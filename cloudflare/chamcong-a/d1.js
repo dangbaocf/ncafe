@@ -300,12 +300,15 @@ export async function luuAnhR2(env, dataUrl, keyPath) {
 export async function qrInfo(env, p) {
   const s = await qrStore(env, p.cs, p.t);
   if (!s) return { ok: false, msg: 'Mã QR không đúng hoặc đã hết hạn.' };
+  // Trả thêm công tắc để QR.html quyết route (CF D1 hay đường cũ)
+  const cfBat = String(await cfg(env, 'CF_CHAM_CONG_BAT') || 'Có') === 'Có';
   return {
     ok: true,
     store: {
       MaCS: s.MaCS, TenCS: s.TenCS, GioMo: s.GioMo, GioDong: s.GioDong,
       BanKinh: s.BanKinh || 100, QRVer: s.QRVer || ''
-    }
+    },
+    cfBat
   };
 }
 
@@ -335,7 +338,26 @@ export async function qrMo(env, request, p) {
   return out;
 }
 
-export async function qrVao(env, request, p) {
+/* ----------- Backfill Sheet (31/10 đợt A) -----------
+ * Gọi qua ctx.waitUntil sau khi ghi D1. Apps Script fn qrVaoBackfill / qrRaBackfill
+ * nhận record, chèn Sheet dạng chữ thuần, idempotent theo ID. Lỗi fetch → bỏ qua, không
+ * ảnh hưởng response gửi về nhân viên. */
+export async function backfillSheet(env, fn, record) {
+  if (!env.APPS_SCRIPT_URL || !env.API_KEY) return;
+  try {
+    const r = await fetch(env.APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'content-type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ fn, args: [record], key: env.API_KEY }),
+      redirect: 'follow'
+    });
+    try { await r.body?.cancel(); } catch (_) {}
+  } catch (e) {
+    console.log('[backfill ' + fn + '] lỗi:', e.message);
+  }
+}
+
+export async function qrVao(env, request, p, ctx) {
   const info = await qrInfo(env, p);
   if (!info.ok) return info;
   const cs = info.store;
@@ -386,6 +408,17 @@ export async function qrVao(env, request, p) {
     await wifiQueueCho(env, cs.MaCS, n.MaNV, tenNgan(n.Ten), wc.ip, wc.asOrg, id, anhUrl, 'VAO');
   }
 
+  // Backfill Sheet qua ctx.waitUntil (không chặn response về nhân viên)
+  if (ctx && ctx.waitUntil) {
+    ctx.waitUntil(backfillSheet(env, 'qrVaoBackfill', {
+      ID: id, Ngay: today, MaNV: up(n.MaNV), Ten: tenNgan(n.Ten), MaCS: up(cs.MaCS),
+      MaCa: c.MaCa, CaBD: c.GioBD, CaKT: c.GioKT, ViTri: p.viTri || n.ViTri,
+      Vao: vao, TreMin: tre, TrangThai: 'Đang làm', CanhBao: cb.cb, AnhVao: anhUrl,
+      ViDo: cb.lat || null, KinhDo: cb.lng || null, KhoangCach: cb.kc || null,
+      ThietBi: String(p.deviceId || ''), IP: ip, AsOrg: asOrg
+    }));
+  }
+
   return {
     ok: true, loai: 'VAO', gio: vao, tre, ca: c.GioBD + '–' + c.GioKT,
     goi: tenNgan(n.Ten), id, bietDanh: String(n.BietDanh || ''),
@@ -398,7 +431,7 @@ export async function qrVao(env, request, p) {
   };
 }
 
-export async function qrRa(env, request, p) {
+export async function qrRa(env, request, p, ctx) {
   const info = await qrInfo(env, p);
   if (!info.ok) return info;
   const cs = info.store;
@@ -464,6 +497,15 @@ export async function qrRa(env, request, p) {
 
   if (wc && wc.choIP) {
     await wifiQueueCho(env, cs.MaCS, n.MaNV, tenNgan(n.Ten), wc.ip, wc.asOrg, mo.ID, anhRa, 'RA');
+  }
+
+  if (ctx && ctx.waitUntil) {
+    ctx.waitUntil(backfillSheet(env, 'qrRaBackfill', {
+      ID: mo.ID, Ra: ra, GioThuc: thuc, KhaiLoai: loai, KhaiGio: khaiGio,
+      KhaiTu: tu, KhaiDen: den, KhaiGhiChu: String(p.ghiChu || ''),
+      CoMat: coMat, LyDo: String(p.lyDo || ''), TrangThai: tt, GioTinh: gioTinh,
+      AnhRa: anhRa, CanhBao: cbFinal
+    }));
   }
 
   return {

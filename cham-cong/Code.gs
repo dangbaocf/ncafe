@@ -158,7 +158,8 @@ function apiHam(){ return {qrInfo:qrInfo, qrMo:qrMo, qrNhanVien:qrNhanVien, qrVa
   xinPhep:xinPhep, baoQuenCham:baoQuenCham, phanHoi:phanHoi, baoHong:baoHong, dsBaoHongNV:dsBaoHongNV,
     bangTinVao:bangTinVao, datBietDanh:datBietDanh,
     demCaChoDuyetT10:demCaChoDuyetT10, kiemWifiTu2510:kiemWifiTu2510, batWifiBatBuoc:batWifiBatBuoc,
-    tgCallback:tgCallback, saoLuuSheetNgay:saoLuuSheetNgay}; }   // (30/10c) tgCallback inline button; (31/10) saoLuuSheetNgay sao lưu Sheet 1 lần
+    tgCallback:tgCallback, saoLuuSheetNgay:saoLuuSheetNgay,
+    qrVaoBackfill:qrVaoBackfill, qrRaBackfill:qrRaBackfill}; }   // (30/10c) tgCallback inline button; (31/10) saoLuuSheetNgay sao lưu Sheet 1 lần; (31/10 đợt A) qr*Backfill nhận ghi từ Cloudflare D1 (ctx.waitUntil)
 /* (30/10b) Số ca "Chờ xác nhận" trong tháng 10/2026 theo quán – trước kỳ lương 3/11 để QL duyệt hết. Chỉ trả số, không tên nhân viên. */
 function demCaChoDuyetT10(){
   var today=fmtDate(new Date()), so={}, tong=0;
@@ -343,6 +344,47 @@ function saoLuuSheetNgay(p){
   try{ ghiNhatKy('Hệ thống','','','Sao lưu Sheet (31/10)','', ten+' @ '+file.getUrl()); }catch(e){}
   return {ok:true, ten:ten, id:file.getId(), url:file.getUrl(), folder:folder.getName(), folderId:folder.getId()};
 }
+/* ---- (31/10 đợt A) Backfill từ Cloudflare D1 ----
+ * Worker ncafe-chamcong gọi hàm này qua ctx.waitUntil sau khi ghi D1.
+ * Idempotent theo cột ID (ChamCong Sheet có cột ID). Ghi chữ thuần (prefix ' cho IP/ngày/giờ/sdt).
+ * KHÔNG cần PIN – authz đã qua API_KEY ở lớp doPost. */
+function qrVaoBackfill(p){
+  if(!p || !p.ID) return {ok:false, msg:'Thiếu ID'};
+  try{ ensureCols('ChamCong', XN_COT); }catch(e){}
+  var sh=SS.getSheetByName('ChamCong'); if(!sh) return {ok:false, msg:'Thiếu bảng ChamCong'};
+  var h=sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0], iID=h.indexOf('ID');
+  if(iID<0) return {ok:false, msg:'Thiếu cột ID'};
+  if(sh.getLastRow()>1){
+    var ids=sh.getRange(2,iID+1,sh.getLastRow()-1,1).getValues();
+    for(var i=0;i<ids.length;i++) if(String(ids[i][0])===String(p.ID)) return {ok:true, boQua:'trung_id'};
+  }
+  var ghi={ID:String(p.ID), Ngay:"'"+String(p.Ngay||''), MaNV:"'"+String(p.MaNV||''), Ten:String(p.Ten||''), MaCS:String(p.MaCS||''),
+    MaCa:String(p.MaCa||''), CaBD:"'"+String(p.CaBD||''), CaKT:"'"+String(p.CaKT||''), ViTri:String(p.ViTri||''),
+    Vao:"'"+String(p.Vao||''), TreMin:+p.TreMin||0, TrangThai:String(p.TrangThai||'Đang làm'),
+    CanhBao:String(p.CanhBao||''), AnhVao:String(p.AnhVao||''), ViDo:p.ViDo==null?'':+p.ViDo||'', KinhDo:p.KinhDo==null?'':+p.KinhDo||'',
+    KhoangCach:p.KhoangCach==null?'':+p.KhoangCach||'', ThietBi:"'"+String(p.ThietBi||''), IP:"'"+String(p.IP||''),
+    AsOrg:String(p.AsOrg||''), NguonNhap:'CF_D1'};
+  var row=h.map(function(k){ return ghi.hasOwnProperty(k)?ghi[k]:''; });
+  sh.appendRow(row);
+  return {ok:true, dong:sh.getLastRow()};
+}
+function qrRaBackfill(p){
+  if(!p || !p.ID) return {ok:false, msg:'Thiếu ID'};
+  try{ ensureCols('ChamCong', XN_COT); }catch(e){}
+  var sh=SS.getSheetByName('ChamCong'); if(!sh) return {ok:false, msg:'Thiếu bảng ChamCong'};
+  var h=sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0], iID=h.indexOf('ID'); if(iID<0) return {ok:false, msg:'Thiếu cột ID'};
+  if(sh.getLastRow()<2) return {ok:true, chuaCoVao:true};   // chưa có record vao
+  var ids=sh.getRange(2,iID+1,sh.getLastRow()-1,1).getValues(), rowIdx=-1;
+  for(var i=0;i<ids.length;i++) if(String(ids[i][0])===String(p.ID)){ rowIdx=i+2; break; }
+  if(rowIdx<0) return {ok:true, chuaCoVao:true};   // vao chưa đến (hiếm: ra đến trước vao qua waitUntil)
+  var doi={Ra:"'"+String(p.Ra||''), GioThuc:+p.GioThuc||0, KhaiLoai:String(p.KhaiLoai||''), KhaiGio:+p.KhaiGio||0,
+    KhaiTu:"'"+String(p.KhaiTu||''), KhaiDen:"'"+String(p.KhaiDen||''), KhaiGhiChu:String(p.KhaiGhiChu||''),
+    CoMat:"'"+String(p.CoMat||''), LyDo:String(p.LyDo||''), TrangThai:String(p.TrangThai||'Chờ xác nhận'),
+    GioTinh:+p.GioTinh||0, AnhRa:String(p.AnhRa||''), CanhBao:String(p.CanhBao||'')};
+  Object.keys(doi).forEach(function(k){ var ci=h.indexOf(k); if(ci>=0) sh.getRange(rowIdx, ci+1).setValue(doi[k]); });
+  return {ok:true, dong:rowIdx};
+}
+
 function tgCallback(update){
   try{
     if(!update || !update.callback_query) return {ok:true, bo:'not_callback'};

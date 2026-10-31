@@ -88,10 +88,10 @@ export async function handleChamCongD1(request, env, ctx) {
   if (!fn) return json({ ok: false, msg: 'Hàm chưa khai: ' + fnName }, 500);
 
   try {
+    // ctx truyền vào qrVao/qrRa để waitUntil backfill Sheet (31/10 đợt A). Hàm khác bỏ qua ctx.
     const result = needsRequest
-      ? await fn(env, request, body)
+      ? await fn(env, request, body, ctx)
       : await fn(env, body);
-    // ctx.waitUntil cho backfill Sheet (phase sau)
     return json(result);
   } catch (e) {
     console.log('[chamcong-d1] ' + fnName + ' lỗi:', e.message, e.stack);

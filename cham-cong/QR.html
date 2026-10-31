@@ -37,6 +37,19 @@ function hm(x){ return String(Math.round(x*100)/100).replace('.',','); }
 function mins(t){ var p=String(t).split(':'); return +p[0]*60+ +p[1]; }
 var DEV=ls('ncafe_dev'); if(!DEV){ DEV='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); ls('ncafe_dev',DEV); }
 var NV=null, S={vt:'',ca:'',kh:'',photo:null}, POS={lat:'',lng:'',acc:'',loi:''};
+// (31/10 đợt A) Chấm công qua Cloudflare D1 với dự phòng tự động về Apps Script sau 5s / 5xx.
+// CF_BAT cập nhật từ qrInfo.cfBat (CaiDat 'CF_CHAM_CONG_BAT' admin có công tắc khẩn cấp).
+var CF_BAT = true, CF_URL_D1 = {qrMo:'mo', qrNhanVien:'nhan-vien', qrVao:'vao', qrRa:'ra'};
+function cham(fn, args, ok, loi){
+  ok = ok || function(){}; loi = loi || function(e){ try{ if($('err')) $('err').textContent = 'Lỗi: '+(e && e.message || e); }catch(_){} };
+  function cu(){ google.script.run.withSuccessHandler(ok).withFailureHandler(loi)[fn](args); }
+  if(!CF_BAT || !CF_URL_D1[fn] || !window.fetch || !window.AbortController) return cu();
+  var ctrl = new AbortController(), tHan = setTimeout(function(){ ctrl.abort(); }, 5000), xong = false;
+  fetch('/cham-cong-d1/qr/'+CF_URL_D1[fn], { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(args), signal: ctrl.signal })
+    .then(function(r){ clearTimeout(tHan); if(!r.ok || r.status >= 500) throw new Error('CF '+r.status); return r.json(); })
+    .then(function(j){ xong = true; if(fn==='qrMo' && j && j.ok){ CF_BAT = (j.cfBat !== false); if(!CF_BAT) return cu(); } ok(j); })
+    .catch(function(e){ clearTimeout(tHan); if(xong) return; try{ console.warn('CF fallback:', e && e.message); }catch(_){} cu(); });
+}
 // Lấy vị trí: lần 1 nhanh (wifi / mạng di động, vài giây – đủ cho bán kính 100m), lần 2 bằng GPS cho chính xác hơn. Bị chặn thì báo nhân viên cách bật.
 var TRONG_APP=/Zalo|FBAN|FBAV|FB_IAB|Instagram|Messenger|Line\//i.test(navigator.userAgent);
 function veViTri(){ var e=$('vtTT'); if(!e) return; if(POS.lat){ e.innerHTML='📍 Đã lấy vị trí (±'+POS.acc+' m)'; e.style.color='#2F6B3A'; return; }
@@ -47,9 +60,10 @@ function layViTri(chinhXac, han, xong){ if(!navigator.geolocation){ POS.loi='má
     function(e){ if(!POS.lat) POS.loi=e.code===1?'chưa cho phép':(e.code===3?'hết thời gian chờ':'không xác định được'); veViTri(); if(xong) xong(); }, {enableHighAccuracy:chinhXac, timeout:han, maximumAge:120000}); }
 layViTri(false, 8000); layViTri(true, 25000);
 var MA_NHO=ls('ncafe_ma'); if(MA_NHO) $('ma').value=MA_NHO;
-google.script.run.withSuccessHandler(function(r){ if(!r.ok){ $('store').textContent=r.msg; $('store').style.cssText='background:#F8E1DE;color:#B4382F'; return; }
-  $('store').textContent='Quán '+r.store.TenCS; WIFI=r.wifi||{}; veWifi(); if(r.nv) nhanNV(r.nv); else $('sMa').classList.remove('hide'); })
-  .withFailureHandler(function(e){ $('store').textContent='Lỗi mạng: '+(e.message||e)+' – tải lại trang'; }).qrMo({cs:CS,t:TK,maNV:MA_NHO||'',deviceId:DEV});
+cham('qrMo', {cs:CS,t:TK,maNV:MA_NHO||'',deviceId:DEV},
+  function(r){ if(!r.ok){ $('store').textContent=r.msg; $('store').style.cssText='background:#F8E1DE;color:#B4382F'; return; }
+    $('store').textContent='Quán '+r.store.TenCS; WIFI=r.wifi||{}; veWifi(); if(r.nv) nhanNV(r.nv); else $('sMa').classList.remove('hide'); },
+  function(e){ $('store').textContent='Lỗi mạng: '+(e.message||e)+' – tải lại trang'; });
 var WIFI={};
 function wifiChan(){ return WIFI.bat && !WIFI.ok && WIFI.cheDo==='batbuoc'; }
 function veWifi(){ var e=$('wfTT'); if(!e || !WIFI.bat) return; if(WIFI.ok){ e.innerHTML='📶 Đang dùng wifi quán'; e.style.color='#2F6B3A'; return; }
@@ -58,8 +72,7 @@ var goMaHen=null; function goMa(){ var m=$('ma').value.replace(/\D/g,''); $('maT
 function nhanNV(r){ if(!r.ok){ ls('ncafe_ma',null); $('sMa').classList.remove('hide'); $('sCham').classList.add('hide'); $('eMa').textContent=r.msg; if($('maTen')) $('maTen').textContent=''; return; }
   NV=r; ls('ncafe_ma',r.MaNV); $('sMa').classList.add('hide'); S={vt:(r.lich[0]&&r.lich[0].ViTri)||r.ViTri,ca:(r.lich[0]&&r.lich[0].MaCa)||'',kh:'',photo:null,gio:'',ghi:''}; ve(); }
 function tim(){ var m=$('ma').value.trim(); if(!m){ $('eMa').textContent='Nhập mã nhân viên'; return; } $('eMa').textContent='';
-  google.script.run.withSuccessHandler(nhanNV)
-  .withFailureHandler(function(e){ $('eMa').textContent='Lỗi: '+(e.message||e); }).qrNhanVien({cs:CS,t:TK,maNV:m,deviceId:DEV}); }
+  cham('qrNhanVien', {cs:CS,t:TK,maNV:m,deviceId:DEV}, nhanNV, function(e){ $('eMa').textContent='Lỗi: '+(e.message||e); }); }
 var TU_GUI=false, CANLY=false, LYDO=['Có mặt đúng giờ, chấm muộn (mã QR / mạng / hết pin)','Đã xin phép quản lý','Xe hư / lủng lốp','Ốm / sức khoẻ','Việc gia đình','Kẹt xe / mưa lớn','Đông khách, quản lý giữ lại','Quán vắng, quản lý cho về','Khác'];
 function luu(){ if($('ktu')) S.tu=$('ktu').value; if($('kden')) S.den=$('kden').value; if($('kcm')) S.cm=$('kcm').value; if($('gio')) S.gio=$('gio').value; if($('ghi')) S.ghi=$('ghi').value; if($('gbd')) S.bd=$('gbd').value; if($('gkt')) S.kt=$('gkt').value; }
 function ve(){ var r=NV, b=$('sCham'); b.classList.remove('hide'); var vao=r.next==='VAO';
@@ -108,7 +121,7 @@ function gui(){ if(!POS.lat && !gui.daCho && POS.loi!=='chưa cho phép'){ gui.d
   luu(); var b=$('gui'); b.disabled=true; b.textContent='Đang lưu…';
   var base={cs:CS,t:TK,maNV:NV.MaNV,deviceId:DEV,photo:S.photo,lat:POS.lat,lng:POS.lng,acc:POS.acc,loiViTri:POS.loi||'',trongApp:TRONG_APP?1:''}, fn, p;
   if(NV.next==='VAO'){ fn='qrVao'; p=Object.assign(base,{maCa:S.ca,viTri:S.vt,gioBD:S.bd,gioKT:S.kt}); } else { fn='qrRa'; p=Object.assign(base,{khaiLoai:S.kh,tu:S.kh==='du'?'':S.tu,den:S.kh==='du'?'':S.den,coMat:S.kh==='du'?S.cm:'',lyDo:S.ly,ghiChu:S.ghi}); }
-  google.script.run.withSuccessHandler(function(r){ if(!r.ok){
+  cham(fn, p, function(r){ if(!r.ok){
       // giờ cao điểm: máy chủ đang ghi cho người khác → tự thử lại (tối đa 3 lần, cách 2–4 giây), nhân viên không phải bấm
       if(r.banLai && (gui.lan=(gui.lan||0)+1)<=3){ b.textContent='Đông người chấm – đang thử lại ('+gui.lan+')…'; setTimeout(function(){ gui.daCho=true; gui(); }, 2000+Math.floor(Math.random()*2000)); return; }
       gui.lan=0; b.disabled=false; b.textContent=NV.next==='VAO'?'Vào ca':'Ra ca'; $('err').textContent=r.msg||'Lỗi, thử lại'; return; }
@@ -116,8 +129,8 @@ function gui(){ if(!POS.lat && !gui.daCho && POS.loi!=='chưa cho phép'){ gui.d
     $('sCham').classList.add('hide'); var x=$('sXong'); x.classList.remove('hide');
     var note='', nn=NV.nn||10, lc=r.loai==='VAO'?loiChao(r,nn):null; if(lc) note=lc.html;
     if(r.loai==='RA') note=r.tuXacNhan?'<p class="sub">Đã ghi: đủ ca '+hm(r.caGio)+'h, khớp lịch.</p>':'<div class="'+(r.khopLich?'sub':'warn')+'">Đã gửi quản lý duyệt: '+(S.kh==='du'?'đủ ca '+hm(r.caGio)+'h':(S.kh==='tang'?'tăng ca ':'giảm ca ')+(S.tu?S.tu+'–'+S.den+' ':'')+'('+hm(r.khaiGio)+'h)')+'. Xem kết quả ở "Giờ công của tôi".</div>';
-    x.innerHTML='<span class="pill '+(r.loai==='VAO'?'vao':'ra')+'">'+(r.loai==='VAO'?'Đã vào ca':'Đã ra ca')+'</span><div class="big"'+(lc&&lc.tre?' style="color:#C62828"':(lc&&lc.treNhe?' style="color:#B26A00"':''))+'>'+r.gio+'</div><b>'+esc(NV.Ten)+'</b>'+note+(r.bt&&r.bt.url&&r.bt.t?'<iframe id="btKhung" title="Bảng tin Ncafe" src="'+r.bt.url+'/bangtin/bar?t='+encodeURIComponent(r.bt.t)+'" style="width:100%;height:110px;border:0;display:block;margin:12px 0 4px;background:transparent;border-radius:16px"></iframe>':'')+'<button class="btn ghost" onclick="location.reload()">Xong</button>'; BTU=(r.bt&&r.bt.url)?(String(r.bt.url).match(/^https?:\/\/[^\/]+/)||[''])[0]:''; })
-  .withFailureHandler(function(e){ if((gui.lan=(gui.lan||0)+1)<=2){ b.textContent='Mạng chập chờn – đang thử lại…'; setTimeout(function(){ gui.daCho=true; gui(); }, 2500); return; } gui.lan=0; b.disabled=false; b.textContent=NV.next==='VAO'?'Vào ca':'Ra ca'; $('err').textContent='Lỗi mạng: '+(e.message||e)+'. Kiểm tra wifi rồi bấm lại.'; })[fn](p); }
+    x.innerHTML='<span class="pill '+(r.loai==='VAO'?'vao':'ra')+'">'+(r.loai==='VAO'?'Đã vào ca':'Đã ra ca')+'</span><div class="big"'+(lc&&lc.tre?' style="color:#C62828"':(lc&&lc.treNhe?' style="color:#B26A00"':''))+'>'+r.gio+'</div><b>'+esc(NV.Ten)+'</b>'+note+(r.bt&&r.bt.url&&r.bt.t?'<iframe id="btKhung" title="Bảng tin Ncafe" src="'+r.bt.url+'/bangtin/bar?t='+encodeURIComponent(r.bt.t)+'" style="width:100%;height:110px;border:0;display:block;margin:12px 0 4px;background:transparent;border-radius:16px"></iframe>':'')+'<button class="btn ghost" onclick="location.reload()">Xong</button>'; BTU=(r.bt&&r.bt.url)?(String(r.bt.url).match(/^https?:\/\/[^\/]+/)||[''])[0]:''; },
+  function(e){ if((gui.lan=(gui.lan||0)+1)<=2){ b.textContent='Mạng chập chờn – đang thử lại…'; setTimeout(function(){ gui.daCho=true; gui(); }, 2500); return; } gui.lan=0; b.disabled=false; b.textContent=NV.next==='VAO'?'Vào ca':'Ra ca'; $('err').textContent='Lỗi mạng: '+(e.message||e)+'. Kiểm tra wifi rồi bấm lại.'; }); }
 
 /* (30/10) Bảng tin Ncafe sau khi chấm công: khung tự co giãn theo chiều cao thanh tin */
 var BTU='';
