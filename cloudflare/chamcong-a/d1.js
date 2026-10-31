@@ -154,3 +154,142 @@ export async function caDangMo(env, maNV) {
   ).bind(up(maNV), today).first();
   return r || null;
 }
+
+/* ============ 6. Wi-Fi (port từ Code.gs wifiKiem_, wifiChan_, wifiLaMobile_, …) ============ */
+export function wifiLaMobile(asOrg) {
+  const s = String(asOrg || '');
+  if (!s) return false;
+  return /\bmobile\b|cellular|wireless|viettel\s*mobile|mobifone|vinaphone|vietnamobile|reddi|itel|gmobile/i.test(s);
+}
+export async function wifiCheDo(env) {
+  const v = String(await cfg(env, 'WIFI_CHE_DO') || 'Cảnh báo');
+  if (/^bắt/i.test(v)) return 'batbuoc';
+  if (/^tắt/i.test(v)) return 'tat';
+  return 'canhbao';
+}
+export async function wifiDs(env) {
+  // Toàn bộ IP registered, lọc TrangThai != 'Bỏ'
+  const rs = await env.DB.prepare("SELECT IP, MaCS FROM WifiQuan WHERE TrangThai <> 'Bỏ'").all();
+  return rs.results || [];
+}
+export async function wifiKiem(env, maCS, ip) {
+  const cd = await wifiCheDo(env);
+  const ds = await wifiDs(env);
+  if (cd === 'tat' || !ds.length) return { bat: false, ok: true, ip, cheDo: cd };
+  const w = ds.find(x => ipKhop(ip, x.IP));
+  return { bat: true, ok: !!w, khop: !!w, ip, cheDo: cd, cs: w ? up(w.MaCS) : '' };
+}
+/** 2h, cùng quán + cùng IP, trả danh sách MaNV khác (unique). */
+export async function wifiDemNVKhacCho(env, maCS, ip, maNVHienTai, durationMs) {
+  const since = fmtDT(new Date(Date.now() - durationMs));
+  const rs = await env.DB.prepare(
+    "SELECT DISTINCT MaNV FROM WifiCho WHERE MaCS = ?1 AND IP = ?2 AND TrangThai = 'Cho' AND Luc >= ?3 AND MaNV <> ?4"
+  ).bind(up(maCS), ip, since, up(maNVHienTai)).all();
+  return (rs.results || []).map(r => String(r.MaNV));
+}
+export async function wifiThemTuNhan(env, maCS, ip, asOrg, dsMaNV) {
+  if (!ip || !maCS) return;
+  // Kiểm có IP chưa (so khớp ipKhop qua pattern đã lưu)
+  const ds = await wifiDs(env);
+  const daCo = ds.some(w => ipKhop(ip, w.IP) && up(w.MaCS) === up(maCS));
+  if (!daCo) {
+    await env.DB.prepare(
+      "INSERT OR IGNORE INTO WifiQuan(IP, MaCS, GhiChu, Ngay, Boi, TrangThai) VALUES(?1, ?2, ?3, ?4, 'Hệ thống', 'Dùng')"
+    ).bind(ip, up(maCS), 'Tự nhận ' + dsMaNV.length + ' NV trong 2h' + (asOrg ? ' (' + String(asOrg).slice(0, 60) + ')' : ''), fmtDate(new Date())).run();
+  }
+  // Xử lý queue: cập nhật WifiCho Cho → Da; xoá CB "IP chờ xác nhận" trong ChamCong row liên quan
+  const rs = await env.DB.prepare(
+    "SELECT ID, CCID FROM WifiCho WHERE MaCS = ?1 AND IP = ?2 AND TrangThai = 'Cho'"
+  ).bind(up(maCS), ip).all();
+  const now = fmtDT(new Date()), by = 'Hệ thống – tự nhận ' + dsMaNV.length + ' NV';
+  for (const r of (rs.results || [])) {
+    await env.DB.prepare("UPDATE WifiCho SET TrangThai='Da', XuLyBoi=?1, LucXong=?2 WHERE ID=?3").bind(by, now, r.ID).run();
+    if (r.CCID) await wifiXoaCB(env, r.CCID);
+  }
+  // Nhật ký
+  await env.DB.prepare(
+    "INSERT INTO NhatKySua(Boi, Bang, Khoa, Cot, Cu, Moi, LyDo) VALUES('Hệ thống', 'WifiQuan', ?1, 'TrangThai', '', 'Dùng', 'Tự nhận ' || ?2 || ' NV cùng chấm trong 2h')"
+  ).bind(ip + '|' + up(maCS), String(dsMaNV.length)).run();
+}
+export async function wifiXoaCB(env, ccid) {
+  const r = await env.DB.prepare("SELECT CanhBao FROM ChamCong WHERE ID = ?1").bind(ccid).first();
+  if (!r) return;
+  const cb = String(r.CanhBao || '').split(';').map(s => s.trim())
+    .filter(s => s && !/^IP chờ xác nhận/i.test(s)).join('; ');
+  await env.DB.prepare("UPDATE ChamCong SET CanhBao = ?1, Updated = ?2 WHERE ID = ?3")
+    .bind(cb, fmtDT(new Date()), ccid).run();
+}
+export async function wifiQueueCho(env, maCS, maNV, ten, ip, asOrg, ccid, anh, loai) {
+  const id = 'W' + idMoi(new Date(), maNV);
+  await env.DB.prepare(
+    "INSERT INTO WifiCho(ID, Luc, MaCS, MaNV, Ten, IP, AsOrg, CCID, Loai, TrangThai, Anh) VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'Cho', ?10)"
+  ).bind(id, fmtDT(new Date()), up(maCS), up(maNV), ten, ip, asOrg || '', String(ccid || ''), String(loai || ''), String(anh || '')).run();
+  return id;
+}
+/**
+ * Trả null nếu được chấm (pass through), hoặc {choIP, ip, asOrg, mobile, msg} khi chế độ Bắt buộc + IP lạ.
+ * KHÔNG dùng GPS (nhân viên không thấy kiểm vị trí) – chỉ dùng ASN mobile để quyết tự nhận.
+ */
+export async function wifiChan(env, cs, nv, loai, p) {
+  const ip = String((p && p.ip) || '');
+  const asOrg = String((p && p.asOrg) || '');
+  const w = await wifiKiem(env, cs.MaCS, ip);
+  if (!w.bat || w.ok) return null;
+  if (String(await cfg(env, 'WIFI_CHO_XAC_NHAN') || 'Không') !== 'Có') {
+    // Fallback: chế độ Bắt buộc cũ – chặn
+    return { ok: false, msg: 'Hãy kết nối Wi-Fi của quán rồi chấm lại' };
+  }
+  const mobile = wifiLaMobile(asOrg);
+  if (ip && !mobile) {
+    const khac = await wifiDemNVKhacCho(env, cs.MaCS, ip, nv.MaNV, 2 * 3600 * 1000);
+    if (khac.length >= 1) {
+      await wifiThemTuNhan(env, cs.MaCS, ip, asOrg, [String(nv.MaNV)].concat(khac));
+      const w2 = await wifiKiem(env, cs.MaCS, ip);
+      if (w2.ok) return null;
+    }
+  }
+  return { choIP: true, ip, asOrg, mobile, loai, msg: 'Đã ghi nhận, đang chờ xác nhận mạng quán' };
+}
+
+/* ============ 7. Cảnh báo chấm (port canhBao trong Code.gs) ============
+ * Trả { cb, lat, lng, kc } – chuỗi cảnh báo ngăn cách '; ', toạ độ và khoảng cách để lưu row.
+ * Áp luật B: KHÔNG so lịch, chỉ nhãn vị trí (nếu quán đã lưu toạ độ) + điện thoại mới. */
+export function khoangCach(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const toRad = x => x * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1), dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return Math.round(2 * R * Math.asin(Math.sqrt(a)));
+}
+export async function canhBao(env, cs, maNV, p) {
+  const out = { cb: '', lat: '', lng: '', kc: '' };
+  const parts = [];
+  // Vị trí quán
+  if (p && p.lat != null && p.lat !== '' && isFinite(+p.lat)) {
+    out.lat = +p.lat; out.lng = +p.lng;
+    if (cs.ViDo != null && cs.ViDo !== '') {
+      const kc = khoangCach(+p.lat, +p.lng, +cs.ViDo, +cs.KinhDo);
+      out.kc = kc;
+      const bk = (+cs.BanKinh || +(await cfg(env, 'QR_BAN_KINH')) || 100);
+      if (kc > bk + Math.min(+p.acc || 0, 150)) parts.push('Cách quán ' + kc + 'm');
+    } else parts.push('Quán chưa lưu vị trí');
+  }
+  // Điện thoại mới (deviceId chưa có trong ThietBi)
+  if (p && p.deviceId) {
+    const dv = String(p.deviceId).slice(0, 40);
+    const r = await env.DB.prepare("SELECT 1 FROM ThietBi WHERE MaNV = ?1 AND Dev = ?2 LIMIT 1").bind(up(maNV), dv).first();
+    if (!r) parts.push('Điện thoại mới');
+  }
+  out.cb = parts.join('; ');
+  return out;
+}
+
+/* ============ 8. Lưu ảnh R2 ============ */
+export async function luuAnhR2(env, dataUrl, keyPath) {
+  if (!dataUrl || !env.ANH) return '';
+  const m = String(dataUrl).match(/^data:(image\/[a-z]+);base64,(.+)$/);
+  if (!m) return '';
+  const bin = Uint8Array.from(atob(m[2]), c => c.charCodeAt(0));
+  await env.ANH.put(keyPath, bin, { httpMetadata: { contentType: m[1] } });
+  return keyPath;
+}
