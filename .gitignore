@@ -26,3 +26,6 @@ _ver.txt
 # IDE
 .vscode/
 .idea/
+
+# Claude Code local settings (user-specific, không push)
+.claude/settings.local.json
