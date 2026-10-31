@@ -293,3 +293,189 @@ export async function luuAnhR2(env, dataUrl, keyPath) {
   await env.ANH.put(keyPath, bin, { httpMetadata: { contentType: m[1] } });
   return keyPath;
 }
+
+/* ============ 9. Handlers chấm công (qrInfo, qrMo, qrNhanVien, qrVao, qrRa) ============
+ * Áp luật B: KHÔNG so lịch Xếp lịch; trễ = giờ chấm vs giờ ca NV tự chọn.
+ * `request` cần request.cf.asOrganization + headers.CF-Connecting-IP. */
+export async function qrInfo(env, p) {
+  const s = await qrStore(env, p.cs, p.t);
+  if (!s) return { ok: false, msg: 'Mã QR không đúng hoặc đã hết hạn.' };
+  return {
+    ok: true,
+    store: {
+      MaCS: s.MaCS, TenCS: s.TenCS, GioMo: s.GioMo, GioDong: s.GioDong,
+      BanKinh: s.BanKinh || 100, QRVer: s.QRVer || ''
+    }
+  };
+}
+
+export async function qrNhanVien(env, p) {
+  const n = await getNhanVien(env, p.maNV);
+  if (!n || !(await dangLam(n))) return { ok: false, msg: 'Mã nhân viên không hợp lệ' };
+  const mo = await caDangMo(env, n.MaNV);
+  return {
+    ok: true,
+    maNV: n.MaNV, goi: tenNgan(n.Ten), viTri: n.ViTri, coSo: n.CoSoChinh,
+    coSdt: !!n.SDT, bietDanh: String(n.BietDanh || ''),
+    dangTrongCa: !!mo,
+    ca: mo ? { ID: mo.ID, CaBD: mo.CaBD, CaKT: mo.CaKT, Vao: mo.Vao, MaCS: mo.MaCS, MaCa: mo.MaCa } : null
+  };
+}
+
+export async function qrMo(env, request, p) {
+  const info = await qrInfo(env, p);
+  if (!info.ok) return info;
+  const ip = (request.headers.get('CF-Connecting-IP') || '').trim();
+  const w = await wifiKiem(env, info.store.MaCS, ip);
+  const out = { ok: true, store: info.store, wifi: { bat: w.bat, ok: w.ok, cheDo: w.cheDo } };
+  if (String(p.maNV || '').trim()) {
+    const nvInfo = await qrNhanVien(env, p);
+    if (nvInfo && nvInfo.ok) out.nv = nvInfo;
+  }
+  return out;
+}
+
+export async function qrVao(env, request, p) {
+  const info = await qrInfo(env, p);
+  if (!info.ok) return info;
+  const cs = info.store;
+  const n = await getNhanVien(env, p.maNV);
+  if (!n || !(await dangLam(n))) return { ok: false, msg: 'Mã nhân viên không hợp lệ' };
+  const ip = (request.headers.get('CF-Connecting-IP') || '').trim();
+  const asOrg = ((request.cf && request.cf.asOrganization) || '').trim();
+  const wc = await wifiChan(env, cs, n, 'VAO', { ip, asOrg });
+  if (wc && !wc.choIP) return wc;
+  if (await caDangMo(env, n.MaNV)) return { ok: false, msg: 'Bạn đang trong ca, hãy chấm Ra ca trước.' };
+
+  // Ca NV tự chọn (luật B)
+  let c;
+  if (p.maCa === 'KHAC') {
+    const bd = hhmm(p.gioBD), kt = hhmm(p.gioKT);
+    if (!bd || !kt || toMin(kt) <= toMin(bd) || toMin(kt) - toMin(bd) > 16 * 60)
+      return { ok: false, msg: 'Điền giờ bắt đầu và kết thúc ca (kết thúc sau bắt đầu)' };
+    c = { MaCa: 'KHAC', GioBD: bd, GioKT: kt, SoGio: (toMin(kt) - toMin(bd)) / 60 };
+  } else {
+    c = await getCa(env, p.maCa);
+    if (!c) return { ok: false, msg: 'Chọn ca làm hôm nay' };
+  }
+
+  const now = new Date(), today = fmtDate(now), vao = fmtTime(now);
+  const id = idMoi(now, n.MaNV);
+  const tre = Math.max(0, toMin(vao) - toMin(c.GioBD));
+  const anhKey = `anh/${today.replace(/-/g, '/')}/${id}-vao.jpg`;
+  const anhUrl = await luuAnhR2(env, p.photo, anhKey);
+  const cb = await canhBao(env, cs, n.MaNV, p);
+  if (wc && wc.choIP) cb.cb = (cb.cb ? cb.cb + '; ' : '') + 'IP chờ xác nhận (' + wc.ip + ')';
+
+  await env.DB.prepare(
+    `INSERT INTO ChamCong (ID, Ngay, MaNV, Ten, MaCS, MaCa, CaBD, CaKT, ViTri, Vao, TreMin, TrangThai,
+       CanhBao, AnhVao, ViDo, KinhDo, KhoangCach, ThietBi, IP, AsOrg, NguonNhap, Created, Updated)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 'Đang làm', ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, 'QR', ?20, ?20)`
+  ).bind(
+    id, today, up(n.MaNV), tenNgan(n.Ten), up(cs.MaCS), c.MaCa, c.GioBD, c.GioKT,
+    p.viTri || n.ViTri, vao, tre, cb.cb, anhUrl, cb.lat || null, cb.lng || null, cb.kc || null,
+    String(p.deviceId || ''), ip, asOrg, fmtDT(now)
+  ).run();
+
+  if (p.deviceId) {
+    await env.DB.prepare(
+      "INSERT OR IGNORE INTO ThietBi(MaNV, Dev, Luc) VALUES(?1, ?2, ?3)"
+    ).bind(up(n.MaNV), String(p.deviceId).slice(0, 40), fmtDT(now)).run();
+  }
+  if (wc && wc.choIP) {
+    await wifiQueueCho(env, cs.MaCS, n.MaNV, tenNgan(n.Ten), wc.ip, wc.asOrg, id, anhUrl, 'VAO');
+  }
+
+  return {
+    ok: true, loai: 'VAO', gio: vao, tre, ca: c.GioBD + '–' + c.GioKT,
+    goi: tenNgan(n.Ten), id, bietDanh: String(n.BietDanh || ''),
+    choIP: !!(wc && wc.choIP), msgIP: (wc && wc.msg) || '',
+    _tg: {
+      loai: 'VAO', cs: cs.MaCS, tenCS: cs.TenCS, ten: tenNgan(n.Ten),
+      ma: String(n.MaNV), gio: vao, ca: c.GioBD + '–' + c.GioKT,
+      viTri: p.viTri || n.ViTri, tre, cb: cb.cb, tuDo: c.MaCa === 'KHAC'
+    }
+  };
+}
+
+export async function qrRa(env, request, p) {
+  const info = await qrInfo(env, p);
+  if (!info.ok) return info;
+  const cs = info.store;
+  const n = await getNhanVien(env, p.maNV);
+  if (!n) return { ok: false, msg: 'Mã nhân viên không hợp lệ' };
+  const loai = p.khaiLoai === 'dung' ? 'du' : p.khaiLoai;
+  if (['du', 'tang', 'giam'].indexOf(loai) < 0) return { ok: false, msg: 'Chọn: đủ ca, tăng ca hoặc giảm ca' };
+  const ip = (request.headers.get('CF-Connecting-IP') || '').trim();
+  const asOrg = ((request.cf && request.cf.asOrganization) || '').trim();
+  const wc = await wifiChan(env, cs, n, 'RA', { ip, asOrg });
+  if (wc && !wc.choIP) return wc;
+  const mo = await caDangMo(env, n.MaNV);
+  if (!mo) return { ok: false, msg: 'Không tìm thấy lượt vào ca hôm nay.' };
+
+  const now = new Date(), raThat = fmtTime(now);
+  const quaDem = toMin(raThat) < toMin(mo.Vao);
+  const ra = quaDem ? '23:59' : raThat;
+  const thuc = Math.round(((toMin(ra) - toMin(mo.Vao)) / 60) * 100) / 100;
+  const caG = (toMin(mo.CaKT) - toMin(mo.CaBD)) / 60;
+  let tu = '', den = '', khaiGio = caG;
+  if (loai !== 'du') {
+    tu = hhmm(p.tu); den = hhmm(p.den);
+    if (tu && den) {
+      if (toMin(den) <= toMin(tu)) return { ok: false, msg: 'Giờ kết thúc phải sau giờ bắt đầu' };
+      khaiGio = (toMin(den) - toMin(tu)) / 60;
+    } else {
+      khaiGio = so(p.khaiGio);
+      if (!(khaiGio > 0)) return { ok: false, msg: 'Điền giờ làm thực tế' };
+    }
+  }
+
+  const today = fmtDate(now);
+  const anhKey = `anh/${today.replace(/-/g, '/')}/${mo.ID}-ra.jpg`;
+  const anhRa = await luuAnhR2(env, p.photo, anhKey);
+
+  const cbTruoc = await canhBao(env, cs, n.MaNV, p);
+  const extras = [];
+  if (cbTruoc.cb) extras.push(cbTruoc.cb);
+  if (quaDem) extras.push('Chấm ra sau nửa đêm lúc ' + raThat + ' (ghi 23:59)');
+  if (up(cs.MaCS) !== up(mo.MaCS)) extras.push('Ra ca ở ' + cs.TenCS + ' (vào ở ' + mo.MaCS + ')');
+  if (wc && wc.choIP) extras.push('IP chờ xác nhận (' + wc.ip + ')');
+  const cbMoi = extras.join('; ');
+  const cbCu = String(mo.CanhBao || '');
+  const cbFinal = cbCu && cbMoi ? cbCu + '; ' + cbMoi : (cbCu || cbMoi);
+
+  // Áp luật B: luôn 'Chờ xác nhận', không tự xác nhận theo lịch.
+  const tt = 'Chờ xác nhận';
+  const dx = loai === 'du' ? caG : khaiGio;
+  const gioTinh = Math.min(dx, caG);
+  const coMat = loai === 'du' ? (hhmm(p.coMat) || '') : '';
+
+  await env.DB.prepare(
+    `UPDATE ChamCong SET
+       Ra = ?1, GioThuc = ?2, KhaiLoai = ?3, KhaiGio = ?4, KhaiTu = ?5, KhaiDen = ?6,
+       KhaiGhiChu = ?7, CoMat = ?8, LyDo = ?9, TrangThai = ?10, GioTinh = ?11, Cach = '',
+       AnhRa = ?12, CanhBao = ?13, Updated = ?14
+     WHERE ID = ?15`
+  ).bind(
+    ra, thuc, loai, khaiGio, tu, den,
+    String(p.ghiChu || ''), coMat, String(p.lyDo || '').slice(0, 150),
+    tt, gioTinh, anhRa, cbFinal, fmtDT(now), mo.ID
+  ).run();
+
+  if (wc && wc.choIP) {
+    await wifiQueueCho(env, cs.MaCS, n.MaNV, tenNgan(n.Ten), wc.ip, wc.asOrg, mo.ID, anhRa, 'RA');
+  }
+
+  return {
+    ok: true, loai: 'RA', gio: ra, trangThai: tt, khaiGio, caGio: caG,
+    tuXacNhan: false, khopLich: false,
+    choIP: !!(wc && wc.choIP), msgIP: (wc && wc.msg) || '',
+    _tg: {
+      loai: 'RA', cs: cs.MaCS, tenCS: cs.TenCS, ten: tenNgan(n.Ten),
+      ma: String(n.MaNV), gio: ra, ca: mo.CaBD + '–' + mo.CaKT,
+      khaiLoai: loai, khaiGio, caGio: caG, gioThuc: thuc,
+      vao: mo.Vao, tu, den, coMat, lyDo: String(p.lyDo || ''),
+      cb: cbFinal, ghiChu: String(p.ghiChu || ''), choDuyet: true, khopLich: false
+    }
+  };
+}
