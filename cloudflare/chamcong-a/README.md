@@ -9,6 +9,23 @@ Worker nhận quét QR → ghi D1 → trả NV 1–2s → nền gửi sang Googl
 - Duyệt giờ + lương vẫn ở Apps Script + Sheet. Sheet lưu bản copy chữ thuần, không bị tự đổi kiểu.
 - Chạy SONG SONG ≥ 1 tuần: Worker D1 là primary; Apps Script `qrVao`/`qrRa` cũ chạy nền để backfill Sheet.
 
+### Cài đặt chuyển SANG D1 trong đợt A (chốt 31/10 chiều – không để Worker đọc Sheet rồi sửa):
+- `WifiQuan` – IP từng quán (CRUD trong UI).
+- `Ca` – giờ ca theo quán (CRUD).
+- `NHAC_NHO_PHUT`, `TRU_GIO_TRE_PHUT` – ngưỡng trễ.
+- `WIFI_CHO_XAC_NHAN_NV`, `WIFI_CHO_XAC_NHAN_GIO` – luật tự nhận IP (mặc định 2 NV / 2 giờ, admin đổi được).
+- `TG_CHAT_TP`, `TG_CHAT_DD`, `TG_CHAT_TD`, `TG_CHAT_TNV`, `TG_CHAT_LDD`, `TG_CHAT` – group Telegram.
+- `TG_ADMIN_IDS` – Telegram ID admin được bấm xác nhận.
+- `WIFI_CHE_DO`, `WIFI_CHO_XAC_NHAN` – công tắc Wi-Fi.
+
+### Cài đặt VẪN ở Sheet trong đợt A (chuyển đợt sau):
+- Lương, cơm, đơn giá, hệ số tăng ca, nghỉ có lương, mức cơm theo vị trí…
+- Mọi cài đặt "lương" khác (chưa dùng cho chấm).
+
+### Mã bí mật (chuyển cuối cùng, chọn tối quán vắng):
+- `QR_SECRET`, `API_KEY`, `TG_TOKEN`, `FEED_SECRET` → Cloudflare `wrangler secret put`. Giữ nguyên giá trị.
+- Khi chuyển mã bí mật, bước này tách thành đợt riêng – không gộp vào A.
+
 ## Hạ tầng cần tạo (sau khi có GitHub, trước khi deploy)
 ```bash
 # D1 (database mới, không đụng ncafe-bangtin)
