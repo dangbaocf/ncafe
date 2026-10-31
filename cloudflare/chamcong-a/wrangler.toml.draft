@@ -1,0 +1,27 @@
+# Đợt A – khi sẵn sàng deploy (sau 3/11 + đã tạo D1 + R2):
+# 1. Tạo DB:   wrangler d1 create ncafe-chamcong-d1
+# 2. Tạo R2:   wrangler r2 bucket create ncafe-anh-chamcong
+# 3. Chép phần dưới vào `cloudflare/wrangler.toml` (ngay dưới `keep_vars = true`),
+#    cập nhật `database_id` từ output của bước 1.
+# 4. Chạy schema:  wrangler d1 execute ncafe-chamcong-d1 --file=chamcong-a/schema.sql --remote
+# 5. Chép secrets (giữ nguyên giá trị, không in):
+#      wrangler secret put QR_SECRET      --name ncafe-chamcong
+#      wrangler secret put TG_TOKEN       --name ncafe-chamcong
+#      wrangler secret put FEED_SECRET    --name ncafe-chamcong
+#      wrangler secret put ADMIN_PIN      --name ncafe-chamcong
+#      wrangler secret put QL_PIN         --name ncafe-chamcong
+#      wrangler secret put TG_WEBHOOK_SECRET --name ncafe-chamcong
+# 6. Build + deploy: cd cloudflare && python3 build_worker.py && wrangler deploy
+# 7. Verify: curl -X POST https://ncafe-chamcong.dangbao-mt.workers.dev/cham-cong-d1/qr/info \
+#      -H 'content-type: application/json' -d '{"cs":"TP","t":"<token>"}'
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ncafe-chamcong-d1"
+database_id = "FILL_ME_AFTER_D1_CREATE"
+preview_database_id = "FILL_ME_AFTER_D1_CREATE"
+
+[[r2_buckets]]
+binding = "ANH"
+bucket_name = "ncafe-anh-chamcong"
+preview_bucket_name = "ncafe-anh-chamcong"
