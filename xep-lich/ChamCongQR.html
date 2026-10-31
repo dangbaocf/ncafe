@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base target="_top">
+<style>
+*{box-sizing:border-box;margin:0}
+body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#FBF8F3;color:#2A1D14;padding:16px;max-width:520px;margin:0 auto;line-height:1.45}
+h1{font-size:20px} .sub{color:#7A6657;font-size:14px}
+.card{background:#fff;border:1px solid #E4D9CC;border-radius:14px;padding:14px;margin-top:12px}
+label{display:block;font-size:13px;color:#7A6657;margin:10px 0 4px}
+input{width:100%;font-size:20px;padding:12px;border:1px solid #C9BBAA;border-radius:10px;background:#fff;color:#2A1D14}
+input.small{font-size:16px;padding:10px}
+button{font-size:17px;font-weight:700;padding:14px;border-radius:12px;border:0;background:#8A5A2B;color:#fff;width:100%;margin-top:12px}
+button.second{background:#fff;color:#8A5A2B;border:1px solid #8A5A2B}
+button.link{background:none;color:#8A5A2B;font-weight:400;font-size:14px;padding:6px;width:auto;margin:0}
+button:disabled{opacity:.6}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:9px 13px;border-radius:999px;border:1px solid #C9BBAA;background:#fff;color:#2A1D14;font-size:15px;font-weight:400;width:auto;margin:0}
+.chip.on{background:#8A5A2B;color:#fff;border-color:#8A5A2B}
+.tag{display:inline-block;padding:4px 10px;border-radius:999px;font-weight:700;font-size:14px}
+.vao{background:#D9EAD3;color:#2E7D5B} .ra{background:#FCE5CD;color:#B45F06}
+.warn{background:#FFF3B0;border-radius:10px;padding:8px 10px;font-size:14px;margin-top:8px}
+.err{color:#C0392B;font-size:14px;margin-top:8px}
+.ok{text-align:center} .big{font-size:44px;font-weight:800;margin:6px 0}
+img#preview{width:100%;border-radius:12px;margin-top:10px;display:none}
+.hide{display:none}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid #fff;border-right-color:transparent;border-radius:50%;animation:s .8s linear infinite;margin-right:8px;vertical-align:-2px}
+@keyframes s{to{transform:rotate(360deg)}}
+</style></head><body>
+<h1>Chấm công Ncafe</h1>
+<p class="sub" id="store">Đang kiểm tra mã QR…</p>
+
+<div class="card hide" id="stepMa">
+  <label for="ma">Mã nhân viên của bạn</label>
+  <input id="ma" inputmode="numeric" autocomplete="off" placeholder="VD: 312">
+  <button onclick="timNV()">Tiếp tục</button>
+  <p class="sub" style="margin-top:8px">Điện thoại sẽ nhớ mã này, lần sau chỉ cần quét và chụp ảnh.</p>
+  <p class="err" id="errMa"></p>
+</div>
+
+<div class="card hide" id="stepCham">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+    <div><b id="ten"></b> <span class="sub" id="maHien"></span></div>
+    <span class="tag" id="loai"></span>
+  </div>
+  <p class="sub" id="caInfo" style="margin-top:6px"></p>
+  <div id="vtBox">
+    <label>Ca này bạn làm vị trí</label>
+    <div class="chips" id="vtChips"></div>
+  </div>
+  <div id="otBox"></div>
+  <button class="second" id="btnCam" onclick="$('cam').click()">Chụp ảnh</button>
+  <input type="file" id="cam" accept="image/*" capture="user" class="hide" onchange="gotPhoto(this)">
+  <img id="preview" alt="">
+  <p class="sub" id="gps" style="margin-top:8px">Đang lấy định vị…</p>
+  <button id="btnSend" class="hide" onclick="gui()">Chấm công</button>
+  <p class="err" id="err"></p>
+  <p style="text-align:center;margin-top:8px"><button class="link" onclick="doiMa()">Không phải bạn? Đổi mã</button></p>
+</div>
+
+<div class="card hide ok" id="stepXong">
+  <div id="xongLoai" class="tag"></div>
+  <div class="big" id="xongGio"></div>
+  <div id="xongTen" style="font-weight:700"></div>
+  <div id="xongNote" class="sub" style="margin-top:6px"></div>
+  <div id="xongCanh"></div>
+  <button class="second" onclick="location.reload()">Xong</button>
+</div>
+
+<script>
+var CS='<?= cs ?>', TK='<?= tk ?>';
+var $=function(i){return document.getElementById(i);};
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function ls(k,v){ try{ if(v===undefined) return localStorage.getItem(k); if(v===null) localStorage.removeItem(k); else localStorage.setItem(k,v); }catch(e){ return null; } }
+var DEV=ls('ncafe_dev'); if(!DEV){ DEV='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); ls('ncafe_dev',DEV); }
+var NV=null, VT='', photo=null, photoUrl=null, pos={lat:'',lng:'',acc:''}, otNeed=null;
+
+google.script.run.withSuccessHandler(function(r){
+  if(!r.ok){ $('store').innerHTML='<span class="err">'+esc(r.msg)+'</span>'; return; }
+  $('store').textContent='Quán '+r.store.TenCS;
+  layViTri();
+  var ma=ls('ncafe_ma'); if(ma){ $('ma').value=ma; timNV(); } else $('stepMa').classList.remove('hide');
+}).withFailureHandler(function(e){ $('store').innerHTML='<span class="err">Lỗi: '+esc(e.message||e)+'</span>'; }).qrInfo({cs:CS,t:TK});
+
+function layViTri(){
+  if(!navigator.geolocation){ $('gps').textContent='Điện thoại không cho lấy định vị – vẫn chấm được, quản lý sẽ xem lại.'; return; }
+  navigator.geolocation.getCurrentPosition(function(p){ pos={lat:p.coords.latitude,lng:p.coords.longitude,acc:Math.round(p.coords.accuracy)}; $('gps').textContent='Đã lấy định vị (sai số khoảng '+pos.acc+'m).'; },
+    function(){ $('gps').textContent='Chưa lấy được định vị. Bật định vị cho trình duyệt để chấm công không bị đánh dấu.'; },
+    {enableHighAccuracy:true, timeout:10000, maximumAge:60000});
+}
+function timNV(){
+  var ma=$('ma').value.trim(); if(!ma){ $('errMa').textContent='Nhập mã nhân viên'; return; }
+  $('errMa').textContent='';
+  google.script.run.withSuccessHandler(function(r){
+    if(!r.ok){ ls('ncafe_ma',null); $('stepMa').classList.remove('hide'); $('stepCham').classList.add('hide'); $('errMa').textContent=r.msg||'Không tìm thấy mã'; return; }
+    NV=r; ls('ncafe_ma',r.MaNV);
+    $('stepMa').classList.add('hide'); $('stepCham').classList.remove('hide');
+    $('ten').textContent=r.Ten.split(' (')[0]; $('maHien').textContent='('+r.MaNV+')';
+    $('loai').textContent=r.next==='VAO'?'VÀO CA':'RA CA'; $('loai').className='tag '+(r.next==='VAO'?'vao':'ra');
+    var ci=r.lich?('Lịch hôm nay: '+r.lich.GioBD+'–'+r.lich.GioKT+' tại '+r.lich.MaCS+(r.lich.ViTri?' · '+r.lich.ViTri:'')):'Hôm nay chưa có lịch – vẫn chấm được, quản lý sẽ xếp sau.';
+    if(r.next==='RA' && r.lastTime) ci='Vào lúc '+r.lastTime+(r.lastStore?' tại '+r.lastStore:'')+'. '+ci;
+    $('caInfo').textContent=ci;
+    if(!r.mayQuen) $('caInfo').textContent+=' (Điện thoại mới: lượt này sẽ được quản lý xem lại.)';
+    if(r.next==='VAO'){ VT=(r.lich&&r.lich.ViTri)||r.ViTri||''; veVT(); $('vtBox').classList.remove('hide'); } else $('vtBox').classList.add('hide');
+  }).withFailureHandler(function(e){ $('errMa').textContent='Lỗi: '+(e.message||e); $('stepMa').classList.remove('hide'); }).qrNhanVien({cs:CS,t:TK,maNV:ma,deviceId:DEV});
+}
+function veVT(){ $('vtChips').innerHTML=['Pha chế','Phục vụ','Thu ngân','Rửa ly','Bảo vệ'].map(function(v){ return '<button class="chip'+(v===VT?' on':'')+'" onclick="VT=\''+v+'\';veVT()">'+v+'</button>'; }).join(''); }
+function doiMa(){ ls('ncafe_ma',null); location.reload(); }
+function gotPhoto(inp){
+  var f=inp.files[0]; if(!f) return; var img=new Image(), rd=new FileReader();
+  rd.onload=function(){ img.onload=function(){ var c=document.createElement('canvas'), max=640, w=img.width, h=img.height, k=Math.min(1,max/Math.max(w,h));
+    c.width=Math.round(w*k); c.height=Math.round(h*k); c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    photo=c.toDataURL('image/jpeg',0.7); photoUrl=null; var p=$('preview'); p.src=photo; p.style.display='block';
+    $('btnCam').textContent='Chụp lại'; $('btnSend').classList.remove('hide'); }; img.src=rd.result; }; rd.readAsDataURL(f);
+}
+function gui(){
+  if(!photo && !photoUrl){ $('err').textContent='Chụp ảnh trước khi chấm công'; return; }
+  var b=$('btnSend'); b.disabled=true; b.innerHTML='<span class="spin"></span>Đang lưu'; $('err').textContent='';
+  var p={cs:CS,t:TK,maNV:NV.MaNV,deviceId:DEV,photo:photoUrl?null:photo,photoUrl:photoUrl,lat:pos.lat,lng:pos.lng,acc:pos.acc,viTri:NV.next==='VAO'?VT:''};
+  if(otNeed){ p.tangCa=$('ot').value.trim()||'0'; p.lyDo=$('ly').value.trim(); }
+  google.script.run.withSuccessHandler(function(r){
+    b.disabled=false; b.textContent='Chấm công';
+    if(r && !r.ok && r.needOT){ photoUrl=r.photoUrl; otNeed=r.needOT[0];
+      $('otBox').innerHTML='<div class="warn">Ca kết thúc '+esc(otNeed.gioKT)+', bạn ra trễ '+otNeed.over+' phút. Bạn có tăng ca không?</div>'+
+        '<label for="ot">Số giờ tăng ca (để trống nếu không tăng ca)</label><input class="small" id="ot" inputmode="decimal" placeholder="VD: 1,5">'+
+        '<label for="ly">Lý do / việc đã làm</label><input class="small" id="ly" placeholder="VD: đông khách, dọn kho">'+
+        '<p class="sub" style="margin-top:6px">Tăng ca chỉ được tính khi quản lý xác nhận.</p>';
+      $('btnCam').classList.add('hide'); b.textContent='Gửi'; return; }
+    if(!r || !r.ok){ $('err').textContent=(r&&r.msg)||'Lỗi không rõ, thử lại'; return; }
+    var x=(r.results||[])[0]||{};
+    $('stepCham').classList.add('hide'); $('stepXong').classList.remove('hide');
+    $('xongLoai').textContent=x.loai==='RA'?'ĐÃ RA CA':'ĐÃ VÀO CA'; $('xongLoai').className='tag '+(x.loai==='RA'?'ra':'vao');
+    $('xongGio').textContent=r.time; $('xongTen').textContent=NV.Ten.split(' (')[0];
+    var note=''; if(x.loai==='VAO' && x.tre>0) note='Đi trễ '+x.tre+' phút';
+    if(x.loai==='RA' && x.tc!=='' && x.tc!=null) note=(+x.tc>0?'Tăng ca '+x.tc+'h, chờ quản lý xác nhận':'Không tính tăng ca');
+    $('xongNote').textContent=note;
+    $('xongCanh').innerHTML=(r.canhBao&&r.canhBao.length)?'<div class="warn">Đã ghi nhận. Quản lý sẽ xem lại: '+esc(r.canhBao.join(', '))+'</div>':'';
+  }).withFailureHandler(function(e){ b.disabled=false; b.textContent='Chấm công'; $('err').textContent='Lỗi: '+(e.message||e)+'. Thử lại.'; }).qrChamCong(p);
+}
+</script>
+</body></html>

@@ -1,0 +1,28 @@
+# Build artifacts (rebuild bằng python3 build_dist.py / build_worker.py)
+cham-cong/dist/Code.gs
+cham-cong/dist/QuanLy.html
+cham-cong/dist/appsscript.json
+cloudflare/worker.js
+
+# Pull check – chỉ reference local
+cham-cong/pull_check/
+xep-lich/pull_check/
+
+# D1 backup – có thể chứa dữ liệu NV, không commit
+bangtin/backup/
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+
+# Temp
+*.log
+*.tmp
+*.before_rebuild
+_ver.txt
+
+# IDE
+.vscode/
+.idea/

@@ -1,0 +1,12 @@
+name = "ncafe-bangtin"
+main = "worker.js"
+compatibility_date = "2026-10-30"
+keep_vars = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ncafe-bangtin"
+database_id = "c5885d43-8745-4442-a7af-8c1546dc3e1f"
+
+[triggers]
+crons = ["*/5 * * * *"]

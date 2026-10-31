@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quản lý Ncafe</title>
+<style>
+:root{--bg:#FBF8F3;--ink:#2A1D14;--muted:#7A6657;--line:#E4D9CC;--accent:#8A5A2B;--bad:#C0392B;--ok:#2E7D5B;--soft:#F3ECE3;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;padding:14px;font-size:14px}
+h1{font-size:18px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+h1 small{font-size:12px;font-weight:600;color:var(--muted);background:var(--soft);padding:3px 8px;border-radius:999px}
+h2{font-size:15px;margin:16px 0 6px}
+p.sub{color:var(--muted);margin:4px 0 8px;line-height:1.5}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;border-bottom:1px solid var(--line)}
+.tabs button{background:none;color:var(--muted);border:0;border-bottom:3px solid transparent;border-radius:0;padding:10px 12px;font-weight:600;white-space:nowrap}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--accent)}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin-bottom:12px}
+.bar label,.grid label{font-size:12px;color:var(--muted);display:block}
+input,select{padding:8px;border:1px solid var(--line);border-radius:8px;background:#fff;font-size:14px}
+button{padding:9px 14px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-weight:600;font-size:14px}
+button.second{background:#fff;color:var(--accent);border:1px solid var(--accent)}
+button.mini{padding:3px 8px;font-size:12px}
+button:disabled{opacity:.5}
+.wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:#fff;margin-bottom:16px}
+table{border-collapse:collapse;width:100%;min-width:640px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;vertical-align:top}
+th{background:var(--soft);font-weight:600;position:sticky;top:0}
+td.n{text-align:right;font-variant-numeric:tabular-nums}
+td.cell{white-space:normal;min-width:140px}
+.it{display:flex;justify-content:space-between;gap:4px;padding:2px 0}
+.it .x{background:none;color:var(--muted);padding:0 4px;font-size:15px}
+.bad{color:var(--bad);font-weight:600} .ok{color:var(--ok)}
+.hide{display:none}
+#login{max-width:320px;margin:60px auto;text-align:center}
+#login input{width:100%;font-size:22px;text-align:center;margin:10px 0}
+.err{color:var(--bad);margin-top:8px}
+a{color:var(--accent)}
+details{margin-bottom:14px} summary{cursor:pointer;color:var(--accent);font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:8px}
+.grid input,.grid select{width:100%}
+.bd{border-collapse:collapse;width:100%;min-width:900px}
+.bd td,.bd th{border:1px solid #C9BBAA;padding:4px;vertical-align:top}
+.bd th{background:#F3ECE3;text-align:center}
+.bd .lab{font-weight:700;white-space:nowrap;font-size:13px;width:92px}
+.chip{display:block;width:100%;border:1px solid transparent;background:rgba(255,255,255,.55);border-radius:6px;padding:3px 5px;font-size:13px;margin:2px 0;color:#2A1D14;font-family:inherit}
+.chip:hover{border-color:#C9BBAA}.chip:focus{outline:none;border-color:#8A5A2B;background:#fff}
+.chip.lead{font-weight:700;color:#8B1A1A}
+.chip.keo{cursor:default}.chip.keo:focus{border-color:transparent;background:rgba(255,255,255,.55)}
+.chip.sp{background:repeating-linear-gradient(45deg,#fff,#fff 6px,#F3ECE3 6px,#F3ECE3 12px);font-style:italic;color:#7A6657}
+.chip.add{background:transparent;border:1px dashed #C9BBAA;color:#7A6657}
+.chip.err{border-color:#C0392B;background:#FDECEA}
+.tbl{border-collapse:collapse;font-size:13px}.tbl th,.tbl td{border:1px solid #E4D9CC;padding:4px 6px;text-align:left}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.modal.hide{display:none}
+.sheet{background:#fff;width:100%;max-width:560px;max-height:86vh;overflow:auto;border-radius:14px 14px 0 0;padding:14px}
+@media(min-width:700px){.modal{align-items:center}.sheet{border-radius:14px}}
+.sheet h3{font-size:16px;margin-bottom:8px}
+.gbtn{display:inline-block;margin:3px 4px 3px 0;padding:6px 10px;border-radius:999px;border:1px solid #C9BBAA;background:#fff;color:#2A1D14;font-size:13px}
+.gbtn.on{background:#8A5A2B;color:#fff;border-color:#8A5A2B}
+.pp{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;background:#FBF8F3;color:#2A1D14;border:1px solid #E4D9CC;border-radius:10px;padding:8px 10px;margin:4px 0}
+.pp small{display:block;color:#7A6657;font-weight:400;font-size:12px;margin-top:2px}
+.pp.dim{opacity:.6}
+.pkh{font-size:12px;color:#7A6657;margin:10px 0 2px;font-weight:700;text-transform:uppercase}
+button.chip{text-align:left;cursor:pointer}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:4px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;border:1px solid var(--line)}
+td.pc{white-space:normal;min-width:150px;font-size:12px;line-height:1.4}
+td.pc .btnap{display:block;margin-top:3px}
+
+/* ===== Bản nháp – sửa như Google Sheet ===== */
+.nhHop{border-radius:10px;padding:9px 12px;margin:6px 0;background:#F4F8F6;border:1px solid #CFE0D8;line-height:1.7}
+.nhVangBg{background:#FFF6D6;border-color:#F0D98A}
+.nhTool{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}
+.nhTool button{width:auto}
+.nhTabs{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-right:6px}
+.nhTab{background:#fff;color:var(--ink);border:0;border-radius:0;padding:6px 12px;font-weight:600}
+.nhTab.on{background:var(--accent);color:#fff}
+.nhMau{display:inline-flex;gap:4px;align-items:center;font-size:12px;color:var(--muted);margin:0 6px}
+.nhMau i{display:inline-block;width:22px;height:22px;border:1px solid #bbb;border-radius:5px;cursor:pointer}
+.nhPhai{margin-left:auto;display:inline-flex;gap:6px;flex-wrap:wrap}
+.nhViTri{font-size:12px;color:var(--muted);font-family:ui-monospace,Menlo,Consolas,monospace;margin:2px 0 4px;min-height:16px}
+.nhVung{display:flex;gap:10px;align-items:flex-start}
+.nhLuoi{position:relative;overflow:auto;max-height:72vh;flex:1;border:1px solid #c8c8c8;border-radius:6px;background:#fff;outline:none}
+.nhT{border-collapse:separate;border-spacing:0;table-layout:fixed;font-family:"Times New Roman",Times,serif;font-size:13.5px}
+.nhT td{height:24px;padding:0 4px;border-right:1px solid #e1e1e1;border-bottom:1px solid #e1e1e1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;cursor:cell;user-select:none}
+.nhT th{background:#F1F3F4;color:#5f6368;font:500 11px -apple-system,"Segoe UI",Roboto,Arial,sans-serif;border-right:1px solid #d6d6d6;border-bottom:1px solid #d6d6d6;height:20px}
+.nhT tr.nhHd th{position:sticky;top:0;z-index:3}
+.nhT th.nhSo{position:sticky;left:0;z-index:2}
+.nhT tr.nhDau td{position:sticky;z-index:2}
+.nhT tr.nhDau0 td{top:21px;overflow:visible} .nhT tr.nhDau1 td{top:46px} .nhT tr.nhDau2 td{top:71px}
+.nhT tr.nhDau th{position:sticky;z-index:3} .nhT tr.nhDau0 th{top:21px} .nhT tr.nhDau1 th{top:46px} .nhT tr.nhDau2 th{top:71px}
+.nhT tr.nhDau0 td[data-c="0"],.nhT tr.nhDau0 td[data-c="9"]{z-index:4;overflow:visible;text-align:left}   /* tiêu đề tuần tràn sang ô bên cạnh như Sheet */
+.nhT td.nhChon{box-shadow:inset 0 0 0 999px rgba(26,115,232,.13)}
+.nhT td.nhHT{outline:2px solid #1a73e8;outline-offset:-2px}
+.nhT td.nhLoi{background-image:linear-gradient(225deg,#d93025 7px,transparent 7px)!important}
+.nhT td.nhDich{outline:2px dashed #1a73e8;outline-offset:-2px}
+.nhKeo,.nhKeo td{cursor:move!important}
+.nhChiXem .nhT td{cursor:default}
+#nhIn{position:absolute;z-index:5;opacity:0;border:2px solid #1a73e8;padding:2px 4px;font:13.5px "Times New Roman",Times,serif;resize:none;overflow:hidden;background:#fff;color:#000;box-shadow:0 2px 6px rgba(0,0,0,.2);white-space:nowrap}
+#nhIn{pointer-events:none} #nhIn.nhSua{opacity:1;pointer-events:auto}   /* chưa gõ: không chặn chuột (bấm / kéo / bấm đúp ô vẫn được) */
+#nhGY{position:absolute;z-index:6;background:#fff;border:1px solid #ccc;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.18);min-width:220px;font-size:13px}
+#nhGY div{padding:5px 9px;cursor:pointer} #nhGY div span{color:var(--muted);font-size:11.5px} #nhGY div.on,#nhGY div:hover{background:#E8F0FE}
+.nhKT{width:300px;flex:0 0 300px;font-size:13px;max-height:72vh;overflow:auto}
+.nhKT .nhSum{margin-bottom:6px}
+.nhDo{background:#F8E1DE;border-radius:8px;padding:7px 9px;margin:6px 0}
+.nhXanh{background:#EAF5EE;border-radius:8px;padding:7px 9px;margin:6px 0;color:#2E7D5B}
+.nhVang{background:#FFF3B0;border-radius:8px;padding:7px 9px;margin:6px 0}
+.nhCan{margin:6px 0} .nhCan div{padding:2px 0 2px 10px;border-left:2px solid #eee;margin:2px 0}
+@media (max-width:900px){ .nhVung{flex-direction:column} .nhKT{width:100%;flex:none} }
+.hopTai{position:relative}.hopTai>*{opacity:.45;pointer-events:none;transition:opacity .15s}
+.hopTai::before{content:'Đang tải…';position:absolute;top:6px;left:50%;transform:translateX(-50%);z-index:4;background:#2F5D62;color:#fff;font-weight:700;font-size:12px;padding:4px 12px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+</style></head>
+<body>
+<div id="login">
+  <h1 style="justify-content:center">Quản lý Ncafe</h1>
+  <input id="pin" type="password" inputmode="numeric" placeholder="Mã truy cập">
+  <button onclick="login()">Vào</button>
+  <div id="lerr" class="err"></div>
+</div>
+
+<div id="app" class="hide">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h1>Quản lý Ncafe <small id="roleTag"></small></h1><div style="display:flex;gap:6px"><a id="sangCC" class="hide" target="_top" style="font-size:13px;font-weight:600;padding:7px 12px;border-radius:8px;background:#6B4226;color:#fff;text-decoration:none">Sang Chấm công →</a><button class="second" onclick="dangXuat()" style="width:auto;margin:0;padding:7px 12px;font-size:13px">Đăng xuất</button></div></div>
+  <div id="verTag"></div>
+  <div class="tabs">
+    <button data-t="xep" class="on" onclick="tab('xep')">Xếp lịch</button>
+    <button data-t="nhap" onclick="tab('nhap')">Bản nháp</button>
+    <button data-t="lich" onclick="tab('lich')">Lịch tuần</button>
+    <button data-t="gio" onclick="tab('gio')">Giờ công</button>
+    <button data-t="ns" onclick="tab('ns')">Nhân sự</button>
+    <button data-t="hoc" onclick="tab('hoc')">Học từ chấm công</button>
+    <button data-t="ccn" onclick="tab('ccn')">Ca cần người</button>
+    <button data-t="gn" onclick="tab('gn')">Ghi nhớ</button>
+    <button data-t="ks" onclick="tab('ks')">Khảo sát</button>
+    <button data-t="qr" onclick="tab('qr')">Mã QR</button>
+    <button data-t="lk" onclick="tab('lk')">Link truy cập</button>
+    <button data-t="luong" id="tabLuong" class="hide" onclick="tab('luong')">Tính lương</button>
+  </div>
+
+  <!-- XẾP LỊCH -->
+  <section id="t_xep">
+    <div class="bar">
+      <div><label>Tuần bắt đầu (thứ 2)</label><input type="date" id="tuan"></div>
+      <button onclick="xep('mau')">Gợi ý theo lịch tuần trước</button>
+      <button class="second" onclick="xep('full')">Gợi ý xếp mới hoàn toàn</button>
+      <button class="second" onclick="xep('bosung')">Gợi ý bổ sung chỗ trống</button>
+      <button class="second" onclick="dongBo()">Đồng bộ từ app Chấm công</button>
+      <span id="xmsg"></span>
+    </div>
+    <p class="sub" id="dbMsg" style="margin:6px 0"></p>
+    <div id="qtBox" style="background:#F4F8F6;border:1px solid #CFE0D8;border-radius:12px;padding:12px 14px;margin:8px 0 12px">
+      <h2 style="margin:0 0 6px">Quy trình lịch tuần</h2>
+      <ol style="margin:0 0 0 18px;line-height:1.75">
+        <li><b>Xếp gợi ý</b> (nút ở trên): app ghi vào <b>bản nháp</b> <span id="qtTenGY" class="hide"></span>. <b>Lịch chính thức chưa đổi</b>, nhân viên chưa thấy. <span id="qtGoiY"></span></li>
+        <li><b>Sửa ở tab <a href="#" onclick="tab('nhap');return false">Bản nháp</a></b> (như Google Sheet, kiểm tra ngay khi gõ). Muốn sửa trên Google Sheet thì bấm <b>Xuất ra Google Sheet</b> ở đó; hoặc vẫn xếp trong tab <b>Lịch T<span id="qtThang">…</span></b> của file quán như cũ: <a target="_blank" href="https://docs.google.com/spreadsheets/d/1u_WaOGqMjkhLxwaYqS9HqUZDHTH60cO7FtrRjEtuJrs/edit">Lịch CFMH - NV 2026</a> · <a target="_blank" href="https://docs.google.com/spreadsheets/d/1-xHHjHV9X59i91iAKR3zKhXy6PGhhE8ieXym8_LLmmo/edit">LĐD - Lịch NV</a></li>
+        <li><b>Kiểm tra</b>: đọc <select id="qtNguon" style="width:auto;display:inline-block"><option value="web">bản nháp web</option><option value="">tab tháng của file quán</option><option value="sheet">tab Nháp (đã xuất ra Sheet)</option></select> <button onclick="qtKiemTra()" style="width:auto;display:inline-block;margin:0 0 0 6px">🔍 Kiểm tra</button></li>
+        <li><b>Áp dụng</b> làm lịch chính thức (chỉ admin): <button id="qtApBtn" onclick="qtApDung()" disabled style="width:auto;display:inline-block;margin:0;background:#2E7D5B">✓ Áp dụng</button> <span class="sub">Chấm công, "Lịch của tôi", nhắc ca đọc lịch này.</span></li>
+      </ol>
+      <div id="qtKQ" style="margin-top:8px"></div>
+      <details id="qtPB" style="margin-top:8px" ontoggle="if(this.open) qtPhienBan()"><summary style="cursor:pointer;font-weight:600">Lịch sử phiên bản tuần này (lấy lại bản cũ)</summary><div id="qtPBds" class="sub" style="margin-top:6px">Đang tải…</div></details>
+    </div>
+    <p class="sub"><b>Các nút xếp chỉ tạo bản GỢI Ý</b> (không đổi lịch chính thức). <b>Gợi ý theo lịch tuần trước</b> (nên dùng): chép lịch tuần trước cho người còn làm, bỏ người nghỉ việc / báo bận, rồi chỉ bổ sung chỗ dưới mức tối thiểu. Lần đầu dùng lịch thật 19–25/10. <b>Xếp mới hoàn toàn</b>: app tự xếp tới mức chuẩn từ đầu. <b>Chỉ bổ sung</b>: giữ nguyên ca đã có, điền ô trống.</p>
+    <div id="xres" class="hide">
+      <p id="chuaDK" class="sub" style="margin:6px 0"></p>
+
+      <p id="xsum"></p>
+      <div id="hocSu" style="margin-top:10px"></div>
+      <h2>Gợi ý nhân sự theo cơ sở</h2>
+      <div class="wrap"><table id="xcsT"><thead><tr><th>Cơ sở</th><th>Thiếu thật (ca/tuần)</th><th>Nên thêm (ca/tuần)</th><th>Nên tuyển (người)</th><th>Chi tiết</th></tr></thead><tbody></tbody></table></div>
+      <h2>Gợi ý lấp chỗ thiếu</h2>
+      <p class="sub">Mỗi chỗ thiếu gợi ý tối đa 3 người hay làm quán/ca đó và tăng ca được. Người phù hợp thì <b>ghi thêm vào file lịch của quán</b> (bước 2), rồi Kiểm tra → Áp dụng.</p>
+      <div class="wrap"><table id="xgoiy"><thead><tr><th>Ngày</th><th>Cơ sở</th><th>Ca</th><th>Vị trí</th><th>Thiếu</th><th>Gợi ý</th></tr></thead><tbody></tbody></table></div>
+      <h2>Còn thiếu cả tuần</h2>
+      <div class="wrap"><table id="xgap"><thead><tr><th>Cơ sở</th><th>Ca</th><th>Vị trí</th><th>Số ngày thiếu</th><th>Tổng người thiếu</th></tr></thead><tbody></tbody></table></div>
+      <h2>Gợi ý tuyển</h2><ul id="xtuyen" style="margin-left:18px"></ul>
+      <h2>Ca kéo dài / gãy đã xếp</h2><ul id="xtc" style="margin-left:18px"></ul>
+      <h2>Giờ công từng cơ sở</h2>
+      <div class="wrap"><table id="xcs"><thead><tr><th>Cơ sở</th><th>Giờ công/ngày</th><th>Số người trong tuần</th><th>Giờ / 1 triệu doanh thu</th></tr></thead><tbody></tbody></table></div>
+      <h2>Giờ trong tuần từng người</h2>
+      <div class="wrap"><table id="xnv"><thead><tr><th>Mã</th><th>Tên</th><th>Loại</th><th>Giờ</th><th>Ngày</th><th>Cơ sở chính tuần này</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- BẢN NHÁP: sửa như Google Sheet -->
+  <section id="t_nhap" class="hide">
+    <div class="bar"><div><label>Tuần (thứ 2)</label><input type="date" id="nTuan" onchange="nhDoiTuan()"></div>
+      <div><label>Xem</label><select id="nhXem" onchange="nhDoiXem()"><option value="nhap">Bản nháp đang soạn (sửa được)</option><option value="chinh">Lịch chính thức (đang áp dụng)</option><option value="thucte">Thực tế theo chấm công</option><option value="goiy">Gợi ý xếp mới (để so sánh)</option></select></div>
+      <span id="nhTT" class="sub" style="align-self:center"></span></div>
+    <div id="nhChua" class="hide nhHop" style="padding:16px">
+      <p style="margin-bottom:10px">Tuần này chưa có lịch đang soạn.</p>
+      <button onclick="nhTaoMoi('thang')" style="width:auto;font-size:15px;padding:11px 18px">📥 Lấy lịch từ file quán (lịch xếp tay)</button>
+      <span class="sub" style="margin-left:6px">đọc tuần này từ tab "Lịch T…" của file lịch quán, anh/chị xem lại rồi Áp dụng · <a href="#" onclick="flMo();return false">📁 file lịch đang dùng</a></span>
+      <div style="margin-top:8px"><button class="second mini" onclick="nhTaoMoi('mau')" style="width:auto">＋ Hoặc: app gợi ý theo lịch tuần trước</button></div>
+      <div style="margin-top:12px"><span class="sub">Cách khác: </span><select id="nhCachKhac" style="width:auto"><option value="">— chọn —</option><option value="thang">Lấy tuần này từ file lịch quán (tab tháng)</option><option value="lc" id="nhChuaLC">Bắt đầu từ lịch chính thức đang dùng</option><option value="full">App xếp mới hoàn toàn</option><option value="bosung">Giữ lịch đang có, chỉ điền chỗ trống</option></select> <button class="second mini" onclick="if($('nhCachKhac').value) nhTaoMoi($('nhCachKhac').value)" style="width:auto">Làm</button></div>
+      <span id="nhTruoc" class="hide"></span></div>
+    <div id="nhKhoa" class="hide nhHop nhVangBg"></div>
+    <div id="nhNguon" class="hide nhHop nhVangBg"></div>
+    <div id="nhKhung" class="hide">
+      <div class="nhTool">
+        <span class="nhTabs"><button class="nhTab" data-k="CFMH" onclick="nhChonTab('CFMH')">4 quán CFMH</button><button class="nhTab" data-k="LDD" onclick="nhChonTab('LDD')">LĐD</button></span>
+        <button id="nhUndo" class="second mini" onclick="nhHoanTac(false)" title="Ctrl+Z">↶ Hoàn tác</button>
+        <button id="nhRedo" class="second mini" onclick="nhHoanTac(true)" title="Ctrl+Y">↷ Làm lại</button>
+        <button class="second mini" onclick="nhThemDong()" title="Thêm 1 dòng dưới dòng đang chọn (cùng màu quán)">+ Thêm dòng</button>
+        <button class="second mini" onclick="nhXoaDong()">− Xoá dòng</button>
+        <span class="nhMau">Màu quán: <i style="background:#ffffff" title="Trần Phú" onclick="nhTo('#ffffff')"></i><i style="background:#ffe599" title="Tản Đà" onclick="nhTo('#ffe599')"></i><i style="background:#b6d7a8" title="Đống Đa" onclick="nhTo('#b6d7a8')"></i><i style="background:#c9daf8" title="TNV" onclick="nhTo('#c9daf8')"></i></span>
+        <span class="nhPhai">
+          <select id="nhThem" onchange="nhMenu(this.value);this.value=''" style="width:118px;padding:6px 8px"><option value="">Thêm ▾</option><option value="file">📁 File lịch xếp tay (đổi / kiểm tra)</option><option value="mau">Tạo lại bản gợi ý (theo tuần trước)</option><option value="xuat">Xuất ra Google Sheet</option><option value="venhap">Lấy về từ tab Nháp (đã sửa trên Sheet)</option><option value="thang">Lấy tuần này từ file quán (tab tháng)</option><option value="lc">Bắt đầu lại từ lịch chính thức</option><option value="truoc">Lấy lại bản nháp trước</option><option value="dongbo">Đồng bộ nhân sự & giờ thật từ app Chấm công</option></select>
+          <button id="nhAp" onclick="nhApDung()" style="background:#2E7D5B;width:auto">✓ Áp dụng</button>
+        </span>
+      </div>
+      <div id="nhViTri" class="nhViTri"></div>
+      <div class="nhVung"><div id="nhLuoi" class="nhLuoi" tabindex="-1"><div id="nhBang"></div><textarea id="nhIn" rows="1" spellcheck="false" autocomplete="off"></textarea><div id="nhGY" class="hide"></div></div><aside id="nhKT" class="nhKT"></aside></div>
+      <p class="sub" style="margin-top:6px">Gõ như Google Sheet: bấm ô rồi gõ (<b>Châu (8)</b>, <b>Thư full</b>, <b>Nam gãy</b>, <b>Phương (15h)</b>, <b>Nhơn (12h30-6h)</b>) · Enter / Tab / mũi tên · Delete xoá · <b>Ctrl+C / X / V</b> (dán qua lại với Google Sheet, giữ màu) · Ctrl+Shift+V dán chỉ chữ · <b>Ctrl+Z</b> hoàn tác · <b>kéo ô</b> sang ô khác để đổi người (ô đích có người thì 2 người đổi chỗ) · ô có góc đỏ = cần xem (rê chuột để biết lý do). Tự lưu sau 2–3 giây.</p>
+    </div>
+  </section>
+
+  <!-- HỌC TỪ CHẤM CÔNG THẬT -->
+  <section id="t_hoc" class="hide">
+    <p class="sub">App đọc <b>chấm công thật 8 tuần gần nhất</b> (bỏ giờ nạp từ file cũ), tự chạy đầu mỗi tháng. Định mức và vị trí chỉ đổi khi <b>admin bấm chấp nhận</b>.</p>
+    <div class="bar"><button onclick="hocTai(true)" style="width:auto">Học lại từ chấm công ngay</button><span id="hocTT" class="sub" style="align-self:center"></span></div>
+    <div id="hocND"></div>
+  </section>
+
+  <!-- LỊCH TUẦN -->
+  <section id="t_lich" class="hide">
+    <div class="bar">
+      <div><label>Tuần (thứ 2)</label><input type="date" id="ltuan"></div>
+      <div><label>Lịch</label><select id="lnguon"><option value="">Lịch chính thức (đang áp dụng)</option><option value="goiy">Lịch gợi ý xếp mới (chỉ để so sánh)</option><option value="thucte">Lịch thực tế (theo chấm công)</option></select></div>
+      <div><label>Xem theo</label><select id="lview"><option value="all">Bảng chung</option><option value="ca">Một cơ sở (ca / vị trí)</option><option value="nv">Nhân viên</option></select></div>
+      <div><label>Cơ sở</label><select id="lcs"><option value="">Tất cả</option></select></div>
+      <button onclick="xemLich()">Xem</button>
+      <button class="second" onclick="moBanNhapTuan()" style="width:auto">✏️ Sửa tuần này trong Bản nháp</button>
+    </div>
+    <p class="sub" id="lmsg"></p>
+    <div id="hocPanel" class="hide" style="background:#EAF5EE;border:1px solid #B6D7A8;border-radius:10px;padding:10px;margin:8px 0"></div>
+    <div class="bar hide" id="goiyBar" style="background:#FFF3B0;border-radius:10px;padding:10px">
+      <span>Đây là <b>lịch gợi ý xếp mới</b> (app tự xếp lại từ đầu theo thuật toán), chỉ để so sánh, chưa ảnh hưởng lịch chính thức.</span>
+      <button onclick="dungGoiY()">Đưa bản này vào Bản nháp để sửa</button>
+    </div>
+    <p class="sub" style="background:#F4F8F6;border:1px solid #CFE0D8;border-radius:8px;padding:7px 10px">Tab này <b>chỉ để xem</b> lịch chính thức, lịch gợi ý xếp mới, hoặc lịch thực tế theo chấm công. <b>Sửa lịch ở tab Bản nháp</b> (giống Google Sheet) → Kiểm tra → Áp dụng: bấm nút <b>✏️ Sửa tuần này trong Bản nháp</b>.</p>
+    <div class="legend" id="legend">
+      <span><i style="background:#FFFFFF"></i>TP</span><span><i style="background:#CFE8CF"></i>ĐĐ</span><span><i style="background:#F3E3B5"></i>TĐ</span><span><i style="background:#C9D7F0"></i>TNV</span><span><i style="background:#F7D9CB"></i>LĐD</span>
+      <span><i style="background:#E3D7F5"></i>Gãy / tăng ca / lấp thiếu</span><span><i style="background:#FFD8A8"></i>OFF</span><span><i style="background:#F8C9C9"></i>Đăng ký bận</span>
+      <span><i style="background:#FFF3B0"></i>Chưa xếp, có gợi ý</span><span><i style="background:#C8C8C8"></i>Chưa xếp, chưa gợi ý</span>
+    </div>
+    <div class="wrap"><table id="lgrid"><thead></thead><tbody></tbody></table></div>
+    <details class="hide"><summary>Thêm ca tay (đổi người: xoá ca cũ bằng dấu × rồi thêm ca mới)</summary>
+      <p class="sub">Người đã có ca trong ngày chỉ thêm được ca gãy cùng quán, không trùng giờ. App sẽ báo nếu bị trùng.</p>
+      <div class="grid">
+        <div><label>Cơ sở</label><select id="aCS"></select></div>
+        <div><label>Ngày</label><input type="date" id="aNgay"></div>
+        <div><label>Mã NV</label><input id="aNV" inputmode="numeric" placeholder="VD: 205"></div>
+        <div><label>Ca</label><select id="aCa" onchange="$('aTD').style.display=this.value==='TUDO'?'contents':'none'"></select></div>
+        <div id="aTD" style="display:none"><div><label>Từ giờ</label><input type="time" id="aBD" value="15:00"></div><div><label>Đến giờ</label><input type="time" id="aKT" value="19:00"></div></div>
+        <div><label>Vị trí</label><select id="aVT"><option>Pha chế</option><option>Phục vụ</option><option>Thu ngân</option><option>Quản lý</option><option>Rửa ly</option><option>Bảo vệ</option></select></div>
+        <div><label>Ghi chú</label><input id="aGhi" placeholder="VD: đổi ca với Lam"></div>
+      </div>
+      <button style="margin-top:8px" onclick="them()">Thêm vào lịch</button> <span id="amsg"></span>
+    </details>
+    <h2>Đăng ký bận tuần này</h2><div id="lban" class="sub"></div>
+  </section>
+
+  <!-- GIỜ CÔNG -->
+  <section id="t_gio" class="hide">
+    <div class="bar">
+      <div><label>Từ ngày</label><input type="date" id="from"></div>
+      <div><label>Đến ngày</label><input type="date" id="to"></div>
+      <div><label>Cơ sở</label><select id="cs"><option value="">Tất cả</option></select></div>
+      <button onclick="load()">Xem</button>
+      <button class="second" onclick="quick(0)">Hôm nay</button>
+      <button class="second" onclick="quick(6)">7 ngày</button>
+      <button class="second" onclick="quick(29)">30 ngày</button>
+    </div>
+    <h2>Tăng ca chờ duyệt</h2>
+    <div class="wrap"><table id="ot"><thead><tr><th>Ngày</th><th>Tên</th><th>Cơ sở</th><th>Ca</th><th>Ra lúc</th><th>Giờ TC</th><th>Lý do</th><th>Duyệt</th></tr></thead><tbody></tbody></table></div>
+    <details><summary>Bổ sung chấm công (quên chấm)</summary>
+      <div class="grid">
+        <div><label>Mã NV</label><input id="mNV" inputmode="numeric" placeholder="VD: 205"></div>
+        <div><label>Ngày</label><input type="date" id="mNgay"></div>
+        <div><label>Giờ</label><input type="time" id="mGio"></div>
+        <div><label>Cơ sở</label><select id="mCS"></select></div>
+        <div><label>Loại</label><select id="mLoai"><option value="VAO">Vào</option><option value="RA">Ra</option></select></div>
+        <div><label>Lý do</label><input id="mLyDo"></div>
+      </div>
+      <button style="margin-top:8px" onclick="manual()">Lưu bản ghi</button> <span id="mmsg"></span>
+    </details>
+    <h2>Tổng giờ theo nhân viên</h2>
+    <div class="wrap"><table id="sum"><thead><tr><th>Mã</th><th>Tên</th><th>Giờ</th><th>Ngày công</th><th>Lần trễ</th><th>Lần về sớm</th><th>Thiếu chấm</th><th>Theo cơ sở</th></tr></thead><tbody></tbody></table></div>
+    <h2>Chi tiết từng lần chấm</h2>
+    <div class="wrap"><table id="det"><thead><tr><th>Ngày</th><th>Mã</th><th>Tên</th><th>Cơ sở</th><th>Vào</th><th>Ra</th><th>Giờ</th><th>Ca</th><th>Trễ</th><th>Sớm</th><th>Tăng ca</th><th>Ghi chú</th><th>Ảnh</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <!-- NHÂN SỰ -->
+  <section id="t_ks" class="hide">
+    <h2 style="font-size:17px;margin-bottom:4px">Khảo sát nhân viên</h2>
+    <p class="sub">Gửi link cho nhân viên điền 1 lần (khoảng 3 phút). Phần thời gian rảnh, ngày nghỉ, quán không tiện được dùng ngay; phần kỹ năng (vị trí hỗ trợ, tăng ca) chỉ dùng sau khi quản lý bấm <b>Xác nhận</b>.</p>
+    <div class="bar"><button class="second" onclick="copyKS()">Copy link khảo sát</button><span class="sub" id="ksMsg"></span></div>
+    <div id="ksList"></div>
+  </section>
+  <section id="t_qr" class="hide">
+    <h2 style="font-size:17px;margin-bottom:4px">Mã QR chấm công</h2>
+    <p class="sub">In mã của từng quán dán ở quầy. Nhân viên dùng điện thoại quét, chụp ảnh, chấm công. Mã đổi mỗi tháng (mã tháng cũ dùng thêm được 5 ngày đầu tháng mới) – nhớ in mã tháng sau trước ngày 1. Lần đầu: đứng tại quán, mở trang này trên điện thoại, bấm <b>Lưu vị trí quán</b> để app kiểm phạm vi 100m.</p>
+    <div id="qrList"></div>
+    <h3 style="font-size:15px;margin:14px 0 6px">Lượt chấm công cần xem lại (7 ngày)</h3>
+    <div id="cbList"><p class="sub">Đang tải…</p></div>
+  </section>
+  <section id="t_ccn" class="hide">
+    <p class="sub">Quán thiếu người đột xuất hoặc cần thêm người giờ bất kỳ: đăng ca ở đây. Nhân viên thấy trong trang <b>Lịch của tôi</b> (app Chấm công) và bấm "Tôi nhận". Quản lý chọn người → ca vào lịch ngay, với đúng giờ đã đăng.</p>
+    <div class="grid" style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px">
+      <div><label>Ngày</label><input type="date" id="cNgay"></div><div><label>Cơ sở</label><select id="cCS"></select></div>
+      <div><label>Từ giờ</label><input type="time" id="cBD" value="17:00"></div><div><label>Đến giờ</label><input type="time" id="cKT" value="22:30"></div>
+      <div><label>Vị trí</label><select id="cVT"><option>Phục vụ</option><option>Pha chế</option><option>Thu ngân</option><option>Rửa ly</option><option>Bảo vệ</option></select></div>
+      <div><label>Số người</label><input id="cSo" value="1" inputmode="numeric"></div><div><label>Ghi chú</label><input id="cGhi" placeholder="VD: đông khách, có tiệc"></div>
+    </div><button style="margin-top:8px" onclick="dangCa()">Đăng ca cần người</button> <span id="cmsg"></span>
+    <div id="ccnList" style="margin-top:12px"></div>
+  </section>
+  <section id="t_gn" class="hide">
+    <h2 style="font-size:17px;margin-bottom:4px">Ghi nhớ cho app</h2>
+    <p class="sub">Luật cố định về từng người: app nhớ mãi và tự tránh khi xếp lịch, cho đến khi anh/chị xoá. Lý do chọn lúc "Chốt lịch tuần" cũng hiện ở đây.</p>
+    <div class="card" style="margin:10px 0;padding:10px;border:1px solid #E4D9CC;border-radius:10px">
+      <div class="bar">
+        <div><label>Nhân viên</label><select id="gnNV"></select></div>
+        <div><label>Loại</label><select id="gnLoai" onchange="gnLoaiDoi()"><option value="ban">Bận cố định (đi học…)</option><option value="kxcs">Không xếp ở quán</option><option value="kxvt">Không xếp vị trí</option></select></div>
+      </div>
+      <div id="gnBan" style="margin-top:8px">
+        <div class="pkh">Thứ</div><div id="gnThu"></div>
+        <div class="pkh">Ca</div><div id="gnKhoi"></div>
+      </div>
+      <div id="gnCS" class="hide" style="margin-top:8px"><label>Quán</label> <select id="gnMaCS"></select></div>
+      <div id="gnVT" class="hide" style="margin-top:8px"><label>Vị trí</label> <select id="gnViTri"><option>Pha chế</option><option>Phục vụ</option><option>Rửa ly</option><option>Bảo vệ</option></select></div>
+      <button style="margin-top:10px" onclick="gnThem()">Thêm ghi nhớ</button> <span class="sub" id="gnMsg"></span>
+    </div>
+    <div id="gnList"></div>
+  </section>
+  <section id="t_ns" class="hide">
+    <p class="sub">Thêm nhân viên mới, cho chính thức, cho nghỉ việc. Người mới được cấp mã tự động theo vị trí (pha chế 2xx, phục vụ 3xx…), trạng thái <b>Thử việc</b> (app vẫn xếp lịch, ưu tiên sau). Người nghỉ việc: app bỏ các ca từ ngày nghỉ, không xếp và không cho chấm công nữa.</p>
+    <div class="grid" id="nsForm" style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px">
+      <div><label>Mã (tự cấp)</label><input id="fMa" disabled placeholder="mới"></div>
+      <div><label>Tên gọi trên lịch</label><input id="fTen" placeholder="VD: Minh Anh"></div>
+      <div><label>Vị trí</label><select id="fViTri"><option>Pha chế</option><option>Phục vụ</option><option>Quản lý</option><option>Rửa ly</option><option>Bảo vệ</option><option>Support</option></select></div>
+      <div><label>Chức vụ</label><select id="fChucVu"><option>Nhân viên</option><option>Trưởng ca</option><option>Quản lý</option><option>Hỗ trợ</option></select></div>
+      <div><label>Loại</label><select id="fLoai"><option value="PT">Part time</option><option value="FT">Full time</option></select></div>
+      <div><label>Cơ sở chính</label><select id="fCS"></select></div>
+      <div><label>Ca hay làm</label><select id="fCa"><option>Sáng</option><option>Trưa</option><option>Tối</option></select></div>
+      <div><label>Vị trí kiêm</label><input id="fKiem" placeholder="VD: Phục vụ"></div>
+      <div><label>Tăng ca được</label><select id="fTC"><option>Không</option><option>Có</option></select></div>
+      <div><label>Sinh viên</label><select id="fSV"><option>Không</option><option>Có</option></select></div>
+      <div><label>Cố định 1 quán</label><select id="fCD"><option>Không</option><option>Có</option></select></div>
+      <div><label>SĐT</label><input id="fSDT" inputmode="tel"></div>
+      <div><label>Trạng thái</label><select id="fTT"><option>Thử việc</option><option>Đang làm</option><option>Support</option></select></div>
+      <div><label>Ghi chú</label><input id="fGhi"></div>
+      <div id="fLuongWrap" class="hide"><label>Lương giờ (admin)</label><input id="fLuong" inputmode="decimal"></div>
+    </div>
+    <div class="bar" style="margin-top:8px">
+      <button onclick="luuNS()">Lưu</button> <button class="second" onclick="moiNS()">Nhân viên mới</button>
+      <span id="nsMsg"></span>
+    </div>
+    <div class="bar" id="nghiBar" style="display:none;background:#FDECEA;border-radius:10px;padding:10px">
+      <b id="nghiTen"></b>
+      <div><label>Ngày nghỉ (từ ngày này không xếp nữa)</label><input type="date" id="nghiNgay"></div>
+      <div><label>Lý do</label><input id="nghiLyDo"></div>
+      <button onclick="xacNhanNghi()">Xác nhận nghỉ việc</button> <button class="second" onclick="$('nghiBar').style.display='none'">Huỷ</button>
+    </div>
+    <div class="bar"><div><label>Tìm</label><input id="nsTim" oninput="veNS()" placeholder="tên hoặc mã"></div>
+      <div><label>Trạng thái</label><select id="nsLoc" onchange="veNS()"><option value="">Đang làm + thử việc + support</option><option value="Thử việc">Thử việc</option><option value="Đã nghỉ">Đã nghỉ</option><option value="*">Tất cả</option></select></div></div>
+    <div class="wrap"><table id="nsT"><thead><tr><th>Mã</th><th>Tên</th><th>Vị trí</th><th>Chức vụ</th><th>Loại</th><th>Cơ sở</th><th>Tăng ca</th><th>Trạng thái</th><th>Ghi chú</th><th></th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <!-- LINK TRUY CẬP -->
+  <section id="t_lk" class="hide">
+    <p class="sub">Mọi link của app ở đây, lúc nào cần cứ vào tab này. Cột <b>Trang trên caphemuoihue.com</b> là địa chỉ nên tạo trên web; bấm <b>Copy mã nhúng</b> rồi dán vào trang WordPress đó (cách làm ở cuối tab). Link trực tiếp vẫn dùng được nếu web có sự cố.</p>
+    <div class="wrap"><table id="lkT"><thead><tr><th>Dùng cho</th><th>Trang trên caphemuoihue.com</th><th>Link trực tiếp</th><th>Mã nhúng</th><th>Ghi chú</th></tr></thead><tbody></tbody></table></div>
+    <h2>Gắn lên caphemuoihue.com (làm 1 lần cho mỗi trang)</h2>
+    <ol class="sub" style="margin-left:18px;line-height:1.7">
+      <li>Vào WordPress → Trang → Thêm mới. Tiêu đề ví dụ "Quản lý", đường dẫn (slug) đúng như cột Trang, ví dụ <b>quan-ly</b>. Nếu anh đã tạo trang với đường dẫn khác (ví dụ <b>chamcongtp</b>), sửa dòng WEB_TP… trong tab <b>CaiDat</b> cho khớp; cột Trang ở đây sẽ đổi theo.</li>
+      <li>Chuyển trình soạn thảo sang tab <b>Văn bản</b> (Text), dán mã nhúng vừa copy. Không gõ thêm gì khác.</li>
+      <li>Bên phải, mục Thuộc tính trang → Giao diện (Template) chọn <b>Page – Blank</b> (Flatsome) cho gọn; không chọn cũng được vì mã nhúng tự phủ kín màn hình.</li>
+      <li>Đăng. Trang chấm công từng quán không đưa lên menu web, chỉ mở trên điện thoại của quán rồi thêm vào màn hình chính.</li>
+      <li>Khi cập nhật code, nhớ Triển khai → Quản lý các bản triển khai → sửa → Phiên bản mới, để link /exec giữ nguyên và các trang web không phải sửa.</li>
+    </ol>
+  </section>
+
+  <!-- TÍNH LƯƠNG (chỉ admin) -->
+  <section id="t_luong" class="hide">
+    <div class="bar">
+      <div><label>Tháng</label><input type="month" id="thang"></div>
+      <button onclick="luong()">Tính lương</button>
+      <span id="lgmsg"></span>
+    </div>
+    <p class="sub">Tạo tab <b>Luong_yyyy-MM</b> trong Google Sheet: giờ làm từ chấm công (tăng ca chỉ cộng khi đã duyệt), lương giờ từ tab NhanVien, tiền cơm tự tính (từ 7,5h/ngày được 1 suất, từ 11,5h được 2 suất, 20 nghìn/suất). Giờ nghỉ có lương, phụ cấp, thưởng, tạm ứng, trừ lỗi nhập tay ở ô vàng; tính lại vẫn giữ số đã nhập.</p>
+    <h2>Cần xử lý trước khi chốt lương</h2><ul id="lgwarn" style="margin-left:18px"></ul>
+  </section>
+</div>
+
+<div id="pk" class="modal hide" onclick="if(event.target===this) pkDong()"><div class="sheet">
+  <h3 id="pkTitle"></h3>
+  <div id="pkCur" class="sub"></div>
+  <div class="pkh">Giờ làm</div>
+  <div id="pkGio"></div>
+  <div id="pkAct" style="margin:8px 0"></div>
+  <input id="pkTim" placeholder="Tìm tên hoặc mã…" oninput="pkVe()" style="width:100%;margin-top:6px">
+  <div id="pkList"></div>
+  <button class="second" style="margin-top:10px;width:100%" onclick="pkDong()">Đóng</button>
+</div></div>
+<script>
+var PIN='', ROLE='', STORES=[], CAS=[], GOIY=[];
+var DN=['CN','T2','T3','T4','T5','T6','T7'];
+function $(id){return document.getElementById(id);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function d2(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function nextMon(){ var t=new Date(), d=(t.getDay()+6)%7, m=new Date(t); m.setDate(t.getDate()-d+7); return d2(m); }
+function dd(iso){ var d=new Date(iso+'T12:00:00'); return DN[d.getDay()]+' '+iso.slice(8,10)+'/'+(+iso.slice(5,7)); }
+function tab(t){ document.querySelectorAll('.tabs button').forEach(function(b){b.classList.toggle('on',b.dataset.t===t);}); ['xep','nhap','lich','gio','luong','ns','hoc','ccn','gn','ks','qr','lk'].forEach(function(x){$('t_'+x).classList.toggle('hide',x!==t);}); if(t==='hoc') hocTai(false);
+  NH.dangMo=(t==='nhap'); if(t==='nhap'){ nhGan(); if(!$('nTuan').value) $('nTuan').value=$('tuan').value; if($('nhXem').value!=='nhap') nhDoiXem(); else if(!NH.luoi || NH.tuan!==$('nTuan').value) nhMo(); else nhVe(); } else if(NH.dirty) nhLuu();
+  if(t==='gio') load(); if(t==='lich') xemLich(); if(t==='ns') dsNS(); if(t==='gn') gnTai(); if(t==='ccn') ccnTai(); if(t==='ks') ksTai(); if(t==='qr') qrTai(); if(t==='lk') dsLink(); }
+
+function dangXuat(){ PIN=''; ROLE=''; $('pin').value=''; $('lerr').textContent=''; $('app').classList.add('hide'); $('login').classList.remove('hide'); try{ $('pin').focus(); }catch(e){} }
+function login(){
+  var p=$('pin').value; $('lerr').textContent='';
+  google.script.run.withSuccessHandler(function(r){
+    if(!r.ok){ $('lerr').textContent=r.msg||'Lỗi không rõ'; return; }
+    PIN=p; ROLE=r.role; STORES=r.stores; CAS=r.ca; if(r.chamCongUrl){ $('sangCC').href=r.chamCongUrl; $('sangCC').classList.remove('hide'); }
+    $('roleTag').textContent=ROLE==='admin'?'Admin':'Quản lý';
+    if(r.tachCC){ ['gio','luong','qr','ks'].forEach(function(t){ var b=document.querySelector('.tabs button[data-t="'+t+'"]'); if(b) b.classList.add('hide'); });
+      var h1=$('roleTag').parentNode; if(h1 && h1.firstChild) h1.firstChild.textContent='Xếp lịch Ncafe ';
+      var nsF=$('nsForm'); if(nsF && !$('nsGhiChu')){ nsF.classList.add('hide'); var nsG=document.createElement('p'); nsG.id='nsGhiChu'; nsG.className='sub'; nsG.style.cssText='background:#FFF3B0;border-radius:8px;padding:8px 10px;margin:8px 0'; nsG.innerHTML='Thêm nhân viên, cấp mã, cho nghỉ việc: làm ở <b>app Chấm công</b> (danh sách gốc). App Xếp lịch tự lấy về mỗi lần đồng bộ; ở đây chỉ chỉnh thông tin dùng cho xếp lịch.'; nsF.parentNode.insertBefore(nsG,nsF); } }
+    try{ boTriMoi(); }catch(e){} try{ taiHocSu(); }catch(e){} try{ setTimeout(taiChuaDK,300); $('tuan').addEventListener('change',taiChuaDK); }catch(e){}
+    var V=r.ver||{}, ADMIN_VER='29/10e XL';
+    var lech=(V.code!==ADMIN_VER || V.sched!==ADMIN_VER);
+    $('verTag').innerHTML='Code '+esc(V.code||'BẢN CŨ')+' · Schedule '+esc(V.sched||'BẢN CŨ')+' · Admin '+ADMIN_VER;
+    $('verTag').style.cssText=lech?'display:block;background:#F4CCCC;color:#8B1A1A;border-radius:8px;padding:6px 10px;margin:-4px 0 10px;font-size:13px;font-weight:600':'display:block;color:#7A6657;font-size:12px;margin:-6px 0 8px';
+    if(lech) $('verTag').innerHTML+=' – <b>CÓ FILE CHƯA CẬP NHẬT</b>: dán lại các file lệch bản từ trang Copy code, rồi Triển khai → Phiên bản mới.';
+    $('tabLuong').classList.toggle('hide',ROLE!=='admin' || !!r.tachCC);   // đã tách app: bảng lương nằm ở app Chấm công
+    STORES.forEach(function(s){ $('cs').add(new Option(s.TenCS,s.MaCS)); $('mCS').add(new Option(s.TenCS,s.MaCS)); $('lcs').add(new Option(s.TenCS,s.MaCS)); $('aCS').add(new Option(s.TenCS,s.MaCS)); });
+    $('lcs').onchange=function(){ if($('lcs').value) $('aCS').value=$('lcs').value; fillCa(); xemLich(); }; $('lview').onchange=xemLich; $('lnguon').onchange=xemLich; $('aCS').onchange=fillCa; fillCa();
+    $('login').classList.add('hide'); $('app').classList.remove('hide');
+  }).withFailureHandler(function(){ $('lerr').textContent='Lỗi mạng'; }).dangNhap({pin:p});
+}
+function fillCa(){ var cs=$('aCS').value, s=$('aCa'); s.innerHTML=''; CAS.filter(function(c){return !/^TD\d/.test(c.MaCa) && (c.CoSo==='ALL'||c.CoSo.split(',').map(function(x){return x.trim();}).indexOf(cs)>-1);}).forEach(function(c){ s.add(new Option(c.TenCa+' '+c.GioBD+'–'+c.GioKT,c.MaCa)); }); s.add(new Option('Giờ tự do… (chọn giờ bắt đầu – kết thúc)','TUDO')); $('aTD').style.display='none'; }
+$('tuan').value=nextMon(); try{ qtCapNhat(); }catch(e){} $('ltuan').value=nextMon(); $('aNgay').value=nextMon();
+(function(){ var t=new Date(), f=new Date(); f.setDate(t.getDate()-6); $('from').value=d2(f); $('to').value=d2(t); var m=new Date(t.getFullYear(),t.getMonth(),1); $('thang').value=m.getFullYear()+'-'+String(m.getMonth()+1).padStart(2,'0'); })();
+
+/* --- Xếp lịch --- */
+function xep(mode){
+  if(!confirm('Xếp GỢI Ý cho tuần '+$('tuan').value+'?\nApp ghi vào BẢN NHÁP (bản nháp đang có được giữ để lấy lại). Lịch chính thức KHÔNG thay đổi.')) return;
+  var m=$('xmsg'); m.textContent='Đang xếp, chờ khoảng 1 phút…'; try{ $('nhTT').textContent='Đang xếp gợi ý, chờ khoảng 1 phút…'; }catch(e){}
+  google.script.run.withSuccessHandler(function(r){
+    if(!r){ m.textContent='Máy chủ không trả kết quả (có thể quá thời gian 6 phút của Google). Anh chụp màn hình gửi lại để sửa.'; return; }
+    if(!r.ok){ m.textContent=r.msg||'Lỗi không rõ khi xếp lịch'; return; }
+    try{
+    if(r.nhapWeb){ $('nTuan').value=$('tuan').value; NH.luoi=null; $('nhXem').value='nhap'; if(NH.dangMo) nhMo(); }
+    if(r.nhapWeb){ $('qtGoiY').innerHTML='✓ <a href="#" onclick="$(\'nTuan\').value=$(\'tuan\').value;NH.luoi=null;tab(\'nhap\');return false"><b>Mở bản nháp để sửa</b></a>'; } else
+    $('qtGoiY').innerHTML=(r.goiYFile||[]).map(function(f){ return f.loi?'<span class="bad">'+esc(f.ten)+': '+esc(f.loi)+'</span>':'✓ <a target="_blank" href="'+esc(f.url)+'">'+esc(f.ten)+' → tab '+esc(f.tab)+'</a>'; }).join(' · ');
+    m.innerHTML='Xong bản gợi ý. <button class="second mini" onclick="$(\'lview\').value=\'all\';tab(\'lich\')">Xem bảng lịch</button> <button class="second mini" onclick="$(\'lview\').value=\'nv\';$(\'lcs\').value=\'\';tab(\'lich\')">Xem theo nhân viên</button> <a href="'+r.fileUrl+'" target="_blank">Mở file lịch</a>';
+    $('ltuan').value=$('tuan').value;
+    $('xres').classList.remove('hide');
+    $('xsum').innerHTML=(r.goiYMoi&&r.goiYMoi.soCa?'<span style="display:block;background:#FFF3B0;border-radius:8px;padding:6px 8px;margin-bottom:6px">Đã làm thêm <b>lịch gợi ý xếp mới</b> ('+r.goiYMoi.soCa+' ca, thiếu thật '+r.goiYMoi.soThieu+' lượt) để so sánh. <button class="second mini" onclick="$(\'lnguon\').value=\'goiy\';$(\'lview\').value=\'all\';tab(\'lich\')">Xem lịch gợi ý</button></span>':'')+(r.nguonMau?'Khung lấy từ <b>'+esc(r.nguonMau)+'</b>. ':'')+'Đã xếp '+r.soCa+' ca. <b class="bad">Thiếu thật: '+r.soThieu+' lượt</b> (dưới mức tối thiểu hoặc nguyên tắc pha chế) · Nên thêm: '+(r.soNen||0)+' lượt (so với mức chuẩn, chỉ là gợi ý tăng ca).';
+    GOIY=r.goiYThieu;
+    var tc=r.tuyenCS||[], tt=tc.reduce(function(x,c){ x[0]+=c.Thieu; x[1]+=c.Nen; x[2]+=c.Tuyen; return x; },[0,0,0]);
+    document.querySelector('#xcsT tbody').innerHTML=tc.map(function(c){ return '<tr><td><b>'+esc(c.Ten)+'</b></td><td class="n '+(c.Thieu?'bad':'')+'">'+c.Thieu+'</td><td class="n">'+c.Nen+'</td><td class="n"><b>'+c.Tuyen+'</b></td><td class="cell" style="min-width:320px">'+esc(c.ChiTiet)+'</td></tr>'; }).join('')
+      +'<tr style="background:var(--soft)"><td><b>TỔNG</b></td><td class="n bad"><b>'+tt[0]+'</b></td><td class="n">'+tt[1]+'</td><td class="n"><b>'+tt[2]+'</b></td><td class="cell">Thiếu thật tạm thời do người nhà (support) / tăng ca lấp. Bảng này cũng có trong file lịch, tab Tuyển.</td></tr>';
+    document.querySelector('#xgoiy tbody').innerHTML=r.goiYThieu.map(function(g,gi){
+      var opts=g.GoiY.map(function(x,xi){ return '<div style="margin:3px 0"><b>'+esc(x.Ten)+'</b> <span style="color:var(--muted)">('+x.Gio+'h tuần)</span> – '+esc(x.LyDo)+' <span class=\"sub\">→ thêm vào file lịch quán nếu đồng ý</span></div>'; }).join('')||'<span class="bad">Không ai phù hợp – chủ quán hỗ trợ / thử việc</span>';
+      return '<tr'+(g.Muc==='nen'?' style="color:var(--muted)"':'')+'><td>'+dd(g.Ngay)+'</td><td>'+g.MaCS+'</td><td>'+g.Khoi+'</td><td>'+g.ViTri+'</td><td class="n '+(g.Muc==='nen'?'':'bad')+'">'+(g.Muc==='nen'?'+':'')+g.Thieu+(g.Muc==='nen'?' nên':'')+'</td><td class="cell" style="min-width:280px">'+opts+'</td></tr>';
+    }).join('')||'<tr><td colspan="6">Không thiếu</td></tr>';
+    document.querySelector('#xgap tbody').innerHTML=r.gaps.map(function(g){return '<tr'+(g.Muc==='nen'?' style="color:var(--muted)"':'')+'><td>'+g.MaCS+'</td><td>'+g.Khoi+'</td><td>'+g.ViTri+(g.Muc==='nen'?' <i>(nên thêm)</i>':'')+'</td><td class="n">'+g.ngay+'</td><td class="n '+(g.Muc==='nen'?'':'bad')+'">'+g.tong+'</td></tr>';}).join('')||'<tr><td colspan="5">Không thiếu</td></tr>';
+    var tuy=r.tuyen||[], hires=tuy.filter(function(t){return !t.le;}), le=tuy.filter(function(t){return t.le;});
+    $('xtuyen').innerHTML=(hires.length?'<li><b>Nên tuyển '+hires.length+' người</b> để hết thiếu thật ('+r.soThieu+' lượt/tuần):</li>':'<li>Không cần tuyển thêm: thiếu lẻ xử lý bằng người nhà / tăng ca.</li>')+hires.map(function(t){return '<li>'+esc(t.text)+'</li>';}).join('')+le.map(function(t){return '<li style="color:var(--muted)">'+esc(t.text)+'</li>';}).join('')+((r.support||[]).length?'<li style="color:var(--muted)">Tuần này đã nhờ người nhà (Support) '+r.support.length+' lượt: '+r.support.map(esc).join('; ')+'</li>':'')||'<li>Không cần tuyển thêm cho tuần này</li>';
+    $('xtc').innerHTML=r.tangCa.map(function(t){return '<li>'+esc(t)+'</li>';}).join('')||'<li>Không có</li>';
+    document.querySelector('#xcs tbody').innerHTML=r.coSo.map(function(c){return '<tr><td>'+c.Ten+'</td><td class="n">'+c.GioNgay+'</td><td class="n">'+c.SoNguoi+'</td><td class="n">'+c.GioTrenTrieu+'</td></tr>';}).join('');
+    document.querySelector('#xnv tbody').innerHTML=r.gioTuan.map(function(x){return '<tr><td>'+x.MaNV+'</td><td>'+esc(x.Ten)+'</td><td>'+x.Loai+'</td><td class="n">'+x.Gio+'</td><td class="n">'+x.Ngay+'</td><td>'+x.CoSo+'</td></tr>';}).join('');
+    }catch(err){ m.textContent='Đã xếp xong ('+(r.soCa||0)+' ca) nhưng hiển thị kết quả bị lỗi: '+(err&&err.message?err.message:err)+'. Lịch đã lưu, xem ở tab Lịch tuần.'; }
+  }).withFailureHandler(function(e){ m.textContent='Lỗi: '+((e&&e.message)||String(e)||'không rõ')+'. Anh chụp màn hình gửi lại để sửa.'; })
+  .xepLich({pin:PIN, tuan:$('tuan').value, mode:mode});
+}
+/* ===== Quy trình lịch tuần: kiểm tra → áp dụng → phiên bản ===== */
+function tenGoiY_(){ var t=$('tuan').value||''; return 'Nháp '+t.slice(8,10)+'.'+t.slice(5,7); }
+document.addEventListener('change',function(e){ if(e.target && e.target.id==='tuan') qtCapNhat(); });
+function qtCapNhat(){ var t=$('tuan').value||''; $('qtTenGY').textContent=tenGoiY_(); $('qtThang').textContent=t?(+t.slice(5,7)):'…'; $('qtKQ').innerHTML=''; $('qtApBtn').disabled=true; $('qtPB').open=false; }
+var QT=null;
+function qtDd(d){ return d.slice(8)+'/'+d.slice(5,7); }
+function qtTab(){ return $('qtNguon').value==='sheet'?tenGoiY_():''; }
+function qtNg(){ return $('qtNguon').value==='web'?'web':''; }
+function qtKiemTra(){ var k=$('qtKQ'); k.innerHTML='<p class="sub">Đang đọc file lịch của quán…</p>'; $('qtApBtn').disabled=true;
+  google.script.run.withSuccessHandler(function(r){ QT=r; if(!r.ok){ k.innerHTML='<p class="bad">'+esc(r.msg)+'</p>'; return; }
+    var TEN={TP:'Trần Phú',DD:'Đống Đa',TD:'Tản Đà',TNV:'TNV',LDD:'LĐD'};
+    var h='<p>Đọc từ: '+r.nguon.map(esc).join(' · ')+'<br><b>'+r.soCa+' ca · '+r.soNguoi+' người</b>'+(r.coDinh?' (gồm '+r.coDinh+' ca nhân sự cố định tự thêm)':'')+' · lịch chính thức hiện có '+r.hienTai+' ca.</p>';
+    if(r.loi.length) h+='<p class="bad">'+r.loi.map(esc).join('<br>')+'</p>';
+    h+=r.thieuPC.length?'<div style="background:#F8E1DE;border-radius:8px;padding:8px;margin:6px 0"><b>⛔ '+r.thieuPC.length+' buổi KHÔNG có người biết pha chế</b> (bắt buộc mỗi quán phải có): '+r.thieuPC.map(function(x){ return TEN[x.cs]+' '+qtDd(x.ngay)+' '+x.khoi; }).join(' · ')+'</div>':'<p style="color:#2E7D5B">✓ Mọi buổi ở mọi quán đều có người biết pha chế.</p>';
+    if(r.tenLa.length) h+='<div style="background:#FFF3B0;border-radius:8px;padding:8px;margin:6px 0"><b>Tên chưa có mã</b> (sửa tên trong file cho đúng, hoặc thêm người ở tab Nhân sự): '+r.tenLa.map(function(x){ return '<b>'+esc(x.ten)+'</b> ×'+x.so+' <span class="sub">('+esc(x.vd)+')</span>'; }).join(' · ')+'</div>';
+    if(r.canXem.length) h+='<details style="margin:6px 0"><summary><b>'+r.canXem.length+' chỗ cần xem</b> (trùng giờ 2 quán, làm quá 14 tiếng, ô "?", giờ không hiểu)</summary><ul style="margin:4px 0 0 18px">'+r.canXem.map(function(x){ return '<li>'+(x.ngay?qtDd(x.ngay)+' ':'')+'<b>'+esc(x.o)+'</b>: '+esc(x.lo)+(x.vitri?' <span class="sub">('+esc(x.vitri)+')</span>':'')+'</li>'; }).join('')+'</ul></details>';
+    if(r.thieu.length) h+='<details style="margin:6px 0"><summary><b>'+r.thieu.length+' buổi dưới mức thường xếp</b> (so với lịch thật 6–10/2026)</summary><ul style="margin:4px 0 0 18px">'+r.thieu.map(function(x){ return '<li>'+TEN[x.cs]+' '+qtDd(x.ngay)+' '+x.khoi+': '+x.co+'/'+x.can+' '+x.loai+'</li>'; }).join('')+'</ul></details>';
+    var ds=r.days, CS=['TP','DD','TD','TNV','LDD'], KH=['Sáng','Trưa','Tối'], B={}; r.bang.forEach(function(x){ B[x.cs+'|'+x.ngay+'|'+x.khoi]=x; });
+    h+='<details style="margin:6px 0"><summary><b>Bảng số người từng buổi</b> (người / biết pha chế, dòng dưới = thường xếp)</summary><div class="wrap"><table><tr><th>Quán</th><th>Buổi</th>'+ds.map(function(d){ return '<th>'+['CN','T2','T3','T4','T5','T6','T7'][new Date(d+'T12:00:00').getDay()]+' '+qtDd(d)+'</th>'; }).join('')+'</tr>';
+    CS.forEach(function(cs){ KH.forEach(function(kh,ki){ h+='<tr>'+(ki===0?'<td rowspan="3"><b>'+TEN[cs]+'</b></td>':'')+'<td>'+kh+'</td>'+ds.map(function(d){ var x=B[cs+'|'+d+'|'+kh]; if(!x) return '<td></td>'; var mau=x.pc<1?'#F8E1DE':(x.tong<x.tongMin||x.pc<x.pcMin?'#FFF3B0':''); return '<td style="text-align:center;'+(mau?'background:'+mau:'')+'">'+x.tong+' / '+x.pc+'<br><span class="sub">'+x.tongChuan+' / '+x.pcChuan+'</span></td>'; }).join('')+'</tr>'; }); });
+    h+='</table></div></details>';
+    k.innerHTML=h; $('qtApBtn').disabled=(ROLE!=='admin'); if(ROLE!=='admin') k.innerHTML+='<p class="sub">Chỉ admin (chủ quán) bấm Áp dụng được.</p>'; })
+  .withFailureHandler(function(e){ k.innerHTML='<p class="bad">Lỗi: '+esc(e.message||e)+'</p>'; })
+  .xemLichQuan({pin:PIN, tuan:$('tuan').value, tab:qtTab(), nguon:qtNg()}); }
+function qtApDung(dongY){ if(!QT||!QT.ok) return; if(!dongY && !confirm('Áp dụng '+QT.soCa+' ca làm LỊCH CHÍNH THỨC tuần '+$('tuan').value+'?\nLịch hiện tại được lưu thành phiên bản, lấy lại được bất cứ lúc nào.')) return;
+  var b=$('qtApBtn'); b.disabled=true; b.textContent='Đang áp dụng…';
+  google.script.run.withSuccessHandler(function(r){ b.textContent='✓ Áp dụng';
+      if(!r.ok && r.canXacNhan){ b.disabled=false; if(confirm(r.msg+'\n\nVẫn áp dụng?')) qtApDung(true); return; }
+      if(!r.ok){ alert(r.msg); b.disabled=false; return; }
+      $('qtKQ').insertAdjacentHTML('afterbegin','<p style="background:#EAF5EE;border-radius:8px;padding:8px"><b>✓ Đã áp dụng phiên bản '+r.phienBan+'</b>: '+r.soCa+' ca, '+r.soNguoi+' người.'+(r.thieuPC?' Còn '+r.thieuPC+' buổi thiếu pha chế.':'')+(r.hoc?' '+esc(r.hoc):'')+'</p>'); $('qtPB').open=true; qtPhienBan(); })
+    .withFailureHandler(function(e){ b.disabled=false; b.textContent='✓ Áp dụng'; alert('Lỗi: '+(e.message||e)); })
+    .apDungLichQuan({pin:PIN, tuan:$('tuan').value, tab:qtTab(), nguon:qtNg(), dongYThieuPC:!!dongY}); }
+function qtPhienBan(){ var o=$('qtPBds'); o.textContent='Đang tải…';
+  google.script.run.withSuccessHandler(function(r){ if(!r.ok){ o.textContent=r.msg; return; } if(!r.list.length){ o.textContent='Tuần này chưa áp dụng lần nào.'; return; }
+    o.innerHTML='<table><tr><th>Bản</th><th>Lúc</th><th>Ai</th><th>Nguồn</th><th>Số ca</th><th></th></tr>'+r.list.map(function(x){ return '<tr><td><b>'+x.So+'</b>'+(x.dangDung?' <span style="color:#2E7D5B">(đang dùng)</span>':'')+'</td><td>'+esc(x.Luc)+'</td><td>'+esc(x.Boi)+'</td><td>'+esc(x.Nguon)+(x.GhiChu?'<br><span class="sub">'+esc(x.GhiChu)+'</span>':'')+'</td><td>'+x.SoCa+'</td><td>'+(!x.dangDung&&ROLE==='admin'?'<button class="second mini" onclick="qtKhoiPhuc('+x.So+')">Khôi phục</button>':'')+'</td></tr>'; }).join('')+'</table>'; })
+  .withFailureHandler(function(e){ o.textContent='Lỗi: '+(e.message||e); }).dsPhienBanLich({pin:PIN, tuan:$('tuan').value}); }
+function qtKhoiPhuc(so){ if(!confirm('Lấy lại phiên bản '+so+' làm lịch chính thức tuần '+$('tuan').value+'?\n(Bản đang dùng vẫn được giữ trong lịch sử.)')) return;
+  google.script.run.withSuccessHandler(function(r){ if(!r.ok){ alert(r.msg); return; } alert('Đã khôi phục: lịch chính thức là bản '+so+' ('+r.soCa+' ca), lưu thành phiên bản '+r.phienBan+'.'); qtPhienBan(); })
+  .withFailureHandler(function(e){ alert('Lỗi: '+(e.message||e)); }).khoiPhucLich({pin:PIN, tuan:$('tuan').value, so:so}); }
+
+function apDung(gi,xi){
+  var g=GOIY[gi], x=g.GoiY[xi], b=$('ap_'+gi+'_'+xi); b.disabled=true; b.textContent='Đang xếp…';
+  google.script.run.withSuccessHandler(function(r){
+    if(!r.ok){ alert(r.msg||'Lỗi không rõ'); b.disabled=false; b.textContent='Xếp vào'; return; }
+    b.textContent='Đã xếp';
+    // người này đã có ca trong ngày: khoá các gợi ý khác của họ cùng ngày (trừ gãy cùng quán / kéo dài)
+    GOIY.forEach(function(g2,gj){ g2.GoiY.forEach(function(y,yj){ if(gj===gi&&yj===xi) return;
+      if(y.MaNV===x.MaNV && g2.Ngay===g.Ngay && !(g2.MaCS===g.MaCS && (y.Loai==='gay'||y.Loai==='keodai'))){ var bb=$('ap_'+gj+'_'+yj); if(bb){ bb.disabled=true; bb.textContent='Đã xếp ngày này'; } } }); });
+    g.Thieu--; if(g.Thieu<=0) g.GoiY.forEach(function(y,yj){ var bb=$('ap_'+gi+'_'+yj); if(bb && yj!==xi){ bb.disabled=true; bb.textContent='Đã đủ người'; } });
+  }).apDungGoiY({pin:PIN, Ngay:g.Ngay, MaCS:g.MaCS, MaNV:x.MaNV, MaCa:x.MaCa, ThayCa:x.ThayCa, ViTri:g.ViTri, LyDo:x.LyDo});
+}
+
+/* --- Lịch tuần --- */
+var SC={TP:'#FFFFFF',DD:'#CFE8CF',TD:'#F3E3B5',TNV:'#C9D7F0',LDD:'#F7D9CB'}, LV=null;
+function xemLich(){
+  var m=$('lmsg'); m.textContent='Đang tải…';
+  var view=$('lview').value, cs=$('lcs').value;
+  if(view==='ca' && !cs){ cs=STORES[0].MaCS; $('lcs').value=cs; }
+  google.script.run.withSuccessHandler(function(r){
+    if(!r.ok){ m.textContent=r.msg||'Lỗi không rõ'; return; } m.textContent=''; LV=r;
+    $('legend').style.display=view==='nv'?'flex':'none';
+    var goiy=$('lnguon').value==='goiy' || $('lnguon').value==='thucte';
+    if(goiy && view==='ca'){ $('lview').value='all'; view='all'; }
+    if(view==='nv') renderNV(r, cs); else if(view==='all') renderAll(r, goiy); else renderCa(r);
+    $('lban').innerHTML=r.ban.length?r.ban.map(function(b){return dd(b.Ngay)+': '+esc(b.Ten)+' bận '+b.Khoi;}).join(' · '):'Chưa có ai đăng ký bận.';
+  }).withFailureHandler(function(e){ m.textContent='Lỗi: '+e.message; })
+  .getLichTuan({pin:PIN, tuan:$('ltuan').value, maCS:view==='ca'?cs:'', all:view!=='ca', nguon:$('lnguon').value});
+  $('goiyBar').classList.toggle('hide', $('lnguon').value!=='goiy');
+}
+function renderNV(r, cs){
+  var ppl=r.people.filter(function(p){ return !cs || p.CS===cs; });
+  document.querySelector('#lgrid thead').innerHTML='<tr><th>Mã</th><th>Tên</th><th>Vị trí</th><th>Giờ</th>'+r.days.map(function(d){return '<th>'+dd(d)+'</th>';}).join('')+'</tr>';
+  var free=0, sugN=0;
+  document.querySelector('#lgrid tbody').innerHTML=ppl.map(function(p){
+    var gio=0, cells=r.days.map(function(d){
+      var mine=r.items.filter(function(i){return i.MaNV===p.MaNV && i.Ngay===d;}); mine.forEach(function(i){gio+=i.SoGio;});
+      var bans=r.ban.filter(function(b){return b.MaNV===p.MaNV && b.Ngay===d;}).map(function(b){return b.Khoi;});
+      var sg=r.sug[p.MaNV+'|'+d]||[];
+      if(mine.length){
+        var them=mine.length>1||mine.some(function(i){return /gãy|Tăng ca|Lấp thiếu/.test(i.Ghi);});
+        var extra=(mine.length===1)?sg.filter(function(x){return x.ThayCa || x.MaCS===mine[0].MaCS;}):[];
+        return '<td class="pc" style="background:'+(them?'#E3D7F5':(SC[mine[0].MaCS]||'#fff'))+'">'+mine.map(function(i){ return '<div class="it"><span><b>'+i.MaCS+'</b> '+i.Ca+' · '+esc(i.ViTri)+(/gãy|Tăng ca|Lấp thiếu/.test(i.Ghi)?' <i>'+esc(i.Ghi)+'</i>':'')+'</span><button class="x" title="Xoá ca" onclick="xoa(\''+d+'\',\''+p.MaNV+'\',\''+i.MaCa+'\',\''+i.MaCS+'\',\''+esc(p.Ten)+'\')">×</button></div>'; }).join('')
+          + extra.map(function(x,xi){ return '<button class="second mini btnap" onclick="apNV(\''+p.MaNV+'\',\''+d+'\','+r.sug[p.MaNV+'|'+d].indexOf(x)+',this)">+ '+(x.ThayCa?'Kéo dài':'Gãy')+' '+x.Khoi+' '+esc(x.ViTri)+'</button>'; }).join('')+'</td>';
+      }
+      if(r.off[p.MaNV+'|'+d]) return '<td class="pc" style="background:#FFD8A8">OFF'+(sg.length?sugBtns(p,d,sg):'')+'</td>';
+      if(bans.length) return '<td class="pc" style="background:#F8C9C9">Bận '+bans.join(', ')+'</td>';
+      if(sg.length){ sugN++; return '<td class="pc" style="background:#FFF3B0">Chưa xếp'+sugBtns(p,d,sg)+'</td>'; }
+      free++; return '<td class="pc" style="background:#C8C8C8;color:#555">Trống</td>';
+    }).join('');
+    return '<tr><td>'+p.MaNV+'</td><td><b>'+esc(p.Ten)+'</b></td><td>'+esc(p.ViTri)+'<br><span style="color:var(--muted)">'+p.CS+' · '+p.Loai+'</span></td><td class="n">'+Math.round(gio*10)/10+'</td>'+cells+'</tr>';
+  }).join('')||'<tr><td colspan="11">Không có nhân viên</td></tr>';
+  $('lmsg').textContent=sugN+' ô chưa xếp có gợi ý · '+free+' ô trống chưa gợi ý';
+}
+function sugBtns(p,d,sg){ var shown=0, more=0; var h=sg.map(function(x,xi){ if(x.ThayCa) return ''; if(shown>=3){ more++; return ''; } shown++; return '<button class="second mini btnap" onclick="apNV(\''+p.MaNV+'\',\''+d+'\','+xi+',this)">Xếp '+x.MaCS+' '+x.Khoi+' '+esc(x.ViTri)+'</button>'; }).join('');
+  return h+(more?'<div style="color:var(--muted);margin-top:2px">+'+more+' chỗ khác ở tab Xếp lịch</div>':''); }
+function apNV(ma,d,xi,btn){
+  var x=LV.sug[ma+'|'+d][xi]; btn.disabled=true; btn.textContent='Đang xếp…';
+  google.script.run.withSuccessHandler(function(r){ if(!r.ok){ alert(r.msg||'Lỗi không rõ'); btn.disabled=false; btn.textContent='Thử lại'; return; } xemLich(); })
+  .apDungGoiY({pin:PIN, Ngay:d, MaCS:x.MaCS, MaNV:ma, MaCa:x.MaCa, ThayCa:x.ThayCa, ViTri:x.ViTri, LyDo:x.LyDo});
+}
+var OLDC={TP:'#FFFFFF',TD:'#FFE599',DD:'#B6D7A8',TNV:'#C9DAF8',LDD:'#F7D9CB'};
+function cellTxt(i){ if(/Support/.test(i.Ghi)) return esc(i.Ten)+' (support)'; if(/gãy/.test(i.Ghi)) return esc(i.Ten)+' gãy'; if(i.MaCa==='FT12') return esc(i.Ten)+' full'; return esc(i.Ten)+' ('+String(i.SoGio).replace('.',',')+')'+(/Tăng ca|Lấp thiếu/.test(i.Ghi)?' TC':''); }
+function xbtn(i){ return '<button class="x" title="Xoá ca" onclick="xoa(\''+i.Ngay+'\',\''+esc(i.MaNV)+'\',\''+i.MaCa+'\',\''+i.MaCS+'\',\''+esc(i.Ten)+'\')">×</button>'; }
+function chipTxt(i){ if(/Support/.test(i.Ghi)) return i.Ten+' (support)'; if(/gãy/.test(i.Ghi)) return (i.MaCa==='PT3'||i.MaCa==='FT1')?i.Ten+' gãy':i.Ten+' ('+String(i.SoGio).replace('.',',')+') gãy'; if(i.MaCa==='FT12') return i.Ten+' full'; return i.Ten+' ('+String(i.SoGio).replace('.',',')+')'+(/Tăng ca|Lấp thiếu/.test(i.Ghi)?' TC':''); }
+function renderAll(r, chiXem){
+  // Bảng giống file lịch cũ, mỗi ô là khung có thể gõ lại tên: "Lam (5,5)", "Thư gãy", "Mẫn full", "Linh (8) TC". Xoá chữ = bỏ ca. Ô "+" = thêm người.
+  var label={'Sáng':'SÁNG 6h30–12h','Trưa':'TRƯA 12h–17h','Tối':'TỐI 17h–22h30'}, order=['TP','TD','DD','TNV','LDD'], csName={TP:'Trần Phú',TD:'Tản Đà',DD:'Đống Đa',TNV:'TNV',LDD:'LĐD'};
+  var open={TP:['Sáng','Trưa','Tối'],DD:['Sáng','Trưa','Tối'],LDD:['Sáng','Trưa','Tối'],TD:['Sáng','Trưa'],TNV:['Sáng','Trưa']};
+  function side(i){ return (i.ViTri==='Phục vụ'||i.ViTri==='Bảo vệ')?'PV':'PC'; }
+  var dl='<datalist id="dsNV">'+r.people.map(function(p){return '<option value="'+esc(p.Ten)+'">';}).join('')+'</datalist>';
+  document.querySelector('#lgrid thead').innerHTML='';
+  var html='<tr><td colspan="9" style="padding:0">'+dl+'</td></tr>';
+  [['PV','LỊCH PHỤC VỤ'],['PC','LỊCH PHA CHẾ']].forEach(function(sd){
+    html+='<tr><td colspan="9" style="padding:0"><table class="bd"><tr><td colspan="8" style="background:#38761D;color:#fff;font-weight:700;font-size:15px">'+sd[1]+'</td></tr>';
+    html+='<tr><th></th>'+r.days.map(function(d){return '<th>'+dd(d)+'</th>';}).join('')+'</tr>';
+    ['Sáng','Trưa','Tối'].forEach(function(k){
+      html+='<tr><td colspan="8" style="background:#2A1D14;color:#fff;font-weight:700">'+label[k]+'</td></tr>';
+      order.forEach(function(cs){
+        if(open[cs].indexOf(k)<0) return;
+        var its=r.items.filter(function(i){return i.Khoi===k && side(i)===sd[0] && i.MaCS===cs;});
+        if(!its.length && k==='Trưa' && sd[0]==='PV' && cs!=='TP' && cs!=='TD' && !r.items.some(function(i){return i.Khoi==='Sáng' && (i.Blocks||[]).indexOf('Trưa')>-1 && side(i)==='PV' && i.MaCS===cs;})) return;
+        var cont=(k==='Trưa')?r.items.filter(function(i){ return i.Khoi==='Sáng' && (i.Blocks||[]).indexOf('Trưa')>-1 && side(i)===sd[0] && i.MaCS===cs; }):[];
+        html+='<tr style="background:'+OLDC[cs]+'"><td class="lab">'+csName[cs]+'</td>'+r.days.map(function(d){
+          var cell=its.filter(function(i){return i.Ngay===d;}).sort(function(x,y){return (x.Lead?0:1)-(y.Lead?0:1);});
+          var cn=cont.filter(function(i){return i.Ngay===d;}).map(function(i){ return '<input class="chip'+(i.Lead?' lead':'')+' keo" readonly value="'+esc(chipTxt(i))+' đến '+esc((i.Ca.split('–')[1]||'').replace(/^0/,'').replace(':00','h').replace(':','h'))+'" title="Làm từ ca sáng '+esc(i.Ca)+' – có mặt cả ca sáng và ca trưa. Sửa ở khối SÁNG.">'; }).join('');
+          if(chiXem) return '<td>'+cn+cell.map(function(i){ return '<div class="chip'+(i.Lead?' lead':'')+'">'+esc(chipTxt(i))+'</div>'; }).join('')+'</td>';
+          return '<td>'+cn+cell.map(function(i){ return '<button class="chip'+(i.Lead?' lead':'')+(/Support/.test(i.Ghi)?' sp':'')+'" title="'+esc(i.Ca)+'" data-ngay="'+i.Ngay+'" data-cs="'+i.MaCS+'" data-ca="'+i.MaCa+'" data-nv="'+esc(i.MaNV)+'" data-ten="'+esc(i.Ten)+'" data-gio="'+i.SoGio+'" data-khoi="'+k+'" data-side="'+sd[0]+'" onclick="pkMo(this,\'sua\')">'+esc(chipTxt(i))+'</button>'; }).join('')
+            +'<button class="chip add" data-ngay="'+d+'" data-cs="'+cs+'" data-khoi="'+k+'" data-side="'+sd[0]+'" onclick="pkMo(this,\'them\')">+ thêm người</button></td>'; }).join('')+'</tr>';
+      });
+      var gk=r.gaps.filter(function(g){return g.Khoi===k && ((g.ViTri==='Phục vụ'||g.ViTri==='Bảo vệ')===(sd[0]==='PV'));});
+      var gt=gk.filter(function(g){return g.Muc!=='nen';}), gn=gk.filter(function(g){return g.Muc==='nen';});
+      // ca không có pha chế thật (chỉ người nhà hoặc trống) = quán không mở được → báo đỏ ở cả bảng phục vụ và pha chế
+      var khongPC=r.days.map(function(d){ return order.filter(function(cs){ if(open[cs].indexOf(k)<0) return false; var it=r.items.filter(function(i){ return i.MaCS===cs && i.Ngay===d && (i.Blocks||[]).indexOf(k)>-1; }); return !it.some(function(i){ return (i.ViTri==='Pha chế'||i.ViTri==='Quản lý') && !/Support/.test(i.Ghi); }); }); });
+      if(chiXem){ gt=[]; gn=[]; }
+      if(khongPC.some(function(x){return x.length;})) html+='<tr style="background:#C0392B;color:#fff"><td class="lab">KHÔNG CÓ PHA CHẾ</td>'+khongPC.map(function(l){ return '<td style="font-size:12px;font-weight:700">'+l.map(function(cs){return csName[cs]+': quán không mở được';}).join('<br>')+'</td>'; }).join('')+'</tr>';
+      if(gt.length) html+='<tr style="background:#F4CCCC"><td class="lab">THIẾU</td>'+r.days.map(function(d){ return '<td class="bad" style="font-size:12px">'+gt.filter(function(g){return g.Ngay===d;}).map(function(g){return g.MaCS+': thiếu '+g.Thieu+' '+g.ViTri.toLowerCase();}).join('<br>')+'</td>'; }).join('')+'</tr>';
+      if(gn.length) html+='<tr style="background:#EFEFEF;color:var(--muted)"><td class="lab">Nên thêm</td>'+r.days.map(function(d){ return '<td style="font-size:12px">'+gn.filter(function(g){return g.Ngay===d;}).map(function(g){return g.MaCS+': +'+g.Thieu+' '+g.ViTri.toLowerCase();}).join('<br>')+'</td>'; }).join('')+'</tr>';
+    });
+    var offs=r.days.map(function(d){ return r.people.filter(function(p){ return r.off[p.MaNV+'|'+d] && ((p.ViTri==='Phục vụ'||p.ViTri==='Bảo vệ')===(sd[0]==='PV')); }).map(function(p){return esc(p.Ten);}); });
+    html+='<tr><td class="lab" style="background:#FF9900">OFF</td>'+offs.map(function(o){return '<td style="font-size:12px">'+o.join('<br>')+'</td>';}).join('')+'</tr></table></td></tr>';
+  });
+  document.querySelector('#lgrid tbody').innerHTML=html;
+}
+/* --- Chọn người nhanh: bấm vào tên → chọn người khác trong danh sách gợi ý (không cần gõ) --- */
+var PK=null, PKL=[];
+function moBanNhapTuan(){ var t=$('ltuan').value||$('tuan').value; $('nTuan').value=t; NH.luoi=null; $('nhXem').value='nhap'; tab('nhap'); }
+function chiXemLichTuan(){ if(confirm('Đây là chế độ chỉ xem. Chuyển sang Bản nháp tuần '+($('ltuan').value||'')+' để sửa?')){ $('nhXem').value='nhap'; nhDoiXem(); } return true; }
+function pkMo(el,mode){ if(chiXemLichTuan()) return; var d=el.dataset; PK={mode:mode, ngay:d.ngay, cs:d.cs, khoi:d.khoi, side:d.side, maCa:d.ca, maNV:d.nv, ten:d.ten, gio:d.gio||'', kieu:''};
+  if(mode==='them'){ PK.gio=(d.khoi==='Trưa')?'5':'5.5'; }
+  $('pkTitle').textContent=(mode==='sua'?'Đổi người':'Thêm người')+' · '+d.cs+' · ca '+d.khoi.toLowerCase()+' · '+dd(d.ngay)+' · '+(d.side==='PV'?'phục vụ':'pha chế');
+  $('pkCur').innerHTML=mode==='sua'?'Đang xếp: <b>'+esc(PK.ten)+'</b> ('+String(PK.gio).replace('.',',')+'h)':'Chọn người trong danh sách bên dưới.';
+  pkGioVe(); $('pkTim').value=''; $('pkList').innerHTML='<p class="sub">Đang tìm người phù hợp…</p>'; $('pk').classList.remove('hide');
+  $('pkAct').innerHTML=mode==='sua'?'<button class="second mini" onclick="pkChiDoiGio()">Chỉ đổi giờ, giữ người</button> <button class="second mini" style="color:#C0392B;border-color:#C0392B" onclick="pkBo()">Bỏ ca này</button>':'';
+  google.script.run.withSuccessHandler(function(r){ if(!r.ok){ $('pkList').textContent=r.msg||'Lỗi không rõ'; return; } PKL=r.list; pkVe(); })
+    .ungVien({pin:PIN, ngay:PK.ngay, maCS:PK.cs, khoi:PK.khoi, side:PK.side}); }
+function pkGioVe(){ var opts=PK.khoi==='Trưa'?[['5','5h'],['6.5','6,5h'],['8','8h']]:(PK.khoi==='Tối'?[['5.5','5,5h'],['8','8h'],['gãy','gãy']]:[['5.5','5,5h'],['8','8h'],['10.5','10,5h'],['11.5','11,5h'],['full','full'],['gãy','gãy']]);
+  $('pkGio').innerHTML=opts.map(function(o){ var on=(o[0]==='full'||o[0]==='gãy')?PK.kieu===o[0]:(PK.kieu===''&&String(PK.gio)===o[0]); return '<button class="gbtn'+(on?' on':'')+'" onclick="pkChonGio(\''+o[0]+'\')">'+o[1]+'</button>'; }).join(''); }
+function pkChonGio(v){ if(v==='full'||v==='gãy'){ PK.kieu=v; } else { PK.kieu=''; PK.gio=v; } pkGioVe(); }
+function pkVe(){ var q=$('pkTim').value.trim().toLowerCase(); var nm={ranh:'Rảnh, phù hợp',off:'Đang OFF hôm nay (hỏi đổi ngày nghỉ)',coCa:'Đã có ca hôm nay (chỉ thêm ca gãy cùng quán)',ban:'Đã báo bận'};
+  var l=PKL.filter(function(x){ return !q || x.Ten.toLowerCase().indexOf(q)>-1 || x.MaNV.indexOf(q)>-1; }).filter(function(x){ return x.MaNV!==PK.maNV; });
+  var html='', last=''; l.slice(0,60).forEach(function(x){ if(x.Nhom!==last){ html+='<div class="pkh">'+nm[x.Nhom]+'</div>'; last=x.Nhom; }
+    html+='<button class="pp'+(x.Nhom==='ranh'?'':' dim')+'" onclick="pkChon(\''+x.MaNV+'\')"><span><b>'+esc(x.Ten)+'</b> <span style="color:#7A6657">'+esc(x.ViTri)+' · '+esc(x.Loai||'')+'</span><small>'+esc(x.LyDo)+'</small></span><span>Chọn</span></button>'; });
+  $('pkList').innerHTML=html||'<p class="sub">Không có ai phù hợp</p>'; }
+function pkGui(fn, args, okMsg){ $('pkList').innerHTML='<p class="sub">Đang lưu…</p>';
+  google.script.run.withSuccessHandler(function(r){ if(!r.ok){ alert(r.msg||'Lỗi không rõ'); pkVe(); return; } pkDong(); xemLich(); })
+  .withFailureHandler(function(e){ alert('Lỗi: '+e.message); pkVe(); })[fn](args); }
+function pkChon(ma){ var g=PK.kieu?'':PK.gio;
+  if(PK.mode==='sua') pkGui('suaO',{pin:PIN, ngay:PK.ngay, maCS:PK.cs, maCa:PK.maCa, maNV:PK.maNV, maMoi:ma, gio:g, kieu:PK.kieu});
+  else pkGui('themO',{pin:PIN, ngay:PK.ngay, maCS:PK.cs, khoi:PK.khoi, side:PK.side, maMoi:ma, gio:g, kieu:PK.kieu}); }
+function pkChiDoiGio(){ pkGui('suaO',{pin:PIN, ngay:PK.ngay, maCS:PK.cs, maCa:PK.maCa, maNV:PK.maNV, maMoi:PK.maNV, gio:PK.kieu?'':PK.gio, kieu:PK.kieu}); }
+function pkBo(){ if(!confirm('Bỏ ca của '+PK.ten+'?')) return; pkGui('suaO',{pin:PIN, ngay:PK.ngay, maCS:PK.cs, maCa:PK.maCa, maNV:PK.maNV, text:''}); }
+function pkDong(){ $('pk').classList.add('hide'); }
+/* --- Chốt lịch tuần: app so bản nháp với bản quản lý chốt, học từ chỗ sửa --- */
+var HOC=null;
+function chotTuan(){ if(!confirm('Chốt lịch tuần này? App sẽ so với bản nháp đã xếp, ghi % đoán đúng và học từ các chỗ anh/chị đã sửa.')) return;
+  var b=$('hocPanel'); b.classList.remove('hide'); b.innerHTML='Đang chốt và học…';
+  google.script.run.withSuccessHandler(function(r){ if(!r.ok){ b.innerHTML=esc(r.msg); return; } HOC=r; veHoc(); taiHocSu(); })
+  .withFailureHandler(function(e){ b.innerHTML='Lỗi: '+esc(e.message); }).chotLich({pin:PIN, tuan:$('ltuan').value}); }
+function veHoc(){ var r=HOC, b=$('hocPanel'), LY=['','Xin nghỉ / việc riêng','Đi học / bận cố định thứ này','Không hợp quán này','Chưa đủ kinh nghiệm vị trí này','Khác'];
+  var h='<b>'+esc(r.msg)+'</b>'+(r.hoc&&r.hoc.tuan?' App đã học lại từ '+r.hoc.tuan+' tuần đã chốt.':'');
+  if(r.bo.length){ h+='<p style="margin:8px 0 4px">Những chỗ quản lý đã <b>bỏ người app xếp</b>. Chọn lý do (không bắt buộc) để app nhớ cho các tuần sau:</p><div style="overflow-x:auto"><table class="tbl"><tr><th>Ngày</th><th>Quán</th><th>Ca</th><th>Người app xếp</th><th>Lý do</th></tr>';
+    r.bo.forEach(function(x,i){ h+='<tr><td>'+dd(x.Ngay)+'</td><td>'+x.MaCS+'</td><td>'+esc(x.Khoi)+'</td><td>'+esc(x.Ten)+' <span class="sub">'+esc(x.ViTri)+'</span></td><td><select data-i="'+i+'" class="lydo">'+LY.map(function(l){return '<option>'+l+'</option>';}).join('')+'</select></td></tr>'; });
+    h+='</table></div><button onclick="luuLy()" style="margin-top:8px">Lưu lý do</button> <span class="sub" id="lyMsg"></span>'; }
+  if(r.them.length) h+='<p class="sub" style="margin-top:8px">Quản lý thêm '+r.them.length+' lượt không có trong bản nháp – app đã ghi nhận để học.</p>';
+  b.innerHTML=h; }
+function luuLy(){ var items=[]; document.querySelectorAll('select.lydo').forEach(function(s){ if(s.value){ var x=HOC.bo[+s.dataset.i]; items.push({Ngay:x.Ngay,MaCS:x.MaCS,MaNV:x.MaNV,Khoi:x.Khoi,ViTri:x.ViTri,Loai:'bo',LyDo:s.value}); } });
+  if(!items.length){ $('lyMsg').textContent='Chưa chọn lý do nào.'; return; } $('lyMsg').textContent='Đang lưu…';
+  google.script.run.withSuccessHandler(function(r){ $('lyMsg').textContent=r.ok?('Đã lưu '+r.so+' lý do. Tuần sau app sẽ tránh những chỗ này.'):r.msg; }).luuLyDo({pin:PIN, tuan:HOC.tuan, items:items}); }
+function taiHocSu(){ google.script.run.withSuccessHandler(function(r){ if(!r.ok||!r.lichSu.length){ $('hocSu').innerHTML=''; return; }
+    var h='<h3 style="font-size:15px;margin:6px 0">App học được bao nhiêu</h3><div style="overflow-x:auto"><table class="tbl"><tr><th>Tuần</th><th>Lượt chốt</th><th>App đoán đúng</th></tr>';
+    r.lichSu.forEach(function(x){ h+='<tr><td>'+dd(x.Tuan)+'</td><td>'+x.SoCaChot+'</td><td><b>'+x.PhanTram+'%</b> ('+x.SoDung+')</td></tr>'; });
+    h+='</table></div><p class="sub">Đã nhớ '+r.banCoDinh+' lịch bận cố định, '+r.khongXep+' chỗ không xếp. Con số % tăng dần qua các tuần là app đang học đúng.</p>'; $('hocSu').innerHTML=h; })
+  .getHocTap({pin:PIN}); }
+/* --- Ghi nhớ cho app --- */
+var GN={thu:{},khoi:{}};
+function gnVe(){ $('gnThu').innerHTML=['T2','T3','T4','T5','T6','T7','CN'].map(function(t){ return '<button class="gbtn'+(GN.thu[t]?' on':'')+'" onclick="GN.thu[\''+t+'\']=!GN.thu[\''+t+'\'];gnVe()">'+t+'</button>'; }).join('');
+  $('gnKhoi').innerHTML=['Sáng','Trưa','Tối','Cả ngày'].map(function(k){ return '<button class="gbtn'+(GN.khoi[k]?' on':'')+'" onclick="GN.khoi[\''+k+'\']=!GN.khoi[\''+k+'\'];gnVe()">'+k+'</button>'; }).join(''); }
+function gnLoaiDoi(){ var l=$('gnLoai').value; $('gnBan').classList.toggle('hide',l!=='ban'); $('gnCS').classList.toggle('hide',l!=='kxcs'); $('gnVT').classList.toggle('hide',l!=='kxvt'); }
+function gnTai(){ hopTai('gnList');
+  google.script.run.withSuccessHandler(function(r){ hopXong('gnList'); if(!r.ok){ $('gnList').textContent=r.msg||'Lỗi không rõ'; return; }
+    var cur=$('gnNV').value; $('gnNV').innerHTML='<option value="">– chọn –</option>'+r.nhanVien.map(function(n){ return '<option value="'+n.MaNV+'">'+esc(n.Ten)+' ('+n.MaNV+', '+esc(n.ViTri)+')</option>'; }).join(''); $('gnNV').value=cur;
+    if(!$('gnMaCS').options.length) $('gnMaCS').innerHTML=(window.STORES||[]).map(function(c){ return '<option value="'+c.MaCS+'">'+esc(c.TenCS)+'</option>'; }).join('');
+    $('gnList').innerHTML=r.list.length?('<div class="pkh">Đang ghi nhớ ('+r.list.length+')</div>'+r.list.map(function(x){ return '<div class="pp"><span>'+esc(x.text)+'<small>'+esc(x.Nguon||'')+'</small></span><button class="second mini" onclick="gnXoa(\''+x.id+'\')">Xoá</button></div>'; }).join('')):'<p class="sub">Chưa có ghi nhớ nào.</p>'; }).withFailureHandler(function(e){ hopLoi('gnList', e); })
+  .dsGhiNho({pin:PIN}); gnVe(); gnLoaiDoi(); }
+function gnThem(){ var l=$('gnLoai').value, p={pin:PIN, maNV:$('gnNV').value};
+  if(l==='ban'){ p.loai='ban'; p.thu=Object.keys(GN.thu).filter(function(k){return GN.thu[k];}); p.khoi=Object.keys(GN.khoi).filter(function(k){return GN.khoi[k];}); }
+  else if(l==='kxcs'){ p.loai='kx'; p.maCS=$('gnMaCS').value; } else { p.loai='kx'; p.viTri=$('gnViTri').value; }
+  $('gnMsg').textContent='Đang lưu…';
+  google.script.run.withSuccessHandler(function(r){ $('gnMsg').textContent=r.ok?'Đã ghi nhớ.':r.msg; if(r.ok){ GN={thu:{},khoi:{}}; gnTai(); } }).themGhiNho(p); }
+function gnXoa(id){ if(!confirm('Xoá ghi nhớ này?')) return; google.script.run.withSuccessHandler(function(){ gnTai(); }).xoaGhiNho({pin:PIN, id:id}); }
+/* --- Khảo sát nhân viên --- */
+var KSL=null;
+function ksTai(){ $('ksList').innerHTML='<p class="sub">Đang tải…</p>';
+  google.script.run.withSuccessHandler(function(r){ if(!r.ok){ $('ksList').textContent=r.msg||'Lỗi'; return; } KSL=r;
+    var da=r.list.filter(function(x){return x.daTraLoi;}).length;
+    var h='<p class="sub" style="margin:8px 0">Đã trả lời '+da+'/'+r.list.length+' người.</p>';
+    h+=r.list.map(function(x,i){ var d=x.data, tt=!x.daTraLoi?'<span class="sub">chưa trả lời</span>':(x.xacNhan?'<b style="color:#2E7D5B">đã xác nhận</b>':'<b style="color:#B45F06">chờ xác nhận</b>');
+      var ct=''; if(d){ var ht=Object.keys(d.hoTro||{}).map(function(v){ return v+': '+d.hoTro[v]; }).join(' · ');
+        ct='<small>Vào làm '+esc(d.batDau||'?')+' · '+esc(d.loai||x.Loai||'')+' · '+esc(d.ngoaiGio||'')+'<br>Vị trí chính: '+esc(d.viTriChinh||x.ViTri)+(ht?' · Hỗ trợ: '+esc(ht):'')+(d.menu?' · Menu: '+esc(d.menu):'')+(d.thuNgan?' · Thu ngân một mình: '+esc(d.thuNgan):'')+
+        '<br>Quán muốn: '+esc((d.quanMuon||[]).join(', ')||'–')+' · Không tiện: '+esc((d.quanKhongTien||[]).join(', ')||'–')+' · Có xe: '+esc(d.coXe||'?')+
+        '<br>Ca hay làm: '+esc((d.caHay||[]).join(', ')||'–')+' · Lịch thay đổi: '+esc(d.lichDoi||'?')+(d.nghiThu?' · Muốn nghỉ '+esc(d.nghiThu):'')+
+        '<br>Tăng ca: '+esc(d.tangCa||'?')+' · Ca dài: '+esc(d.caDai||'?')+' · Ca gãy: '+esc(d.gay||'?')+(d.ghiChu?'<br>Ghi chú: '+esc(d.ghiChu):'')+'</small>'; }
+      var odt=' · <span class="sub">lịch '+esc(x.mucOnDinh)+(x.onDinh!==null?' ('+Math.round(x.onDinh*100)+'%)':'')+'</span>';
+      return '<div class="pp"><span><b>'+esc(x.Ten)+'</b> <span class="sub">'+esc(x.MaNV)+' · '+esc(x.ViTri)+' · '+esc(x.Loai||'')+'</span> · '+tt+odt+ct+'</span>'+(x.daTraLoi&&!x.xacNhan?'<button class="mini" onclick="ksXN('+i+')">Xác nhận</button>':'')+'</div>'; }).join('');
+    $('ksList').innerHTML=h; }).dsKhaoSat({pin:PIN}); }
+function copyKS(){ if(!KSL) return; try{ navigator.clipboard.writeText(KSL.link); $('ksMsg').textContent='Đã copy: '+KSL.link; }catch(e){ $('ksMsg').textContent=KSL.link; } }
+function ksXN(i){ var x=KSL.list[i]; if(!confirm('Xác nhận kỹ năng của '+x.Ten+'? App sẽ dùng các vị trí "làm một mình được" làm vị trí kiêm, và cập nhật tăng ca.')) return;
+  google.script.run.withSuccessHandler(function(r){ if(!r.ok){ alert(r.msg||'Lỗi'); return; } ksTai(); }).xacNhanKhaoSat({pin:PIN, maNV:x.MaNV}); }
+/* --- Mã QR --- */
+function qrTai(){ $('qrList').innerHTML='<p class="sub">Đang tải…</p>';
+  google.script.run.withSuccessHandler(function(r){ if(!r.ok){ $('qrList').textContent=r.msg||'Lỗi'; return; }
+    $('qrList').innerHTML=r.list.map(function(c,i){ return '<div class="card" style="margin:10px 0;padding:10px;border:1px solid #E4D9CC;border-radius:10px">'+
+      '<b>'+esc(c.TenCS)+'</b> · '+(c.coViTri?'<span style="color:#2E7D5B">đã lưu vị trí (bán kính '+c.BanKinh+'m)</span>':'<span style="color:#C0392B">chưa lưu vị trí</span>')+
+      ' <button class="second mini" onclick="luuViTri(\''+c.MaCS+'\')">Lưu vị trí quán (đứng tại quán)</button>'+
+      '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px"><div class="qrIn"><div class="sub">Tháng '+r.thang+'</div><div id="qa_'+i+'"></div><div class="sub" style="margin-top:4px">Quét để chấm công – '+esc(c.TenCS)+'</div></div>'+
+      '<div class="qrIn"><div class="sub">Tháng sau ('+r.thangSau+')</div><div id="qb_'+i+'"></div></div></div>'+
+      '<button class="second mini" style="margin-top:6px" onclick="inQR('+i+')">In mã tháng này</button></div>'; }).join('');
+    var ve=function(){ r.list.forEach(function(c,i){ try{ new QRCode($('qa_'+i),{text:c.url,width:170,height:170}); new QRCode($('qb_'+i),{text:c.urlSau,width:110,height:110}); }catch(e){ var q=$('qa_'+i); if(q) q.textContent=c.url; } }); };
+    if(window.QRCode) ve(); else { var sc=document.createElement('script'); sc.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'; sc.onload=ve; sc.onerror=function(){ r.list.forEach(function(c,i){ $('qa_'+i).innerHTML='<small>'+esc(c.url)+'</small>'; }); }; document.head.appendChild(sc); }
+  }).dsMaQR({pin:PIN});
+  google.script.run.withSuccessHandler(function(r){ if(!r.ok){ $('cbList').textContent=r.msg||'Lỗi'; return; }
+    $('cbList').innerHTML=r.list.length?r.list.map(function(x){ return '<div class="pp"><span><b>'+esc(x.Ten)+'</b> <span class="sub">'+x.Ngay.slice(8,10)+'/'+x.Ngay.slice(5,7)+' '+x.Gio+' · '+x.MaCS+' · '+(x.Loai==='VAO'?'vào':'ra')+'</span><small>'+esc(x.CanhBao)+'</small></span>'+(x.Anh?'<a href="'+esc(x.Anh)+'" target="_blank">Ảnh</a>':'')+'</div>'; }).join(''):'<p class="sub">Không có lượt nào cần xem.</p>'; }).dsCanhBao({pin:PIN});
+}
+function luuViTri(cs){ if(!navigator.geolocation){ alert('Trình duyệt không cho lấy định vị'); return; }
+  navigator.geolocation.getCurrentPosition(function(p){ if(!confirm('Lưu vị trí hiện tại (sai số '+Math.round(p.coords.accuracy)+'m) làm vị trí quán '+cs+'?')) return;
+    google.script.run.withSuccessHandler(function(r){ if(!r.ok) alert(r.msg||'Lỗi'); qrTai(); }).luuViTriQuan({pin:PIN, maCS:cs, lat:p.coords.latitude, lng:p.coords.longitude}); },
+    function(){ alert('Không lấy được định vị. Bật định vị cho trình duyệt, hoặc mở trang quản lý bằng link trực tiếp (không qua web) rồi thử lại.'); }, {enableHighAccuracy:true, timeout:15000}); }
+function inQR(i){ var w=window.open('','_blank'); var el=$('qa_'+i).parentNode.cloneNode(true); w.document.write('<html><head><title>Mã QR</title></head><body style="text-align:center;font-family:sans-serif;padding:40px"><h2>Chấm công Ncafe</h2>'+el.innerHTML+'<p>Quét bằng camera điện thoại → chụp ảnh → Chấm công</p></body></html>'); w.document.close(); setTimeout(function(){ w.print(); },500); }
+/* --- Chưa đăng ký lịch --- */
+function taiChuaDK(){ var t=$('tuan').value; if(!t) return;
+  google.script.run.withSuccessHandler(function(r){ if(!r.ok) return; var b=$('chuaDK'); if(!b) return;
+    b.innerHTML='<b>Đăng ký lịch tuần '+r.tuan.slice(8,10)+'/'+r.tuan.slice(5,7)+'</b> (hạn trước thứ 7, chậm nhất chủ nhật): '+r.roi.length+' part time đã gửi'+(r.chua.length?'; <b style="color:#C0392B">'+r.chua.length+' chưa</b>: '+r.chua.map(function(x){return esc(x.Ten);}).join(', '):'.')+
+      (r.roi.filter(function(x){return x.TrangThai==='Trễ hạn';}).length?' · Trễ hạn: '+r.roi.filter(function(x){return x.TrangThai==='Trễ hạn';}).map(function(x){return esc(x.Ten);}).join(', '):''); }).chuaDangKy({pin:PIN, tuan:t}); }
+
+/* --- thêm ca tay (có giờ tự do, cảnh báo người đã đăng ký bận) --- */
+function them(vanXep){ if(chiXemLichTuan()) return; var p={pin:PIN, maCS:$('aCS').value, ngay:$('aNgay').value, maNV:$('aNV').value.trim(), maCa:$('aCa').value, viTri:$('aVT').value, ghiChu:$('aGhi').value, gioBD:$('aBD').value, gioKT:$('aKT').value, vanXep:!!vanXep};
+  if(!p.maNV){ $('amsg').textContent='Nhập mã nhân viên'; return; } $('amsg').textContent='Đang thêm…';
+  google.script.run.withSuccessHandler(function(r){ if(r.ok){ $('amsg').textContent='Đã thêm vào lịch.'; xemLich(); return; } if(r.canhBao){ if(confirm(r.msg)) them(true); else $('amsg').textContent='Đã huỷ.'; return; } $('amsg').textContent=r.msg||'Lỗi'; })
+  .withFailureHandler(function(e){ $('amsg').textContent='Lỗi: '+e.message; }).themCa(p); }
+/* --- ca cần người --- */
+function dangCa(){ google.script.run.withSuccessHandler(function(r){ $('cmsg').textContent=r.ok?'Đã đăng. Nhân viên thấy trong Lịch của tôi.':r.msg; if(r.ok) ccnTai(); }).dangCaCanNguoi({pin:PIN,ngay:$('cNgay').value,maCS:$('cCS').value,gioBD:$('cBD').value,gioKT:$('cKT').value,viTri:$('cVT').value,soNguoi:$('cSo').value,ghiChu:$('cGhi').value}); }
+function ccnTai(){ if(!$('cCS').options.length){ STORES.forEach(function(s){ $('cCS').add(new Option(s.TenCS,s.MaCS)); }); $('cNgay').value=d2(new Date()); }
+  hopTai('ccnList');
+  google.script.run.withSuccessHandler(function(r){ hopXong('ccnList'); if(!r.ok){ $('ccnList').textContent=r.msg; return; } var TCS={}; STORES.forEach(function(s){ TCS[s.MaCS]=s.TenCS; });
+    var h=r.list.length?'':'<p class="sub">Chưa có ca cần người nào.</p>';
+    r.list.forEach(function(c){ var tin='Ncafe cần người: '+dd(c.Ngay)+', '+(TCS[c.MaCS]||c.MaCS)+', '+c.GioBD+'–'+c.GioKT+', '+c.SoNguoi+' '+c.ViTri+(c.GhiChu?' ('+c.GhiChu+')':'')+'. Ai làm được vào Lịch của tôi bấm "Tôi nhận"'+(r.linkNV?': '+r.linkNV+'?page=lich':'')+'.';
+      h+='<div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px"><b>'+dd(c.Ngay)+' · '+esc(TCS[c.MaCS]||c.MaCS)+' · '+c.GioBD+'–'+c.GioKT+'</b> · cần '+c.SoNguoi+' '+esc(c.ViTri)+(c.GhiChu?' <span class="sub">('+esc(c.GhiChu)+')</span>':'')+' <span class="pill" style="background:'+(c.TrangThai==='Mở'?'#FBF1D9':'#DCE8E6')+'">'+esc(c.TrangThai)+'</span>';
+      if(c.DaChon.length) h+='<div style="margin-top:6px">Đã chọn: <b>'+c.DaChon.map(function(x){ return esc(x.Ten); }).join(', ')+'</b> (đã vào lịch)</div>';
+      h+='<div style="margin-top:6px"><span class="sub">Người nhận:</span> '+(c.Nhan.filter(function(x){return !x.DaChon;}).map(function(x){ return esc(x.Ten)+' ('+x.MaNV+')'+(x.Lich?' <span class="sub"'+(x.Kin?' style="color:#B4382F"':'')+'>'+esc(x.Lich)+(x.Kin?' – không xếp thêm được':'')+'</span>':'')+(x.Ban?' <span class="sub" style="color:#B4382F">'+esc(x.Ban)+'</span>':'')+(c.TrangThai==='Mở'&&!x.Kin?' <button class="second mini" data-chon="'+c.ID+'|'+x.MaNV+'">Chọn</button>':''); }).join(' · ')||'<span class="sub">chưa ai nhận</span>')+'</div>';
+      if(c.GoiY.length && c.TrangThai==='Mở') h+='<div style="margin-top:6px"><span class="sub">Gợi ý gọi:</span> '+c.GoiY.map(function(x){ return esc(x.Ten)+' <span class="sub">('+esc(x.Ly)+')</span> <button class="second mini" data-chon="'+c.ID+'|'+x.MaNV+'">Chọn</button>'; }).join(' · ')+'</div>';
+      h+='<div style="margin-top:8px"><button class="second mini" data-tin="'+esc(tin)+'">Copy tin gửi Zalo</button> '+(c.TrangThai==='Mở'?'<button class="second mini" data-huy="'+c.ID+'">Huỷ ca</button>':'')+'</div></div>'; });
+    h+='<h2>Nhân viên báo rảnh thêm</h2>'+(r.ranh.length?'<table><tr><th>Ngày</th><th>Nhân viên</th><th>Giờ rảnh</th><th>Ghi chú</th></tr>'+r.ranh.map(function(x){ return '<tr><td>'+dd(x.Ngay)+'</td><td>'+esc(x.Ten)+' <span class="sub">'+x.MaNV+'</span></td><td>'+x.Tu+'–'+x.Den+'</td><td>'+esc(x.GhiChu||'')+'</td></tr>'; }).join('')+'</table>':'<p class="sub">Chưa ai báo.</p>');
+    $('ccnList').innerHTML=h;
+    $('ccnList').querySelectorAll('[data-chon]').forEach(function(b){ b.onclick=function(){ var x=b.dataset.chon.split('|'); chonCa(x[0],x[1],false); }; });
+    $('ccnList').querySelectorAll('[data-huy]').forEach(function(b){ b.onclick=function(){ if(confirm('Huỷ ca cần người này?')) google.script.run.withSuccessHandler(ccnTai).huyCaCanNguoi({pin:PIN,id:b.dataset.huy}); }; });
+    $('ccnList').querySelectorAll('[data-tin]').forEach(function(b){ b.onclick=function(){ try{ navigator.clipboard.writeText(b.dataset.tin); alert('Đã copy:\n\n'+b.dataset.tin); }catch(e){ prompt('Copy:',b.dataset.tin); } }; }); }).withFailureHandler(function(e){ hopLoi('ccnList', e); })
+  .dsCaCanNguoi({pin:PIN}); }
+function chonCa(id, ma, vanXep){ google.script.run.withSuccessHandler(function(r){ if(r.ok){ ccnTai(); return; } if(r.canhBao){ if(confirm(r.msg)) chonCa(id,ma,true); return; } alert(r.msg); }).chonNguoiCa({pin:PIN,id:id,maNV:ma,vanXep:vanXep}); }
+function dongBo(){ $('dbMsg').textContent='Đang đồng bộ…'; google.script.run.withSuccessHandler(function(r){ $('dbMsg').textContent=r.ok?('Đã đồng bộ: '+r.caThucTe+' ca làm thật ('+r.tuan+' tuần), '+r.nhanVienMoi+' nhân viên mới, '+r.nhanVienSua+' người đổi thông tin, '+(r.khaoSat||0)+' khảo sát.'):r.msg; }).dongBoChamCong({pin:PIN}); }
+function dungGoiY(){ if(!confirm('Đưa lịch gợi ý xếp mới (cả 5 quán) vào Bản nháp để sửa?\nBản nháp đang có được giữ để lấy lại. Lịch chính thức KHÔNG đổi.')) return; var m=$('lmsg'); m.textContent='Đang đưa vào Bản nháp…';
+  google.script.run.withSuccessHandler(function(r){ if(!r.ok){ m.textContent=r.msg||'Lỗi không rõ'; return; } m.textContent='Đã đưa '+r.so+' ca vào Bản nháp.'; moBanNhapTuan(); })
+  .withFailureHandler(function(e){ m.textContent='Lỗi: '+(e.message||e); }).apDungGoiYMoi({pin:PIN, tuan:$('ltuan').value}); }
+function suaChip(el){ if(chiXemLichTuan()) return;
+  var d=el.dataset; el.disabled=true;
+  google.script.run.withSuccessHandler(function(r){ el.disabled=false; if(!r.ok){ el.classList.add('err'); alert(r.msg||'Lỗi không rõ'); return; } el.classList.remove('err'); xemLich(); })
+  .withFailureHandler(function(e){ el.disabled=false; el.classList.add('err'); alert('Lỗi: '+e.message); })
+  .suaO({pin:PIN, ngay:d.ngay, maCS:d.cs, maCa:d.ca, maNV:d.nv, text:el.value});
+}
+function themChip(el){ if(chiXemLichTuan()) return;
+  var d=el.dataset; if(!el.value.trim()) return; el.disabled=true;
+  google.script.run.withSuccessHandler(function(r){ el.disabled=false; if(!r.ok){ el.classList.add('err'); alert(r.msg||'Lỗi không rõ'); return; } xemLich(); })
+  .withFailureHandler(function(e){ el.disabled=false; alert('Lỗi: '+e.message); })
+  .themO({pin:PIN, ngay:d.ngay, maCS:d.cs, khoi:d.khoi, side:d.side, text:el.value});
+}
+function moFileLich(){ google.script.run.withSuccessHandler(function(r){ if(r.ok) window.open(r.url,'_blank'); else alert(r.msg||'Lỗi không rõ'); }).lichFileInfo({pin:PIN}); }
+function layFile(){ var m=$('lmsg'); m.textContent='Đang đọc file lịch…';
+  google.script.run.withSuccessHandler(function(r){ if(!r.ok){ m.textContent=r.msg||'Lỗi không rõ'; return; } m.textContent='Đã cập nhật '+r.so+' ca, '+r.off+' ngày OFF từ file lịch.'+(r.loi.length?' Cần xem: '+r.loi.slice(0,6).join(' · ')+(r.loi.length>6?' …':''):''); xemLich(); })
+  .withFailureHandler(function(e){ m.textContent='Lỗi: '+e.message; }).layTuFileLich({pin:PIN, tuan:$('ltuan').value}); }
+function xuatFile(){ var m=$('lmsg'); m.textContent='Đang xuất ra file lịch…';
+  google.script.run.withSuccessHandler(function(r){ m.innerHTML=r.ok?'Đã xuất. <a href="'+r.url+'" target="_blank">Mở file lịch</a>':r.msg; })
+  .withFailureHandler(function(e){ m.textContent='Lỗi: '+e.message; }).xuatFileLich({pin:PIN, tuan:$('ltuan').value}); }
+function renderCa(r){
+  var blks=['Sáng','Trưa','Tối'], label={'Sáng':'SÁNG 6h30–12h','Trưa':'TRƯA 12h–17h','Tối':'TỐI 17h–22h30'};
+  var pos=['Thu ngân','Pha chế','Phục vụ','Rửa ly','Bảo vệ'], PC={'Thu ngân':'#FCE8B2','Pha chế':'#CFE8CF','Phục vụ':'#C9D7F0','Rửa ly':'#E6E6E6','Bảo vệ':'#E3D7F5'};
+  function posOf(i){ return i.ViTri==='Quản lý'?'Pha chế':i.ViTri; }
+  document.querySelector('#lgrid thead').innerHTML='<tr><th>Ca</th><th>Vị trí</th>'+r.days.map(function(d){return '<th>'+dd(d)+'</th>';}).join('')+'</tr>';
+  var html='';
+  blks.forEach(function(k){
+    var inBlk=r.items.filter(function(i){return i.Khoi===k;}); var gk=r.gaps.filter(function(g){return g.Khoi===k;});
+    if(!inBlk.length && !gk.length) return;
+    html+='<tr><td colspan="9" style="background:#2A1D14;color:#fff;font-weight:700">'+label[k]+'</td></tr>';
+    pos.forEach(function(v){
+      var rowsV=inBlk.filter(function(i){return posOf(i)===v;}).sort(function(x,y){return (x.Lead?0:1)-(y.Lead?0:1);}); if(!rowsV.length) return;
+      html+='<tr style="background:'+PC[v]+'"><td></td><td><b>'+v+'</b></td>'+r.days.map(function(d){
+        return '<td class="cell">'+rowsV.filter(function(i){return i.Ngay===d;}).map(function(i){ var tag=/gãy/.test(i.Ghi)?' gãy':(/Tăng ca|Lấp thiếu/.test(i.Ghi)?' +TC':''); var lead=i.ChucVu==='Quản lý'?' <b style="color:#B03A2E">QL</b>':(i.ChucVu==='Trưởng ca'?' <b style="color:#B03A2E">TC</b>':'');
+          return '<div class="it"><span>'+esc(i.Ten)+lead+' ('+String(i.SoGio).replace('.',',')+')'+tag+'</span><button class="x" title="Xoá ca" onclick="xoa(\''+i.Ngay+'\',\''+esc(i.MaNV)+'\',\''+i.MaCa+'\',\''+i.MaCS+'\',\''+esc(i.Ten)+'\')">×</button></div>';
+        }).join('')+'</td>'; }).join('')+'</tr>';
+    });
+    html+='<tr><td></td><td><b>Số người</b></td>'+r.days.map(function(d){ var set={}; r.items.forEach(function(i){ if(i.Ngay===d && i.Blocks.indexOf(k)>-1) set[i.MaNV]=1; }); return '<td class="n"><b>'+Object.keys(set).length+'</b></td>'; }).join('')+'</tr>';
+    if(gk.length) html+='<tr style="background:#F4C7C3"><td></td><td><b>THIẾU</b></td>'+r.days.map(function(d){ return '<td class="cell bad">'+gk.filter(function(g){return g.Ngay===d;}).map(function(g){return 'Thiếu '+g.Thieu+' '+g.ViTri.toLowerCase()+' – tăng ca thêm / chủ quán';}).join('<br>')+'</td>'; }).join('')+'</tr>';
+  });
+  document.querySelector('#lgrid tbody').innerHTML=html||'<tr><td colspan="9">Tuần này chưa có lịch ở cơ sở này. Vào tab Xếp lịch để xếp.</td></tr>';
+}
+/* --- Giờ công --- */
+function quick(n){ var t=new Date(), f=new Date(); f.setDate(t.getDate()-n); $('from').value=d2(f); $('to').value=d2(t); load(); }
+function load(){
+  google.script.run.withSuccessHandler(function(r){
+    if(!r.ok){ alert(r.msg||'Lỗi không rõ'); return; }
+    var sb=document.querySelector('#sum tbody'); sb.innerHTML=r.summary.map(function(s){ return '<tr><td>'+s.MaNV+'</td><td>'+esc(s.Ten)+'</td><td class="n"><b>'+s.Gio+'</b></td><td class="n">'+s.SoNgay+'</td><td class="n'+(s.Tre?' bad':'')+'">'+s.Tre+'</td><td class="n'+(s.Som?' bad':'')+'">'+s.Som+'</td><td class="n'+(s.Loi?' bad':'')+'">'+s.Loi+'</td><td>'+s.CS+'</td></tr>'; }).join('')||'<tr><td colspan="8">Chưa có dữ liệu trong khoảng này</td></tr>';
+    var ob=document.querySelector('#ot tbody'); ob.innerHTML=r.lines.filter(function(x){return x.TCDuyet==='Chờ duyệt';}).map(function(x){ return '<tr><td>'+x.Ngay+'</td><td>'+esc(x.Ten)+'</td><td>'+x.CS+'</td><td>'+x.Ca+'</td><td>'+x.Ra+'</td><td><input style="width:60px" id="g_'+x.IdR+'" value="'+x.TC+'"></td><td>'+esc(x.TCLyDo)+'</td><td><button class="mini" onclick="ot(\''+x.IdR+'\',\'Đã duyệt\')">Duyệt</button> <button class="second mini" onclick="ot(\''+x.IdR+'\',\'Từ chối\')">Từ chối</button></td></tr>'; }).join('')||'<tr><td colspan="8">Không có tăng ca chờ duyệt</td></tr>';
+    document.querySelector('#det tbody').innerHTML=r.lines.map(function(x){ return '<tr><td>'+x.Ngay+'</td><td>'+x.MaNV+'</td><td>'+esc(x.Ten)+'</td><td>'+x.CS+'</td><td>'+x.Vao+'</td><td>'+x.Ra+'</td><td class="n">'+(x.Gio||'')+'</td><td>'+x.Ca+'</td><td class="n'+(x.Tre?' bad':'')+'">'+(x.Tre||'')+'</td><td class="n'+(x.Som?' bad':'')+'">'+(x.Som||'')+'</td><td>'+(x.TCDuyet?x.TC+'h '+x.TCDuyet:'')+'</td><td class="'+(x.Ghi?'bad':'')+'">'+esc(x.Ghi)+'</td><td>'+(x.AnhV?'<a href="'+x.AnhV+'" target="_blank">vào</a> ':'')+(x.AnhR?'<a href="'+x.AnhR+'" target="_blank">ra</a>':'')+'</td></tr>'; }).join('');
+  }).withFailureHandler(function(){ alert('Lỗi mạng'); })
+  .getReport({pin:PIN, from:$('from').value, to:$('to').value, maCS:$('cs').value});
+}
+function ot(id,action){ google.script.run.withSuccessHandler(function(r){ if(!r.ok) alert(r.msg||'Lỗi không rõ'); load(); }).approveOT({pin:PIN,id:id,action:action,gio:$('g_'+id).value}); }
+function manual(){ var m=$('mmsg'); m.textContent='Đang lưu…';
+  google.script.run.withSuccessHandler(function(r){ m.textContent=r.ok?'Đã lưu':r.msg; if(r.ok) load(); })
+  .addManual({pin:PIN, maNV:$('mNV').value, ngay:$('mNgay').value, gio:$('mGio').value, maCS:$('mCS').value, loai:$('mLoai').value, lyDo:$('mLyDo').value}); }
+
+/* --- Tính lương (admin) --- */
+function luong(){ var m=$('lgmsg'); m.textContent='Đang tính…';
+  google.script.run.withSuccessHandler(function(r){
+    if(!r.ok){ m.textContent=r.msg||'Lỗi không rõ'; return; }
+    m.textContent='Xong: tab "'+r.tab+'" trong Google Sheet, '+r.so+' người.';
+    $('lgwarn').innerHTML=r.canhBao.length?r.canhBao.map(function(w){return '<li>'+esc(w)+'</li>';}).join('')+(r.soCanhBao>r.canhBao.length?'<li>… và '+(r.soCanhBao-r.canhBao.length)+' mục khác</li>':''):'<li class="ok">Không có tăng ca chờ duyệt hay quên chấm.</li>';
+  }).withFailureHandler(function(e){ m.textContent='Lỗi: '+e.message; }).tinhLuong({pin:PIN, thang:$('thang').value}); }
+
+/* --- Link truy cập --- */
+var LK=[];
+function nhung(url){ return '<div style="position:fixed;inset:0;z-index:99999;background:#fff"><iframe src="'+url+'" style="width:100%;height:100%;border:0" allow="camera; clipboard-write" allowfullscreen></iframe></div>'; }
+function dsLink(){ google.script.run.withSuccessHandler(function(r){ if(!r.ok){ alert(r.msg||'Lỗi không rõ'); return; } LK=r.list;
+  document.querySelector('#lkT tbody').innerHTML=r.list.map(function(x,i){ return '<tr><td><b>'+esc(x.Nhom)+'</b><br>'+esc(x.Ten)+'</td><td class="cell">'+(x.Trang?'<a href="'+esc(x.Trang)+'" target="_blank">'+esc(x.Trang.replace(/^https?:\/\//,''))+'</a>':'–')+'</td><td><button class="second mini" onclick="cp('+i+',\'Link\',this)">Copy link</button> <a href="'+esc(x.Link)+'" target="_blank">mở</a></td><td>'+(x.Trang?'<button class="mini" onclick="cp('+i+',\'Nhung\',this)">Copy mã nhúng</button>':'')+'</td><td class="cell">'+esc(x.Ghi)+'</td></tr>'; }).join('');
+  }).withFailureHandler(function(e){ alert('Lỗi: '+e.message); }).linkTruyCap({pin:PIN}); }
+function cp(i,kind,btn){ var t=kind==='Link'?LK[i].Link:nhung(LK[i].Link);
+  var ok=function(){ var o=btn.textContent; btn.textContent='Đã copy'; setTimeout(function(){btn.textContent=o;},1500); };
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok,function(){ fallback(); }); else fallback();
+  function fallback(){ var ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy'); ok();}catch(e){ prompt('Copy:',t); } ta.remove(); } }
+
+/* --- Nhân sự --- */
+var NS=[], NSsel=null;
+function dsNS(){ google.script.run.withSuccessHandler(function(r){ if(!r.ok){ alert(r.msg||'Lỗi không rõ'); return; } NS=r.list; $('fLuongWrap').classList.toggle('hide', r.role!=='admin');
+  if(!$('fCS').options.length) STORES.forEach(function(s){ $('fCS').add(new Option(s.TenCS,s.MaCS)); }); veNS(); }).dsNhanSu({pin:PIN}); }
+function veNS(){ var q=$('nsTim').value.trim().toLowerCase(), loc=$('nsLoc').value;
+  var l=NS.filter(function(n){ var tt=n.TrangThai||'Đang làm'; if(loc==='*') return true; if(loc) return tt===loc; return tt!=='Đã nghỉ'; })
+    .filter(function(n){ return !q || n.Ten.toLowerCase().indexOf(q)>-1 || n.MaNV.indexOf(q)>-1; });
+  document.querySelector('#nsT tbody').innerHTML=l.map(function(n){ var tt=n.TrangThai||'Đang làm';
+    return '<tr'+(tt==='Đã nghỉ'?' style="color:var(--muted)"':'')+'><td>'+n.MaNV+'</td><td><b>'+esc(n.Ten)+'</b></td><td>'+esc(n.ViTri)+'</td><td>'+esc(n.ChucVu||'')+'</td><td>'+esc(n.Loai||'')+'</td><td>'+esc(n.CoSoChinh||'')+'</td><td>'+esc(n.TangCaDuoc||'')+'</td><td>'+esc(tt)+(n.NgayNghi?' '+n.NgayNghi:'')+'</td><td class="cell">'+esc(n.GhiChu||'')+'</td><td>'
+      +'<button class="second mini" onclick="chonNS(\''+n.MaNV+'\')">Sửa</button> '
+      +(tt==='Thử việc'?'<button class="second mini" onclick="chinhThuc(\''+n.MaNV+'\')">Chính thức</button> ':'')
+      +(tt!=='Đã nghỉ'?'<button class="second mini" onclick="moNghi(\''+n.MaNV+'\')">Nghỉ việc</button>':'')+'</td></tr>'; }).join('')||'<tr><td colspan="10">Không có</td></tr>'; }
+function setF(n){ NSsel=n?n.MaNV:null; $('fMa').value=n?n.MaNV:''; $('fTen').value=n?n.Ten:''; $('fViTri').value=n?n.ViTri:'Pha chế'; $('fChucVu').value=n&&n.ChucVu?n.ChucVu:'Nhân viên'; $('fLoai').value=n?n.Loai||'PT':'PT';
+  $('fCS').value=n?n.CoSoChinh||STORES[0].MaCS:STORES[0].MaCS; $('fKiem').value=n?n.ViTriKiem||'':''; $('fTC').value=n&&n.TangCaDuoc==='Có'?'Có':'Không'; $('fSV').value=n&&n.SinhVien==='Có'?'Có':'Không';
+  $('fCD').value=n&&n.CoDinh==='Có'?'Có':'Không'; $('fSDT').value=n?n.SDT||'':''; $('fTT').value=n?(n.TrangThai==='Đã nghỉ'?'Đang làm':(n.TrangThai||'Đang làm')):'Thử việc'; $('fGhi').value=n?n.GhiChu||'':''; $('fLuong').value=n&&n.LuongGio!==undefined?n.LuongGio:''; $('nsMsg').textContent=n?'Đang sửa '+n.MaNV:''; }
+function moiNS(){ setF(null); $('fTen').focus(); }
+function chonNS(ma){ setF(NS.filter(function(n){return n.MaNV===ma;})[0]); window.scrollTo(0,0); }
+function luuNS(){ var d={Ten:$('fTen').value.trim(),ViTri:$('fViTri').value,ChucVu:$('fChucVu').value,Loai:$('fLoai').value,CoSoChinh:$('fCS').value,CaUuTien:$('fCa').value,ViTriKiem:$('fKiem').value,TangCaDuoc:$('fTC').value,SinhVien:$('fSV').value,CoDinh:$('fCD').value,SDT:$('fSDT').value,TrangThai:$('fTT').value,GhiChu:$('fGhi').value};
+  if(!$('fLuongWrap').classList.contains('hide') && $('fLuong').value!=='') d.LuongGio=+$('fLuong').value.replace(',','.');
+  var m=$('nsMsg'); m.textContent='Đang lưu…';
+  var done=function(r){ if(!r.ok){ m.textContent=r.msg||'Lỗi không rõ'; return; } m.innerHTML=r.MaNV?'Đã thêm. <b>Mã chấm công: '+r.MaNV+'</b> – đưa mã này cho nhân viên.':'Đã lưu.'; dsNS(); };
+  if(NSsel) google.script.run.withSuccessHandler(done).suaNhanSu({pin:PIN,maNV:NSsel,data:d}); else google.script.run.withSuccessHandler(done).themNhanSu({pin:PIN,data:d}); }
+function chinhThuc(ma){ google.script.run.withSuccessHandler(function(r){ if(!r.ok) alert(r.msg||'Lỗi không rõ'); dsNS(); }).suaNhanSu({pin:PIN,maNV:ma,data:{TrangThai:'Đang làm'}}); }
+var NGHI=null; function moNghi(ma){ var n=NS.filter(function(x){return x.MaNV===ma;})[0]; NGHI=ma; $('nghiTen').textContent=n.Ten+' ('+ma+')'; $('nghiNgay').value=d2(new Date()); $('nghiLyDo').value=''; $('nghiBar').style.display='flex'; window.scrollTo(0,0); }
+function xacNhanNghi(){ google.script.run.withSuccessHandler(function(r){ $('nghiBar').style.display='none'; $('nsMsg').textContent=r.ok?'Đã cho nghỉ, bỏ '+r.boCa+' ca đã xếp từ ngày nghỉ. Bấm "Chỉ bổ sung chỗ trống" ở tab Xếp lịch để lấp.':r.msg; dsNS(); })
+  .nghiViec({pin:PIN,maNV:NGHI,ngay:$('nghiNgay').value,lyDo:$('nghiLyDo').value}); }
+
+$('pin').addEventListener('keydown',function(e){ if(e.key==='Enter') login(); });
+
+/* ========== ĐỌC LỊCH TỪ FILE CỦA QUÁN (bố cục tab "Lịch T10": Phục vụ bên trái, Pha chế bên phải; LĐD file riêng) ==========
+   Hàm thuần: nhận bảng giá trị + bảng màu nền của 1 tab → danh sách ca theo tuần. Dùng chung cho app và để thử trên lịch cũ.
+   Quy tắc giờ (chủ quán xác nhận 26/10 và 28/10):
+   - Số KHÔNG có chữ h = số giờ làm: Sáng tính từ 06:30, Trưa từ 12:00, Tối tính ngược từ giờ đóng quán.
+   - Số CÓ chữ h = giờ bắt đầu ("15h", "5h30" = 17:30 ở Trưa/Tối); khoảng "12h30-6h" = 12:30–18:00, "2r-5h" = 14:30–17:00 (r = rưỡi).
+   - Chỉ có tên: cả khung buổi (Sáng 06:30–12:00, Trưa 12:00–17:00, Tối 17:00–đóng quán).
+   - full: từ 06:30, nối liền tới hết buổi sau có cùng tên (không giờ); không có buổi sau → hết 17:00 (quán đóng 18:30 thì tới 18:30).
+   - gãy (ở Sáng): phần sáng 06:30–12:00; phần tối lấy ở khối Tối nếu có, không có thì báo để kiểm tra.
+   - QL = chỗ trống của quản lý (bỏ qua); "?" = cần sửa; "nvm" sau tên bỏ qua.
+   - Màu ô: không màu / đỏ / hồng = Trần Phú, vàng = Tản Đà, xanh lá = Đống Đa, xanh dương = TNV. */
+var LICH_GIO_DONG = {TP:'22:30', DD:'22:30', LDD:'22:30', TD:'18:30', TNV:'18:30'};
+function lichPhut_(hm){ var m=String(hm||'').match(/(\d{1,2}):(\d{2})/); return m?(+m[1])*60+(+m[2]):null; }
+function lichGio_(p){ p=Math.max(0,Math.min(23*60+59,Math.round(p))); return ('0'+Math.floor(p/60)).slice(-2)+':'+('0'+(p%60)).slice(-2); }
+function lichMauQuan_(hex){ hex=String(hex||'').toLowerCase().replace('#','');
+  if(!/^[0-9a-f]{6}$/.test(hex) || hex==='ffffff') return 'TP';
+  var r=parseInt(hex.slice(0,2),16), g=parseInt(hex.slice(2,4),16), b=parseInt(hex.slice(4,6),16), mx=Math.max(r,g,b), mn=Math.min(r,g,b);
+  if(mx-mn<18) return 'TP';                                   // xám
+  if(r>=200 && g>=190 && b<190 && Math.abs(r-g)<60) return 'TD'; // vàng
+  if(g>=r && g>=b) return 'DD';                               // xanh lá
+  if(b>=r && b>=g) return 'TNV';                              // xanh dương
+  return 'TP';                                                // đỏ / hồng / cam
+}
+function lichKhoi_(s){ s=String(s||'').trim().toLowerCase(); if(/^s[áa]ng/.test(s)) return 'Sáng'; if(/^tr[ưu]a/.test(s)) return 'Trưa'; if(/^t[ốo]i/.test(s)) return 'Tối'; if(/^off/.test(s)) return 'OFF'; return ''; }
+function lichNgay_(v){ if(v instanceof Date) return v; var s=String(v||''); var m=s.match(/^D:(\d{4}-\d{2}-\d{2})/); if(m) return new Date(m[1]+'T12:00:00+07:00'); return null; }
+function lichNgayKey_(d){ var x=new Date(d.getTime()+7*3600e3); return x.getUTCFullYear()+'-'+('0'+(x.getUTCMonth()+1)).slice(-2)+'-'+('0'+x.getUTCDate()).slice(-2); }
+// "15h" "5h30" "6h" "12h30" "2r" → phút (Trưa/Tối: số < 12 là buổi chiều)
+function lichMoc_(s, chieu){ s=String(s||'').trim().toLowerCase(); var m=s.match(/^(\d{1,2})\s*(?:(h|:|\.|g)\s*(\d{1,2})?|(r))?$/); if(!m) return null;
+  var h=+m[1], p=m[4]?30:(m[3]?+m[3]:0); if(h>23||p>59) return null; if(chieu && h>=1 && h<=9) h+=12; return h*60+p; }   // buổi chiều: 1h–9h = 13h–21h; 10h, 11h, 12h giữ nguyên
+// đọc 1 ô: tên + kiểu giờ
+function lichDocO_(t){ t=String(t==null?'':t).normalize('NFC').replace(/\s+/g,' ').trim(); if(!t) return null;   // NFC: "gãy" gõ bằng bộ dấu tổ hợp
+  if(/^(QL|TN|PC|PV|BV|RL)$/i.test(t) || /^(thi[ếe]u|n[êe]n th[êe]m)\b/i.test(t) || /thi[ếe]u \d|\+\d+ (phục vụ|pha chế|bảo vệ|rửa ly)/i.test(t)) return {boQua:true};   // dòng "THIẾU / NÊN THÊM" của bản gợi ý
+  if(/^\?+$/.test(t)) return {hoi:true, raw:t};
+  if(/\(support\)/i.test(t)){ var ts=t.replace(/\(support\)/i,'').replace(/\s+/g,' ').trim(); return ts?{support:true, ten:ts, raw:t, loai:'ten', gio:null}:{boQua:true}; }   // người nhà hỗ trợ: tính là có người đứng quầy, không vào lịch / lương
+  var o={raw:t, gay:/(^|[\s(])gãy(?=[\s)]|$)/i.test(t), full:/(^|\s)full(\s|$)/i.test(t), tc:/(^|\s)\+?TC(\s|$)/.test(t), gio:null, bd:null, kt:null, loai:'ten', lo:''};
+  var dq=t.match(/(?:^|[\s\-–])(TP|TĐ|TD|ĐĐ|DD|TNV|LĐD|LDD)\s*$/); if(dq){ o.cs={'TĐ':'TD','ĐĐ':'DD','LĐD':'LDD'}[dq[1]]||dq[1]; t=t.slice(0,dq.index).replace(/[\s\-–]+$/,''); }
+  if(/\([^)]*$/.test(t)) t+=')';                                   // "Nhơn (8,5"  → thiếu ngoặc đóng
+  if(/^[^(]*\)/.test(t)) t=t.replace(/(\S+)\)/,'($1)');                // "Khang 5,5)" → thiếu ngoặc mở
+  if(!/\(/.test(t)){ var sg=t.match(/^(.*?\D)\s+(\d{1,2}(?:[.,]\d+|h\d{0,2}|r)?(?:\s*-\s*\d{1,2}(?:h\d{0,2}|r)?h?)?)((?:\s+(?:gãy|full|TC))*)$/i); if(sg) t=sg[1].trim()+' ('+sg[2]+')'+sg[3]; }   // giờ không ngoặc
+  var m=t.match(/\(([^)]*)\)/), p=m?m[1].trim().toLowerCase().replace(/\s+/g,''):'';
+  if(p){ var r=p.match(/^([0-9hgr:.]+)-([0-9hgr:.]+)$/), s=p.match(/^\d{1,2}(?:[.,]\d+)?$/), st=p.match(/^\d{1,2}(?:h|g|:)\d{0,2}$|^\d{1,2}r$/);
+    if(r){ o.loai='khoang'; o.k1=r[1].replace(/h$/,''); o.k2=r[2].replace(/h$/,''); }
+    else if(s){ o.loai='gio'; o.gio=+p.replace(',','.'); }
+    else if(st){ o.loai='batdau'; o.k1=p.replace(/h$/,''); }
+    else if(/^(gãy|full|support|nvm)$/i.test(p)){ }
+    else o.lo='Không hiểu "('+m[1]+')"'; }
+  o.ten=t.replace(/\([^)]*\)/g,' ').replace(/(^|\s)(gãy|full|nvm|QL|support|off)(?=\s|$)/gi,' ').replace(/(^|\s)\+?TC(?=\s|$)/g,' ').replace(/\s+/g,' ').trim();
+  if(!o.ten) return {boQua:true};
+  return o; }
+// khung giờ 1 ô theo buổi + quán
+function lichKhung_(o, khoi, cs){ var dong=lichPhut_(LICH_GIO_DONG[cs]||'22:30'), sm=6*60+30, tr=12*60, toi=17*60, hetTrua=(dong<=18*60+30)?dong:toi;
+  var dau={'Sáng':sm,'Trưa':tr,'Tối':toi}[khoi], cuoi={'Sáng':tr,'Trưa':hetTrua,'Tối':dong}[khoi], chieu=khoi!=='Sáng';
+  if(o.loai==='gio'){ if(khoi==='Tối' || dau+o.gio*60>dong) return {bd:dong-o.gio*60, kt:dong}; return {bd:dau, kt:dau+o.gio*60}; }   // vượt giờ đóng quán → tính ngược từ giờ đóng
+  if(o.loai==='batdau'){ var b=lichMoc_(o.k1, chieu); if(b==null) return {lo:'Không hiểu giờ bắt đầu "'+o.raw+'"'}; return {bd:b, kt:Math.max(b+60, b>=cuoi?dong:cuoi)}; }
+  if(o.loai==='khoang'){ var a=lichMoc_(o.k1, chieu), z=lichMoc_(o.k2, chieu||lichMoc_(o.k2,false)<(a||0));
+    if(a!=null && z!=null && z<=a){ a=lichMoc_(o.k1,false); z=lichMoc_(o.k2, lichMoc_(o.k2,false)<=a); }        // "8-5h" ở buổi chiều = 08:00–17:00
+    if(a!=null && z!=null && a<6*60){ a+=720; z+=(z<=12*60?720:0); }                                              // "2r-5h" ở buổi sáng = 14:30–17:00
+    if(a==null||z==null||z<=a) return {lo:'Không hiểu khoảng giờ "'+o.raw+'"'}; return {bd:a, kt:z}; }
+  if(o.full){ return {bd:sm, kt:(dong<=18*60+30)?dong:toi, full:true}; }
+  return {bd:dau, kt:cuoi}; }
+/* Đọc 1 tab tháng của file CFMH (2 phía PV / PC) hoặc LĐD. tuan = 'yyyy-mm-dd' (thứ 2) → chỉ lấy tuần đó; bỏ trống → mọi tuần.
+   Trả về {tuan:{ 'yyyy-mm-dd': {o:[{ngay,cs,ben,khoi,ten,raw,bd,kt,gay,full,tc,lo,hang,cot}], off:[{ngay,ten}]}}, loi:[] } */
+function lichDocTab_(v, bg, kieu, tuan){ var kq={tuan:{}, loi:[]}, R=v.length;
+  var o=function(r,c){ return (v[r]&&v[r][c]!=null)?v[r][c]:''; }, mau=function(r,c){ return (bg&&bg[r]&&bg[r][c])||'#ffffff'; };
+  var ngayHang=function(r, c0){ var ds=[]; for(var i=0;i<7;i++){ var d=lichNgay_(o(r,c0+i)); if(!d) return null; ds.push(lichNgayKey_(d)); } return ds; };
+  var phia = kieu==='LDD' ? [{c0:-1, ben:'?'}] : [{nhan:0, c0:1, ben:'PV'}, {nhan:9, c0:10, ben:'PC'}];
+  var coNhanPC=false; if(kieu!=='LDD') for(var rr=0;rr<R && !coNhanPC;rr++){ if(lichKhoi_(o(rr,9))) coNhanPC=true; }
+  phia.forEach(function(P){
+    var ds=null, khoi='', vaiNhom='', trong=0, tuanKey='';
+    for(var r=0;r<R;r++){
+      if(P.ben==='?'){ for(var cc=0;cc<=6;cc++){ if(ngayHang(r,cc)){ P.c0=cc; P.nhan=Math.max(0,cc-2); P.vai=cc-1; break; } } if(P.c0<0) continue; }
+      var d=ngayHang(r, P.c0); if(d){ ds=d; tuanKey=d[0]; khoi=khoi||'Sáng'; trong=0; if(!kq.tuan[tuanKey]) kq.tuan[tuanKey]={o:[],off:[]}; continue; }
+      var nhan=String(o(r,P.nhan)).trim();
+      if(/LỊCH (PHỤC VỤ|PHA CHẾ|LÊ ĐÌNH)/i.test(nhan)){ ds=null; khoi=''; continue; }
+      var k=lichKhoi_(nhan) || (P.ben==='PC' && !coNhanPC ? lichKhoi_(String(o(r,0)).trim()) : ''); if(k){ khoi=k; vaiNhom=''; trong=0; if(!ds){ continue; } }
+      if(!ds || !khoi) continue; if(tuan && tuanKey!==tuan) continue;
+      if(P.vai!=null){ var vn=String(o(r,P.vai)).trim().toUpperCase(); if(/^(PC|TN|QL)/.test(vn)) vaiNhom='PC'; else if(/^(PV|RL|BV)/.test(vn)) vaiNhom='PV'; }
+      // dòng chú thích màu ở cuối khối ("Cs Tản Đà"...) → hết tuần
+      // chỉ xét cột của BÊN MÌNH (dòng chú thích màu bên phục vụ nằm cùng hàng với pha chế tối bên phải)
+      var coChu=false, chuThich=false; for(var c=Math.max(0,P.c0-2);c<Math.min(v[r].length,P.c0+7);c++){ var t=String(o(r,c)); if(/^cs\s/i.test(t.trim())) chuThich=true; if(t.trim()) coChu=true; }
+      if(chuThich){ ds=null; continue; }
+      if(!coChu){ if(++trong>6 && khoi==='OFF') ds=null; continue; } trong=0;
+      for(var i=0;i<7;i++){ var raw=o(r,P.c0+i); if(raw===''||raw==null) continue; var t=String(raw).trim(); if(!t) continue;
+        var ngay=ds[i];
+        if(khoi==='OFF'){ t.split(/[,\/;]|\s{2,}/).forEach(function(x){ var y=lichDocO_(x); if(y && y.ten) kq.tuan[tuanKey].off.push({ngay:ngay, ten:y.ten, raw:x.trim()}); }); continue; }
+        var x=lichDocO_(t); if(!x || x.boQua) continue;
+        var cs=x.cs||(kieu==='LDD'?'LDD':lichMauQuan_(mau(r,P.c0+i)));
+        var ben=P.ben==='?'?(vaiNhom||''):P.ben;
+        if(x.hoi){ kq.tuan[tuanKey].o.push({ngay:ngay, cs:cs, ben:ben, khoi:khoi, ten:'', raw:t, lo:'Ô ghi "?" – cần điền người', hang:r+1, cot:P.c0+i+1}); continue; }
+        if(x.support){ var ks=lichKhung_(x, khoi, cs); kq.tuan[tuanKey].o.push({ngay:ngay, cs:cs, ben:ben||'PC', khoi:khoi, ten:x.ten, raw:t, bd:ks.bd, kt:ks.kt, support:true, hang:r+1, cot:P.c0+i+1}); continue; }
+        var kh=lichKhung_(x, khoi, cs);
+        kq.tuan[tuanKey].o.push({ngay:ngay, cs:cs, ben:ben, khoi:khoi, ten:x.ten, raw:t, bd:kh.bd, kt:kh.kt, gay:x.gay, full:x.full||!!kh.full, tc:x.tc, coGio:x.loai!=='ten', lo:x.lo||kh.lo||'', hang:r+1, cot:P.c0+i+1}); }
+    } });
+  return kq; }
+/* Gộp theo người / ngày: full + cùng tên ở buổi sau (không giờ) → làm liền; các ca liền nhau cùng quán → 1 ca; gãy sáng không có tối → báo. */
+function lichGopNguoi_(ds){ var nhom={}, kq=[], lo=[];
+  ds.forEach(function(e){ if(!e.ma) return; var k=e.ngay+'|'+e.ma; (nhom[k]=nhom[k]||[]).push(e); });
+  Object.keys(nhom).forEach(function(k){ var L=nhom[k].filter(function(e){ return e.bd!=null; }).sort(function(a,b){ return a.bd-b.bd; });
+    var fu=L.filter(function(e){ return e.full; })[0];
+    if(fu){ L.forEach(function(e){ if(e!==fu && !e.coGio && e.cs===fu.cs && e.bd>=fu.bd){ fu.kt=Math.max(fu.kt, e.kt); e.bo=true; } }); L=L.filter(function(e){ return !e.bo; }); }
+    var KHB={'Sáng':[390,720],'Trưa':[720,1020],'Tối':[1020,1350]};
+    L=L.filter(function(e){ if(e.coGio || e.full) return true; var w=KHB[e.khoi]||[e.bd,e.kt];
+      return !L.some(function(x){ return x!==e && (x.coGio||x.full) && x.cs===e.cs && Math.min(x.kt,w[1])-Math.max(x.bd,w[0])>0; }); });
+    var gop=[]; L.forEach(function(e){ var t=gop[gop.length-1]; if(t && t.cs===e.cs && e.bd<=t.kt){ t.kt=Math.max(t.kt,e.kt); t.raw+=' + '+e.raw; if(e.ben==='PC') t.ben='PC'; } else gop.push({ngay:e.ngay,cs:e.cs,ben:e.ben,khoi:e.khoi,ten:e.ten,ma:e.ma,raw:e.raw,bd:e.bd,kt:e.kt,gay:e.gay,tc:e.tc,hang:e.hang,cot:e.cot}); });
+    for(var i=1;i<gop.length;i++){ if(gop[i].bd<gop[i-1].kt) lo.push({ngay:gop[i].ngay, ten:gop[i].ten, lo:'Trùng giờ: '+gop[i-1].cs+' '+lichGio_(gop[i-1].bd)+'–'+lichGio_(gop[i-1].kt)+' và '+gop[i].cs+' '+lichGio_(gop[i].bd)+'–'+lichGio_(gop[i].kt)}); }
+    var g=gop.filter(function(e){ return e.gay; }); if(g.length && gop.length===1 && gop[0].kt<=12*60) lo.push({ngay:gop[0].ngay, ten:gop[0].ten, lo:'Ghi "gãy" nhưng chưa thấy ca tối – kiểm tra'});
+    var tong=gop.reduce(function(s,e){ return s+(e.kt-e.bd); },0); if(tong>14*60) lo.push({ngay:gop[0].ngay, ten:gop[0].ten, lo:'Tổng '+Math.round(tong/6)/10+' giờ trong ngày – kiểm tra'});
+    gop.forEach(function(e){ kq.push(e); }); });
+  return {ca:kq, lo:lo}; }
+/* ===================== BẢN NHÁP TUẦN – SỬA NHƯ GOOGLE SHEET =====================
+   Lưới bố cục y hệt tab "Lịch T10": gõ "Châu (8)", "Thư full", "Nam gãy", "Phương (15h)"…; app đọc bằng cùng bộ đọc với file quán.
+   Phím: mũi tên / Enter / Tab / Delete / F2 · Ctrl+C/X/V (dán qua lại với Google Sheet) · Ctrl+Shift+V dán chỉ chữ · Ctrl+Z / Ctrl+Y
+   Kéo ô đang chọn sang ô khác = chuyển người (giữ màu quán của ô đích). Tự lưu sau 2–3 giây. */
+var NH={tuan:'', luoi:null, k:'CFMH', sel:{r:3,c:1,r2:3,c2:1}, sua:false, undo:[], redo:[], dirty:false, t:null, token:'', ten:'', khoa:null, chiXem:false, nv:[], dm:{}, file:{}, loi:{}, keo:null, chuot:false, kq:null, giuQuyen:false, nguon:''};
+var NH_MAU=[['#ffffff','Trần Phú'],['#ffe599','Tản Đà'],['#b6d7a8','Đống Đa'],['#c9daf8','TNV']];
+var NH_RONG={CFMH:17, LDD:9};
+function nhTok(){ try{ var t=sessionStorage.getItem('nhTok'); if(!t){ t=String(Math.random()).slice(2,12); sessionStorage.setItem('nhTok',t); } return t; }catch(e){ return NH.token||String(Math.random()).slice(2,12); } }
+function nhBoDau(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase().replace(/\s+/g,' ').trim(); }
+function nhNorm(s){ return String(s||'').toLowerCase().normalize('NFC').replace(/\s+/g,' ').trim(); }
+function nhL(){ return NH.luoi[NH.k]; }
+function nhO(r,c){ var L=nhL(); return (L.v[r]&&L.v[r][c]!=null)?L.v[r][c]:''; }
+function nhHien(x){ var m=String(x).match(/^D:(\d{4})-(\d{2})-(\d{2})$/); return m?(m[3]+'/'+m[2]):String(x); }
+function nhCot(c){ return String.fromCharCode(65+c); }
+function nhRongCot(c){ if(NH.k==='CFMH') return (c===0||c===9)?110:(c===8?22:118); return c===0?120:(c===1?54:118); }
+function nhChuanSel(){ var s=NH.sel; return {r1:Math.min(s.r,s.r2), r2:Math.max(s.r,s.r2), c1:Math.min(s.c,s.c2), c2:Math.max(s.c,s.c2)}; }
+function nhDamBao(r){ var L=nhL(), w=NH_RONG[NH.k]; while(L.v.length<=r){ var mau=L.bg.length?L.bg[L.bg.length-1].slice():[]; while(mau.length<w) mau.push('#ffffff'); L.v.push(Array(w).fill('')); L.bg.push(mau.map(function(){ return '#ffffff'; })); } }
+// ---------- mở / tải ----------
+function nhMo(){ NH.token=nhTok(); NH.tuan=$('nTuan').value||$('tuan').value; $('nTuan').value=NH.tuan; $('nhTT').textContent='Đang tải…'; $('nhChua').classList.add('hide'); $('nhKhung').classList.add('hide');
+  google.script.run.withSuccessHandler(function(r){ if(!r.ok){ $('nhTT').textContent=r.msg; return; } NH.nv=r.nv; NH.dm=r.dm; NH.file=r.file; NH.khoa=r.khoa; NH.chiXem=!!r.khoa; NH.giuQuyen=false; NH.undo=[]; NH.redo=[]; NH.tuan=r.tuan; $('nTuan').value=r.tuan;
+      $('nhTruoc').classList.toggle('hide', !r.coTruoc);
+      if(!r.nhap){ NH.luoi=null; $('nhChua').classList.remove('hide'); $('nhChuaLC').textContent=r.lichChinh?('Bắt đầu từ lịch chính thức đang dùng ('+r.lichChinh+' ca)'):'Lịch chính thức tuần này chưa có'; $('nhChuaLC').disabled=!r.lichChinh; $('nhTT').textContent=''; return; }
+      NH.luoi=r.nhap.luoi; ['CFMH','LDD'].forEach(function(k){ var L=NH.luoi[k]; L.v=L.v||[]; L.bg=L.bg||[]; L.dam=L.dam||[]; });
+      NH.nguon=r.nhap.nguon||''; $('nhKhung').classList.remove('hide'); nhBaoNguon(r.nhap);
+      if(r.lichChinhDoi){ var b=$('nhNguon'); b.innerHTML='⚠ <b>Lịch chính thức tuần này đã thay đổi sau lần áp dụng gần nhất</b> (VD chọn người cho ca cần người). Áp dụng bản nháp này sẽ đè mất thay đổi đó. <button class="second mini" onclick="nhTao(\'lc\')">Tạo lại bản nháp từ lịch chính thức</button>'; b.classList.remove('hide'); } nhBaoKhoa(); NH.sel={r:3,c:1,r2:3,c2:1}; nhVe(); nhKiemTra(); $('nhTT').textContent='Bản nháp lưu lúc '+r.nhap.luc+(r.nhap.boi?' ('+r.nhap.boi+')':''); })
+  .withFailureHandler(function(e){ $('nhTT').textContent='Lỗi: '+(e.message||e); }).layNhapLuoi({pin:PIN, tuan:NH.tuan, token:nhTok()}); }
+function nhBaoNguon(n){ var b=$('nhNguon'); if(/^sheet:/.test(NH.nguon)){ b.innerHTML='Bản nháp đã <b>xuất ra Google Sheet</b> (tab "'+esc(NH.nguon.slice(6))+'"). Nếu đang sửa ở Sheet thì bấm <button class="second mini" onclick="nhLayVe(\'nhap\')">Lấy về từ tab Nháp</button> trước khi sửa tiếp ở đây.'; b.classList.remove('hide'); } else b.classList.add('hide'); }
+function nhBaoKhoa(){ var b=$('nhKhoa'); if(NH.khoa && NH.chiXem){ b.innerHTML='<b>'+esc(NH.khoa.ten||'Người khác')+'</b> đang sửa bản nháp tuần này (từ '+esc(NH.khoa.luc||'')+'). Bạn đang <b>chỉ xem</b>. <button class="second mini" onclick="NH.chiXem=false;NH.giuQuyen=true;nhBaoKhoa();nhVe()">Vẫn sửa (giành quyền)</button>'; b.classList.remove('hide'); } else b.classList.add('hide'); }
+function nhTao(cach){ var fn=cach==='lc'?'taoNhapTuLichChinh':(cach==='truoc'?'layLaiNhapTruoc':'layNhapTuSheet'); $('nhTT').textContent='Đang tạo bản nháp…';
+  google.script.run.withSuccessHandler(function(r){ if(!r.ok){ alert(r.msg); $('nhTT').textContent=''; return; } if(r.loi&&r.loi.length) alert('Lưu ý: '+r.loi.join(' · ')); nhMo(); }).withFailureHandler(function(e){ alert('Lỗi: '+(e.message||e)); })[fn]({pin:PIN, tuan:$('nTuan').value}); }
+function nhLayVe(kieu){ if(NH.dirty) nhLuu(); var tab=kieu==='nhap'?('Nháp '+NH.tuan.slice(8,10)+'.'+NH.tuan.slice(5,7)):'';
+  if(!confirm('Lấy tuần này từ '+(tab?'tab "'+tab+'"':'tab tháng (Lịch T'+(+NH.tuan.slice(5,7))+')')+' của 2 file quán vào bản nháp web?\n(Bản nháp hiện tại được giữ, bấm "Lấy lại bản nháp trước" để quay lại.)')) return;
+  $('nhTT').textContent='Đang đọc file quán…'; google.script.run.withSuccessHandler(function(r){ if(!r.ok){ alert(r.msg); $('nhTT').textContent=''; return; } if(r.loi&&r.loi.length) alert('Lưu ý: '+r.loi.join(' · ')); nhMo(); })
+    .withFailureHandler(function(e){ alert('Lỗi: '+(e.message||e)); }).layNhapTuSheet({pin:PIN, tuan:NH.tuan, tab:tab}); }
+function nhXuat(){ if(NH.dirty) nhLuu(); $('nhTT').textContent='Đang xuất ra Google Sheet…';
+  google.script.run.withSuccessHandler(function(r){ if(!r.ok){ alert(r.msg); return; } NH.nguon='sheet:'+r.tab; nhBaoNguon(); $('nhTT').innerHTML='Đã xuất: '+r.file.map(function(f){ return f.loi?'<span class="bad">'+esc(f.ten)+': '+esc(f.loi)+'</span>':'<a target="_blank" href="'+esc(f.url)+'">'+esc(f.ten)+' → tab '+esc(f.tab)+'</a>'; }).join(' · '); })
+    .withFailureHandler(function(e){ alert('Lỗi: '+(e.message||e)); }).xuatNhapRaSheet({pin:PIN, tuan:NH.tuan}); }
+// ---------- vẽ lưới ----------
+function nhVe(){ var L=nhL(), w=NH_RONG[NH.k], dam={}; (L.dam||[]).forEach(function(r){ dam[r]=1; }); var loi=NH.loi[NH.k]||{};
+  var h='<table class="nhT"><colgroup><col style="width:38px">'; for(var c=0;c<w;c++) h+='<col style="width:'+nhRongCot(c)+'px">'; h+='</colgroup><tr class="nhHd"><th></th>'; for(c=0;c<w;c++) h+='<th>'+nhCot(c)+'</th>'; h+='</tr>';
+  for(var r=0;r<L.v.length;r++){ h+='<tr'+(r<3?' class="nhDau nhDau'+r+'"':'')+'><th class="nhSo">'+(r+1)+'</th>';
+    for(c=0;c<w;c++){ var x=nhO(r,c), bg=(L.bg[r]&&L.bg[r][c])||'#ffffff', l=loi[r+'|'+c];
+      h+='<td data-r="'+r+'" data-c="'+c+'" style="background:'+bg+(dam[r]?';font-weight:700':'')+(bg==='#38761d'?';color:#fff':'')+'"'+(l?' class="nhLoi" title="'+esc(l)+'"':'')+'>'+esc(nhHien(x))+'</td>'; }
+    h+='</tr>'; }
+  h+='</table>'; $('nhBang').innerHTML=h; nhVeChon();
+  document.querySelectorAll('.nhTab').forEach(function(b){ b.classList.toggle('on', b.dataset.k===NH.k); });
+  $('nhUndo').disabled=!NH.undo.length; $('nhRedo').disabled=!NH.redo.length; $('nhLuoi').classList.toggle('nhChiXem', NH.chiXem); }
+function nhTd(r,c){ return $('nhBang').querySelector('td[data-r="'+r+'"][data-c="'+c+'"]'); }
+function nhVeChon(){ var s=nhChuanSel(); $('nhBang').querySelectorAll('td.nhChon,td.nhHT').forEach(function(t){ t.classList.remove('nhChon','nhHT'); });
+  for(var r=s.r1;r<=s.r2;r++) for(var c=s.c1;c<=s.c2;c++){ var t=nhTd(r,c); if(t) t.classList.add('nhChon'); }
+  var a=nhTd(NH.sel.r,NH.sel.c); if(a){ a.classList.add('nhHT'); nhDatO(a); }
+  $('nhViTri').textContent=nhCot(NH.sel.c)+(NH.sel.r+1)+(s.r1!==s.r2||s.c1!==s.c2?(':'+nhCot(s.c2)+(s.r2+1)):'')+'  '+(nhO(NH.sel.r,NH.sel.c)?'· '+nhHien(nhO(NH.sel.r,NH.sel.c)):'');
+  var l=(NH.loi[NH.k]||{})[NH.sel.r+'|'+NH.sel.c]; $('nhViTri').title=l||''; if(l) $('nhViTri').textContent+='  ⚠ '+l; }
+// ô nhập (textarea ẩn) luôn nằm trên ô đang chọn: gõ là sửa (gõ tiếng Việt Telex/VNI vẫn đúng)
+function nhDatO(td){ var n=$('nhIn'), g=$('nhLuoi'); if(!td) return; var gr=g.getBoundingClientRect(), tr=td.getBoundingClientRect();
+  n.style.left=(tr.left-gr.left+g.scrollLeft)+'px'; n.style.top=(tr.top-gr.top+g.scrollTop)+'px'; n.style.width=Math.max(tr.width,150)+'px'; n.style.height=tr.height+'px';
+  if(!NH.sua && document.activeElement!==n && NH.dangMo) try{ n.focus({preventScroll:true}); }catch(e){ n.focus(); } }
+function nhDi(dr,dc,mo){ var L=nhL(), w=NH_RONG[NH.k], br=mo?NH.sel.r2:NH.sel.r, bc=mo?NH.sel.c2:NH.sel.c, r=Math.max(0,br+dr), c=Math.max(0,Math.min(w-1,bc+dc)), them=false;
+  if(r>=L.v.length){ if(mo || NH.chiXem) r=L.v.length-1; else { nhDamBao(r); them=true; } }   // đi quá dòng cuối → thêm dòng như Sheet
+  if(mo){ NH.sel.r2=r; NH.sel.c2=c; } else NH.sel={r:r,c:c,r2:r,c2:c};
+  if(them) nhVe(); else nhVeChon(); var t=nhTd(r,c); if(t) t.scrollIntoView({block:'nearest',inline:'nearest'}); }
+// ---------- thay đổi + hoàn tác ----------
+function nhChup(){ NH.undo.push({k:NH.k, s:JSON.stringify(nhL())}); if(NH.undo.length>150) NH.undo.shift(); NH.redo=[]; }
+function nhDoi(){ NH.dirty=true; $('nhTT').textContent='Đang sửa…'; clearTimeout(NH.t); NH.t=setTimeout(nhLuu, 2500); clearTimeout(NH.tk); NH.tk=setTimeout(nhKiemTra, 350); nhVe(); }
+function nhHoanTac(lai){ var tu=lai?NH.redo:NH.undo, ve=lai?NH.undo:NH.redo; if(!tu.length) return; var x=tu.pop(); ve.push({k:x.k, s:JSON.stringify(NH.luoi[x.k])}); NH.luoi[x.k]=JSON.parse(x.s); NH.k=x.k; nhDoi(); }
+function nhKhoa(){ if(NH.chiXem){ $('nhTT').textContent='Đang chỉ xem – bấm "Vẫn sửa" ở trên nếu muốn sửa'; return true; } return false; }
+function nhGhi(r,c,v){ nhDamBao(r); var L=nhL(); if(c>=NH_RONG[NH.k]) return; L.v[r][c]=String(v==null?'':v).replace(/\s+/g,' ').trim(); }
+function nhXoaChon(){ if(nhKhoa()) return; var s=nhChuanSel(); nhChup(); for(var r=s.r1;r<=s.r2;r++) for(var c=s.c1;c<=s.c2;c++) if(!/^D:/.test(nhO(r,c))) nhGhi(r,c,''); nhDoi(); }
+function nhTo(mau){ if(nhKhoa()) return; var s=nhChuanSel(), L=nhL(); nhChup(); for(var r=s.r1;r<=s.r2;r++){ nhDamBao(r); for(var c=s.c1;c<=s.c2;c++) L.bg[r][c]=mau; } nhDoi(); }
+function nhThemDong(){ if(nhKhoa()) return; var L=nhL(), r=nhChuanSel().r2; nhChup(); L.v.splice(r+1,0,Array(NH_RONG[NH.k]).fill('')); L.bg.splice(r+1,0,(L.bg[r]||[]).slice()); L.dam=(L.dam||[]).map(function(x){ return x>r?x+1:x; }); NH.sel={r:r+1,c:NH.sel.c,r2:r+1,c2:NH.sel.c}; nhDoi(); }
+function nhXoaDong(){ if(nhKhoa()) return; var L=nhL(), s=nhChuanSel(); if(s.r1<3){ alert('Không xoá 3 dòng tiêu đề (tên tuần, thứ, ngày).'); return; } var co=false; for(var r=s.r1;r<=s.r2;r++) if((L.v[r]||[]).join('')) co=true;
+  if(co && !confirm('Xoá '+(s.r2-s.r1+1)+' dòng (có tên người)? Có thể hoàn tác bằng Ctrl+Z.')) return; nhChup(); L.v.splice(s.r1,s.r2-s.r1+1); L.bg.splice(s.r1,s.r2-s.r1+1); L.dam=(L.dam||[]).filter(function(x){ return x<s.r1||x>s.r2; }).map(function(x){ return x>s.r2?x-(s.r2-s.r1+1):x; }); NH.sel={r:s.r1,c:NH.sel.c,r2:s.r1,c2:NH.sel.c}; nhDoi(); }
+function nhChuyen(r0,c0,r1,c1){ if(nhKhoa()) return; if(/^D:/.test(nhO(r0,c0))) return; var dich=nhO(r1,c1); nhChup(); nhGhi(r1,c1,nhO(r0,c0)); nhGhi(r0,c0,dich); NH.sel={r:r1,c:c1,r2:r1,c2:c1}; nhDoi(); }  // hoán đổi: ô đích có người thì đổi chỗ 2 người
+// ---------- sửa ô ----------
+function nhBatDauSua(giu){ if(nhKhoa()) return; var x=nhO(NH.sel.r,NH.sel.c); if(/^D:/.test(x)){ $('nhTT').textContent='Ô ngày không sửa ở đây'; return; } var n=$('nhIn'); NH.sua=true; n.classList.add('nhSua'); if(giu) n.value=x; n.focus(); try{ n.setSelectionRange(n.value.length,n.value.length); }catch(e){} nhGoiY(); }
+function nhXong(dr,dc){ var n=$('nhIn'); if(!NH.sua) return; var v=n.value; NH.sua=false; n.classList.remove('nhSua'); $('nhGY').classList.add('hide'); n.value='';
+  if(v.replace(/\s+/g,' ').trim()!==String(nhO(NH.sel.r,NH.sel.c))){ nhChup(); nhGhi(NH.sel.r,NH.sel.c,v); nhDoi(); } if(dr||dc) nhDi(dr||0,dc||0); else nhVeChon(); }
+function nhHuy(){ var n=$('nhIn'); NH.sua=false; n.classList.remove('nhSua'); n.value=''; $('nhGY').classList.add('hide'); nhVeChon(); }
+// gợi ý tên khi gõ
+function nhGoiY(){ var n=$('nhIn'), g=$('nhGY'), t=n.value, m=t.match(/^([^(0-9]*)/), ten=(m?m[1]:'').replace(/(^|\s)(gãy|full|nvm|TC)(\s|$)/gi,' ').trim(), k=nhBoDau(ten);
+  if(!NH.sua || !k){ g.classList.add('hide'); NH.gyI=-1; return; }
+  var diem=function(x){ var a=nhBoDau(x.TenNgan), b=nhBoDau(x.Ten); if(x.MaNV===ten) return 0; if(a.indexOf(k)===0) return 1; if(a.split(' ').some(function(w){ return w.indexOf(k)===0; })) return 2; if(b.indexOf(k)>-1) return 3; return 9; };
+  var L=NH.nv.map(function(x){ return {x:x, d:diem(x)}; }).filter(function(o){ return o.d<9; }).sort(function(m,n){ return m.d-n.d || nhBoDau(m.x.TenNgan).localeCompare(nhBoDau(n.x.TenNgan)); }).map(function(o){ return o.x; }).slice(0,7);   // tên gọi bắt đầu bằng chữ đang gõ lên trước
+  if(!L.length || (L.length===1 && nhNorm(L[0].TenNgan)===nhNorm(ten))){ g.classList.add('hide'); NH.gyI=-1; return; }
+  NH.gyL=L; NH.gyI=-1; g.innerHTML=L.map(function(x,i){ return '<div data-i="'+i+'"><b>'+esc(x.TenNgan)+'</b> <span>'+esc(x.MaNV)+' · '+esc(x.ViTri)+' · '+esc(x.CoSoChinh)+'</span></div>'; }).join('');
+  g.style.left=n.style.left; g.style.top=(parseFloat(n.style.top)+n.offsetHeight)+'px'; g.classList.remove('hide');
+  g.querySelectorAll('div').forEach(function(d){ d.onmousedown=function(e){ e.preventDefault(); nhChonGY(+d.dataset.i); }; }); }
+function nhChonGY(i){ var x=NH.gyL[i], n=$('nhIn'); if(!x) return; var t=n.value, m=t.match(/^([^(0-9]*)(.*)$/), sau=(m?m[2]:'')||'', kw=((m?m[1]:'').match(/(^|\s)(gãy|full|nvm|TC)(?=\s|$)/gi)||[]).join(' ');
+  n.value=(x.TenNgan+(sau?' '+sau.trim():'')+(kw?' '+kw.trim():'')).replace(/\s+/g,' ').trim()+(sau||kw?'':' '); $('nhGY').classList.add('hide'); NH.gyI=-1; n.focus(); }
+// ---------- copy / cắt / dán ----------
+function nhRgbHex(s){ var m=String(s||'').match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/); if(m) return '#'+[m[1],m[2],m[3]].map(function(x){ return ('0'+(+x).toString(16)).slice(-2); }).join(''); s=String(s||'').trim().toLowerCase(); return /^#[0-9a-f]{6}$/.test(s)?s:''; }
+function nhCopy(e, cat){ if(NH.sua) return; var s=nhChuanSel(), L=nhL(), txt=[], html='<table>'; for(var r=s.r1;r<=s.r2;r++){ var row=[]; html+='<tr>'; for(var c=s.c1;c<=s.c2;c++){ var x=nhHien(nhO(r,c)); row.push(x); html+='<td style="background-color:'+((L.bg[r]&&L.bg[r][c])||'#ffffff')+'">'+esc(x)+'</td>'; } txt.push(row.join('\t')); html+='</tr>'; } html+='</table>';
+  e.clipboardData.setData('text/plain', txt.join('\n')); e.clipboardData.setData('text/html', '<meta charset="utf-8">'+html); e.preventDefault();
+  NH.clipNoiBo={s:JSON.stringify({v:txt}), html:html}; if(cat){ if(nhKhoa()) return; nhChup(); for(r=s.r1;r<=s.r2;r++) for(c=s.c1;c<=s.c2;c++) if(!/^D:/.test(nhO(r,c))) nhGhi(r,c,''); nhDoi(); } }
+function nhDan(e){ if(NH.sua) return; e.preventDefault(); if(nhKhoa()) return; var cd=e.clipboardData, html=cd.getData('text/html'), txt=cd.getData('text/plain'), O=[], B=null, chiChu=!!NH.shiftDan; NH.shiftDan=false;
+  if(html && /<table/i.test(html)){ try{ var doc=new DOMParser().parseFromString(html,'text/html'); B=[]; doc.querySelectorAll('tr').forEach(function(tr){ var row=[], rb=[]; tr.querySelectorAll('td,th').forEach(function(td){ var sp=+(td.getAttribute('colspan')||1), x=(td.innerText||td.textContent||'').replace(/\s+/g,' ').trim(), bg=nhRgbHex(td.style.backgroundColor||td.getAttribute('bgcolor'))||'#ffffff'; for(var i=0;i<sp;i++){ row.push(i?'':x); rb.push(bg); } }); O.push(row); B.push(rb); }); }catch(err){ O=[]; B=null; } }
+  if(!O.length){ B=null; O=String(txt||'').replace(/\r/g,'').replace(/\n$/,'').split('\n').map(function(l){ return l.split('\t'); }); }
+  if(!O.length) return; nhChup(); var r0=NH.sel.r, c0=NH.sel.c, L=nhL(), w=NH_RONG[NH.k], s=nhChuanSel();
+  // dán 1 ô vào cả vùng đang chọn (như Sheet)
+  if(O.length===1 && O[0].length===1 && (s.r2>s.r1||s.c2>s.c1)){ for(var r=s.r1;r<=s.r2;r++) for(var c=s.c1;c<=s.c2;c++){ nhGhi(r,c,O[0][0]); if(B && !chiChu) L.bg[r][c]=B[0][0]; } }
+  else { O.forEach(function(row,i){ row.forEach(function(x,j){ var c=c0+j; if(c>=w) return; nhDamBao(r0+i); nhGhi(r0+i,c,/^\d{1,2}\/\d{1,2}$/.test(x)&&r0+i<3?nhO(r0+i,c):x); if(B && !chiChu && B[i] && B[i][j]) L.bg[r0+i][c]=B[i][j]; }); });
+    NH.sel={r:r0,c:c0,r2:Math.min(r0+O.length-1,L.v.length-1),c2:Math.min(c0+Math.max.apply(null,O.map(function(x){ return x.length; }))-1,w-1)}; }
+  nhDoi(); }
+// ---------- chuột ----------
+function nhChuotXuong(e){ var td=e.target.closest('td'); if(!td) return; if(NH.sua) nhXong(); var r=+td.dataset.r, c=+td.dataset.c;
+  if(e.shiftKey){ NH.sel.r2=r; NH.sel.c2=c; nhVeChon(); e.preventDefault(); return; }
+  var dangChon=(NH.sel.r===r && NH.sel.c===c && NH.sel.r2===r && NH.sel.c2===c); NH.keo={r:r,c:c,chuyen:false, coThe:dangChon && !!nhO(r,c) && !/^D:/.test(nhO(r,c))}; NH.chuot=true;
+  NH.sel={r:r,c:c,r2:r,c2:c}; nhVeChon(); e.preventDefault(); }
+function nhChuotDi(e){ if(!NH.chuot) return; var td=e.target.closest&&e.target.closest('td'); if(!td) return; var r=+td.dataset.r, c=+td.dataset.c;
+  if(NH.keo && NH.keo.coThe && (r!==NH.keo.r||c!==NH.keo.c)){ NH.keo.chuyen=true; $('nhLuoi').classList.add('nhKeo'); $('nhLuoi').querySelectorAll('td.nhDich').forEach(function(t){ t.classList.remove('nhDich'); }); td.classList.add('nhDich'); return; }
+  if(!NH.keo || !NH.keo.chuyen){ NH.sel.r2=r; NH.sel.c2=c; nhVeChon(); } }
+function nhChuotLen(e){ if(!NH.chuot) return; NH.chuot=false; $('nhLuoi').classList.remove('nhKeo'); var td=e.target.closest&&e.target.closest('td');
+  if(NH.keo && NH.keo.chuyen && td){ nhChuyen(NH.keo.r, NH.keo.c, +td.dataset.r, +td.dataset.c); } NH.keo=null; $('nhIn').focus(); }
+// ---------- phím ----------
+function nhPhim(e){ var n=$('nhIn'), ctrl=e.ctrlKey||e.metaKey, gy=!$('nhGY').classList.contains('hide');
+  if(NH.sua){
+    if(gy && (e.key==='ArrowDown'||e.key==='ArrowUp')){ e.preventDefault(); var ds=$('nhGY').querySelectorAll('div'); NH.gyI=Math.max(0,Math.min(ds.length-1,NH.gyI+(e.key==='ArrowDown'?1:-1))); ds.forEach(function(d,i){ d.classList.toggle('on',i===NH.gyI); }); return; }
+    if(gy && NH.gyI>=0 && (e.key==='Enter'||e.key==='Tab')){ e.preventDefault(); nhChonGY(NH.gyI); return; }
+    if(e.key==='Enter'){ e.preventDefault(); nhXong(e.shiftKey?-1:1,0); return; } if(e.key==='Tab'){ e.preventDefault(); nhXong(0,e.shiftKey?-1:1); return; }
+    if(e.key==='Escape'){ e.preventDefault(); nhHuy(); return; } return; }
+  if(ctrl && (e.key==='z'||e.key==='Z')){ e.preventDefault(); nhHoanTac(e.shiftKey); return; } if(ctrl && (e.key==='y'||e.key==='Y')){ e.preventDefault(); nhHoanTac(true); return; }
+  if(ctrl && (e.key==='a'||e.key==='A')){ e.preventDefault(); NH.sel={r:0,c:0,r2:nhL().v.length-1,c2:NH_RONG[NH.k]-1}; nhVeChon(); return; }
+  if(ctrl && e.shiftKey && (e.key==='v'||e.key==='V')){ NH.shiftDan=true; return; }
+  if(ctrl) return;
+  var mv={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]}[e.key]; if(mv){ e.preventDefault(); nhDi(mv[0],mv[1],e.shiftKey); return; }
+  if(e.key==='Enter'||e.key==='F2'){ e.preventDefault(); nhBatDauSua(true); return; } if(e.key==='Tab'){ e.preventDefault(); nhDi(0,e.shiftKey?-1:1); return; }
+  if(e.key==='Delete'||e.key==='Backspace'){ e.preventDefault(); nhXoaChon(); return; } }
+function nhGo(){ var n=$('nhIn'); if(!NH.sua && n.value){ if(NH.chiXem||/^D:/.test(nhO(NH.sel.r,NH.sel.c))){ n.value=''; nhKhoa(); return; } NH.sua=true; n.classList.add('nhSua'); } if(NH.sua) nhGoiY(); }
+// ---------- lưu + khoá ----------
+function nhLuu(){ clearTimeout(NH.t); if(!NH.dirty || !NH.luoi) return; if(!NH.ten){ try{ NH.ten=localStorage.getItem('xlTen')||''; }catch(e){} if(!NH.ten){ NH.ten=(prompt('Tên của bạn (để người khác biết ai đang sửa bản nháp):')||(ROLE==='admin'?'Admin':'Quản lý')).trim(); try{ localStorage.setItem('xlTen',NH.ten); }catch(e){} } }
+  var gui=JSON.parse(JSON.stringify(NH.luoi)); NH.dirty=false; $('nhTT').textContent='Đang lưu…';
+  google.script.run.withSuccessHandler(function(r){ if(!r.ok){ NH.dirty=true; if(r.khoa){ NH.khoa=r.khoa; NH.chiXem=true; nhBaoKhoa(); nhVe(); } $('nhTT').innerHTML='<span class="bad">Chưa lưu: '+esc(r.msg)+'</span>'; return; } NH.giuQuyen=false; $('nhTT').textContent='✓ Đã lưu lúc '+r.luc; })
+    .withFailureHandler(function(e){ NH.dirty=true; $('nhTT').innerHTML='<span class="bad">Chưa lưu được (mạng) – app tự thử lại</span>'; NH.t=setTimeout(nhLuu, 8000); })
+    .luuNhapLuoi({pin:PIN, tuan:NH.tuan, token:NH.token, ten:NH.ten, luoi:gui, giuQuyen:NH.giuQuyen}); }
+setInterval(function(){ if(NH.luoi && !NH.chiXem && NH.dangMo && !NH.dirty) google.script.run.withSuccessHandler(function(r){ if(r && !r.ok && r.khoa){ NH.khoa=r.khoa; NH.chiXem=true; nhBaoKhoa(); nhVe(); } }).giuKhoaNhap({pin:PIN, tuan:NH.tuan, token:NH.token, ten:NH.ten||(ROLE==='admin'?'Admin':'Quản lý')}); }, 60000);
+window.addEventListener('beforeunload', function(){ if(NH.dirty) nhLuu(); try{ google.script.run.nhaKhoaNhap({pin:PIN, tuan:NH.tuan, token:NH.token}); }catch(e){} });
+// ---------- kiểm tra ngay trên trình duyệt (cùng bộ đọc với file quán) ----------
+function nhTimNV(ten, cs){ var k=nhNorm(ten), L=NH.nv, c;
+  c=L.filter(function(n){ return nhNorm(n.TenNgan)===k || n.MaNV===k; }); var m=k.match(/^(.*)\s(\d{3})$/); if(m){ var x=L.filter(function(n){ return n.MaNV===m[2]; }); if(x.length) return x[0]; }
+  if(c.length===1) return c[0];
+  if(!c.length) c=L.filter(function(n){ var t=String(n.Ten), sh=nhNorm(t.split(' (')[0]), inner=(t.match(/\(([^)]*)\)/)||[])[1]; return sh===k || nhNorm(t)===k || (inner && nhNorm(inner)===k); });
+  if(!c.length){ var kk=k.replace(/\s/g,''); c=L.filter(function(n){ return nhNorm(n.TenNgan).replace(/\s/g,'')===kk; }); }
+  if(!c.length) return null; var h=c.filter(function(n){ return n.CoSoChinh===cs; }); return h[0]||c[0]; }
+function nhBietPC(n){ return !!n && (n.ViTri==='Pha chế' || n.ViTri==='Quản lý' || n.ChucVu==='Quản lý' || n.ChucVu==='Trưởng ca' || /pha chế/i.test(n.ViTriKiem||'')); }
+function nhKiemTra(){ if(!NH.luoi) return; var monday=NH.tuan, loi={CFMH:{},LDD:{}}, ds=[], la={}, can=[], o=[], off=[];
+  ['CFMH','LDD'].forEach(function(k){ var L=NH.luoi[k]; if(!L.v.length) return; var w=lichDocTab_(L.v, L.bg, k, monday).tuan[monday]; if(!w){ can.push({lo:'Bản nháp '+(k==='LDD'?'LĐD':'CFMH')+': chưa thấy dòng ngày của tuần'}); return; }
+    w.o.forEach(function(e){ e.k=k; o.push(e); }); off=off.concat(w.off); });
+  var hoTro=[]; o.forEach(function(e){ if(e.support){ hoTro.push(e); return; } var cell=e.k+'|'+(e.hang-1)+'|'+(e.cot-1);
+    if(e.lo){ loi[e.k][(e.hang-1)+'|'+(e.cot-1)]=e.lo; can.push({ngay:e.ngay, o:e.raw, lo:e.lo, cell:cell}); if(!e.ten||e.bd==null) return; }
+    var n=nhTimNV(e.ten, e.cs); if(!n){ loi[e.k][(e.hang-1)+'|'+(e.cot-1)]='Chưa có "'+e.ten+'" trong danh sách nhân viên'; la[e.ten]=la[e.ten]||{ten:e.ten, so:0, cell:cell}; la[e.ten].so++; return; }
+    e.ma=n.MaNV; e.n=n; ds.push(e); });
+  var g=lichGopNguoi_(ds); g.lo.forEach(function(x){ var e=ds.filter(function(y){ return y.ten===x.ten && y.ngay===x.ngay; })[0]; if(e) loi[e.k][(e.hang-1)+'|'+(e.cot-1)]=x.lo; can.push({ngay:x.ngay, o:x.ten, lo:x.lo, cell:e?e.k+'|'+(e.hang-1)+'|'+(e.cot-1):''}); });
+  var byMa={}; NH.nv.forEach(function(n){ byMa[n.MaNV]=n; });
+  var KH={'Sáng':[390,720],'Trưa':[720,1020],'Tối':[1020,1350]}, dem={}, nguoi={}; g.ca.forEach(function(c){ nguoi[c.ma]=1; }); g.ca.concat(hoTro.map(function(e){ return {cs:e.cs, ngay:e.ngay, ma:'HT:'+e.ten, bd:e.bd, kt:e.kt, ben:'PC'}; })).forEach(function(c){ if(c.bd==null) return; Object.keys(KH).forEach(function(k){ var a=KH[k][0], b=KH[k][1]; if(Math.min(c.kt,b)-Math.max(c.bd,a)>=60){ var key=c.cs+'|'+c.ngay+'|'+k, x=dem[key]=dem[key]||{tong:{},pc:{}}; x.tong[c.ma]=1; if(c.ben==='PC'||nhBietPC(byMa[c.ma])) x.pc[c.ma]=1; } }); });
+  var days=[], d0=new Date(monday+'T12:00:00'); for(var i=0;i<7;i++){ var d=new Date(d0.getTime()+i*864e5); days.push(d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)); }
+  var thieuPC=[], thieu=[]; ['TP','DD','TD','TNV','LDD'].forEach(function(cs){ days.forEach(function(d){ var loai=([0,6].indexOf(new Date(d+'T12:00:00').getDay())>-1)?'CT':'NT'; Object.keys(KH).forEach(function(k){ var dm=NH.dm[cs+'|'+k+'|'+loai]; if(!dm) return; var x=dem[cs+'|'+d+'|'+k]||{tong:{},pc:{}}, t=Object.keys(x.tong).length, p=Object.keys(x.pc).length;
+    if(p<1) thieuPC.push({cs:cs,ngay:d,khoi:k}); else if(p<dm.pc[0]) thieu.push({cs:cs,ngay:d,khoi:k,loai:'pha chế',co:p,can:dm.pc[0]}); if(t<dm.tong[0]) thieu.push({cs:cs,ngay:d,khoi:k,loai:'người',co:t,can:dm.tong[0]}); }); }); });
+  NH.loi=loi; NH.kq={soCa:g.ca.length, soNguoi:Object.keys(nguoi).length, thieuPC:thieuPC, thieu:thieu, tenLa:Object.keys(la).map(function(x){ return la[x]; }), can:can}; nhVeKQ(); nhVe(); }
+function nhDd(d){ return d?d.slice(8)+'/'+d.slice(5,7):''; }
+function nhVeKQ(){ var r=NH.kq, TEN={TP:'Trần Phú',DD:'Đống Đa',TD:'Tản Đà',TNV:'TNV',LDD:'LĐD'}, h='<div class="nhSum"><b>'+r.soCa+' ca · '+r.soNguoi+' người</b></div>';
+  var den=function(cell,txt){ return cell?'<a href="#" onclick="nhDen(\''+cell+'\');return false">'+txt+'</a>':txt; };
+  h+=r.thieuPC.length?'<div class="nhDo"><b>⛔ '+r.thieuPC.length+' buổi không có người biết pha chế</b><br>'+r.thieuPC.map(function(x){ return TEN[x.cs]+' '+nhDd(x.ngay)+' '+x.khoi; }).join(' · ')+'</div>':'<div class="nhXanh">✓ Buổi nào cũng có người biết pha chế</div>';
+  if(r.tenLa.length) h+='<div class="nhVang"><b>Tên chưa có mã</b><br>'+r.tenLa.map(function(x){ return den(x.cell,'<b>'+esc(x.ten)+'</b>')+' ×'+x.so; }).join(' · ')+'</div>';
+  if(r.can.length) h+='<details open class="nhCan"><summary><b>'+r.can.length+' chỗ cần xem</b></summary>'+r.can.map(function(x){ return '<div>'+nhDd(x.ngay)+' '+den(x.cell,'<b>'+esc(x.o||'')+'</b>')+': '+esc(x.lo)+'</div>'; }).join('')+'</details>';
+  if(r.thieu.length) h+='<details class="nhCan"><summary><b>'+r.thieu.length+' buổi dưới mức thường xếp</b></summary>'+r.thieu.map(function(x){ return '<div>'+TEN[x.cs]+' '+nhDd(x.ngay)+' '+x.khoi+': '+x.co+'/'+x.can+' '+x.loai+'</div>'; }).join('')+'</details>';
+  h+='<p class="sub" style="margin-top:6px">Bảo vệ, rửa ly, cô / chú làm cố định không ghi trong lịch: app tự thêm ca quen khi Áp dụng.</p>'; $('nhKT').innerHTML=h; }
+function nhDen(cell){ var p=cell.split('|'); NH.k=p[0]; NH.sel={r:+p[1],c:+p[2],r2:+p[1],c2:+p[2]}; nhVe(); var t=nhTd(+p[1],+p[2]); if(t) t.scrollIntoView({block:'center',inline:'center'}); $('nhIn').focus(); }
+// ---------- áp dụng từ bản nháp ----------
+function nhApDung(dongY){ if(ROLE!=='admin'){ alert('Chỉ admin (chủ quán) mới áp dụng được.'); return; } if(NH.dirty) nhLuu();
+  if(!dongY && !confirm('Áp dụng bản nháp ('+(NH.kq?NH.kq.soCa:'?')+' ca) làm LỊCH CHÍNH THỨC tuần '+NH.tuan+'?\nLịch đang dùng được lưu thành phiên bản, lấy lại được.')) return;
+  var b=$('nhAp'); b.disabled=true; b.textContent='Đang áp dụng…';
+  setTimeout(function(){ google.script.run.withSuccessHandler(function(r){ b.disabled=false; b.textContent='✓ Áp dụng';
+      if(!r.ok && r.canXacNhan){ if(confirm(r.msg+'\n\nVẫn áp dụng?')) nhApDung(true); return; } if(!r.ok){ alert(r.msg); return; }
+      $('nhTT').innerHTML='<b style="color:#2E7D5B">✓ Đã áp dụng phiên bản '+r.phienBan+'</b>: '+r.soCa+' ca, '+r.soNguoi+' người'+(r.hoc?' · '+esc(r.hoc):''); })
+    .withFailureHandler(function(e){ b.disabled=false; b.textContent='✓ Áp dụng'; alert('Lỗi: '+(e.message||e)); })
+    .apDungLichQuan({pin:PIN, tuan:NH.tuan, nguon:'web', dongYThieuPC:!!dongY}); }, NH.dirty?1500:0); }
+// ---------- gắn sự kiện ----------
+function nhChonTab(k){ if(NH.sua) nhXong(); NH.k=k; NH.sel={r:3,c:1,r2:3,c2:1}; nhVe(); }
+function nhGan(){ if(NH.daGan) return; NH.daGan=true; var g=$('nhLuoi'), n=$('nhIn');
+  g.addEventListener('mousedown', nhChuotXuong); document.addEventListener('mousemove', nhChuotDi); document.addEventListener('mouseup', nhChuotLen);
+  g.addEventListener('dblclick', function(e){ if(e.target.closest('td')) nhBatDauSua(true); });
+  n.addEventListener('keydown', nhPhim); n.addEventListener('input', nhGo); n.addEventListener('blur', function(){ setTimeout(function(){ if(NH.sua && document.activeElement!==n) nhXong(); }, 150); });
+  n.addEventListener('copy', function(e){ nhCopy(e,false); }); n.addEventListener('cut', function(e){ nhCopy(e,true); }); n.addEventListener('paste', nhDan);
+  g.addEventListener('scroll', function(){ var a=nhTd(NH.sel.r,NH.sel.c); if(a) nhDatO(a); }); }
+
+
+/* ===== Học từ chấm công thật: định mức + vị trí kiêm (admin duyệt) ===== */
+function hocTai(chayLai){ $('hocTT').textContent=chayLai?'Đang đọc chấm công…':'Đang tải…';
+  google.script.run.withSuccessHandler(function(r){ if(!r.ok){ $('hocTT').textContent=r.msg; return; } var k=r.kq, ad=(r.role==='admin'), TEN={TP:'Trần Phú',DD:'Đống Đa',TD:'Tản Đà',TNV:'TNV',LDD:'LĐD'};
+      if(!k){ $('hocTT').textContent=''; $('hocND').innerHTML='<p>Chưa học lần nào. Bấm <b>Học lại từ chấm công ngay</b>.</p>'; return; }
+      $('hocTT').textContent='Lần học gần nhất: '+k.luc;
+      var h='<p>Dữ liệu: <b>'+k.soNgay+' ngày</b> chấm công trong 8 tuần (từ '+k.tu.slice(8)+'/'+k.tu.slice(5,7)+')'+(k.tt&&k.tt.boNap?' · bỏ qua '+k.tt.boNap+' lượt nạp từ file cũ':'')+'. Định mức đang dùng: <b>'+esc(r.nguonDang)+'</b>.'+(k.du?'':' <span class="bad">Cần ít nhất 21 ngày chấm công mới thay định mức được – app tự học lại đầu tháng sau.</span>')+'</p>';
+      // bảng định mức cũ / mới
+      var o=function(x){ return x?((x.tong[0]===x.tong[1]?x.tong[0]:x.tong[0]+'–'+x.tong[1])+' người · ≥'+x.pc[0]+' PC'):'–'; };
+      h+='<h2>Định mức người mỗi buổi</h2><div class="wrap"><table><tr><th>Quán</th><th>Buổi</th><th>Ngày thường: đang dùng</th><th>theo chấm công</th><th>Cuối tuần: đang dùng</th><th>theo chấm công</th></tr>';
+      ['TP','DD','TD','TNV','LDD'].forEach(function(cs){ ['Sáng','Trưa','Tối'].forEach(function(b,i){ h+='<tr>'+(i===0?'<td rowspan="3"><b>'+TEN[cs]+'</b></td>':'')+'<td>'+b+'</td>';
+        ['NT','CT'].forEach(function(l){ var key=cs+'|'+b+'|'+l, cu=r.dang[key], m=k.moi[key], khac=m&&(!cu||cu.tong[0]!==m.tong[0]||cu.tong[1]!==m.tong[1]||cu.pc[0]!==m.pc[0]); h+='<td>'+o(cu)+'</td><td'+(khac?' style="background:#FFF3B0;font-weight:600"':'')+'>'+(m?o(m)+' <span class="sub">('+m.n+' buổi)</span>':'<span class="sub">chưa đủ</span>')+'</td>'; }); h+='</tr>'; }); });
+      h+='</table></div><p class="sub">"5–7 người · ≥3 PC" = ít nhất 5, thường xếp 7 người, ít nhất 3 người biết pha chế. Ô vàng = khác định mức đang dùng.</p>';
+      if(ad) h+='<button onclick="hocApDM()" style="width:auto"'+(k.du&&k.doi?'':' disabled')+'>Dùng định mức theo chấm công ('+k.doi+' buổi thay đổi)</button>';
+      // đề xuất vị trí
+      var them=k.vitri.filter(function(x){ return x.lam==='them'; }), bo=k.vitri.filter(function(x){ return x.lam==='bo'; });
+      h+='<h2>Đề xuất vị trí kiêm</h2>';
+      if(!k.vitri.length) h+='<p class="sub">Không có đề xuất: vị trí mọi người làm thật đều khớp hồ sơ.</p>';
+      if(them.length) h+='<p><b>Làm thật nhưng hồ sơ chưa ghi</b> (≥ 6 ca trong 8 tuần):</p><table>'+them.map(function(x){ return '<tr><td><b>'+esc(x.ten)+'</b> ('+x.ma+')</td><td>đã làm <b>'+esc(x.vitri)+'</b> '+x.so+'/'+x.tong+' ca</td><td class="sub">hồ sơ: '+esc(x.hoSo)+'</td><td>'+(ad?'<button class="mini" onclick="hocVT(\''+x.ma+'\',\'them\',\''+x.vitri+'\')">Thêm vào vị trí kiêm</button> <button class="second mini" onclick="hocBo(\''+x.ma+'\',\'them\',\''+x.vitri+'\')">Bỏ qua</button>':'')+'</td></tr>'; }).join('')+'</table>';
+      if(bo.length) h+='<p style="margin-top:8px"><b>Có trong vị trí kiêm nhưng 8 tuần không làm:</b></p><table>'+bo.map(function(x){ return '<tr><td><b>'+esc(x.ten)+'</b> ('+x.ma+')</td><td>'+esc(x.vitri)+': 0/'+x.tong+' ca</td><td class="sub">hồ sơ: '+esc(x.hoSo)+'</td><td>'+(ad?'<button class="second mini" onclick="hocVT(\''+x.ma+'\',\'bo\',\''+x.vitri+'\')">Bỏ khỏi vị trí kiêm</button> <button class="second mini" onclick="hocBo(\''+x.ma+'\',\'bo\',\''+x.vitri+'\')">Vẫn giữ</button>':'')+'</td></tr>'; }).join('')+'</table>';
+      if(!ad && k.vitri.length) h+='<p class="sub">Chỉ admin duyệt được.</p>';
+      $('hocND').innerHTML=h; })
+    .withFailureHandler(function(e){ $('hocTT').textContent='Lỗi: '+(e.message||e); }).layHocCC({pin:PIN, chayLai:!!chayLai}); }
+function hocApDM(){ if(!confirm('Dùng định mức tính từ chấm công thật? (Buổi chưa đủ dữ liệu giữ mức cũ.) Bước Kiểm tra lịch sẽ so theo định mức mới.')) return;
+  google.script.run.withSuccessHandler(function(r){ if(!r.ok){ alert(r.msg); return; } alert('Đã dùng định mức mới cho '+r.so+' buổi.'); hocTai(false); }).withFailureHandler(function(e){ alert('Lỗi: '+(e.message||e)); }).apDungDinhMucMoi({pin:PIN}); }
+function hocVT(ma,lam,vt){ google.script.run.withSuccessHandler(function(r){ if(!r.ok){ alert(r.msg); return; } hocTai(false); }).withFailureHandler(function(e){ alert('Lỗi: '+(e.message||e)); }).duyetViTriKiem({pin:PIN, ma:ma, lam:lam, vitri:vt}); }
+function hocBo(ma,lam,vt){ google.script.run.withSuccessHandler(function(){ hocTai(false); }).boQuaDeXuatViTri({pin:PIN, ma:ma, lam:lam, vitri:vt}); }
+
+/* ===== (28/10) BỐ TRÍ LẠI: app Xếp lịch còn 3 tab – Lịch tuần · Ca cần người · Học từ chấm công ===== */
+function nhDet(id, tieuDe){ var d=document.createElement('details'); d.id=id; d.className='nhHop'; d.style.background='#fff'; d.innerHTML='<summary style="cursor:pointer;font-weight:600">'+tieuDe+'</summary>'; var b=document.createElement('div'); b.style.marginTop='8px'; d.appendChild(b); return {d:d, body:b}; }
+function boTriMoi(){ if(window._BTM){ tab('nhap'); return; } window._BTM=true;
+  document.querySelectorAll('.tabs button').forEach(function(b){ if(['nhap','ccn','hoc'].indexOf(b.dataset.t)<0) b.classList.add('hide'); });
+  var bn=document.querySelector('.tabs button[data-t="nhap"]'); bn.textContent='Lịch tuần'; bn.parentNode.insertBefore(bn, bn.parentNode.firstChild);
+  var bc=document.querySelector('.tabs button[data-t="ccn"]'); if(bc) bn.parentNode.insertBefore(bc, bn.nextSibling);   // thứ tự hay dùng: Lịch tuần · Ca cần người · Học từ chấm công
+  var host=$('t_nhap');
+  // xem lịch chính thức / thực tế / gợi ý xếp mới ngay trong tab Lịch tuần
+  var xk=document.createElement('div'); xk.id='nhXemKhac'; xk.className='hide'; var tl=$('t_lich'); while(tl.firstChild) xk.appendChild(tl.firstChild); host.insertBefore(xk, $('nhKhung').nextSibling);
+  [$('ltuan'),$('lnguon')].forEach(function(e){ if(e && e.parentNode) e.parentNode.style.display='none'; });
+  var bMo=xk.querySelector('button[onclick="moBanNhapTuan()"]'); if(bMo) bMo.style.display='none';
+  var hd=xk.querySelector('p.sub[style*="CFE0D8"]'); if(hd) hd.innerHTML='Chỉ để xem. Muốn sửa: chọn <b>Xem → Bản nháp đang soạn</b>.';
+  // các phần ít dùng: thu gọn ở cuối tab
+  var pb=$('qtPB'); if(pb){ pb.className='nhHop'; pb.style.background='#fff'; host.appendChild(pb); }
+  var pt=nhDet('nhPT','Phân tích tuần (chỗ thiếu, gợi ý tuyển, giờ từng người) – có sau khi tạo bản gợi ý'); pt.body.appendChild($('xmsg')); if($('xres')) pt.body.appendChild($('xres')); host.appendChild(pt.d);
+  var gn=nhDet('nhGN','Ghi nhớ khi xếp (luật cố định từng người, app tự tránh)'); var tg=$('t_gn'); while(tg.firstChild) gn.body.appendChild(tg.firstChild); gn.d.addEventListener('toggle',function(){ if(gn.d.open) try{ gnTai(); }catch(e){} }); host.appendChild(gn.d);
+  var fl=nhDet('nhFL','📁 File lịch xếp tay (file nào đang được đọc, đổi file mới, kiểm tra đọc đúng chưa)'); fl.body.id='flBody'; fl.d.addEventListener('toggle',function(){ if(fl.d.open) try{ flTai(); }catch(e){} }); host.appendChild(fl.d);
+  var ns=document.createElement('p'); ns.className='sub'; ns.style.marginTop='8px'; ns.innerHTML='Thêm / sửa nhân viên, vị trí kiêm, cố định, tăng ca: làm ở <b>app Chấm công → Nhân sự</b> (hồ sơ duy nhất). App này tự lấy về.'; host.appendChild(ns);
+  tab('nhap'); }
+function nhDoiTuan(){ var t=$('nTuan').value; $('tuan').value=t; $('ltuan').value=t; NH.luoi=null; if($('nhXem').value==='nhap') nhMo(); else nhDoiXem(); }
+function nhDoiXem(){ var v=$('nhXem').value, nhap=(v==='nhap'); $('nhXemKhac').classList.toggle('hide', nhap);
+  if(nhap){ nhMo(); return; } ['nhKhung','nhChua','nhKhoa','nhNguon'].forEach(function(id){ $(id).classList.add('hide'); }); $('nhTT').textContent='';
+  $('ltuan').value=$('nTuan').value; $('lnguon').value={chinh:'',thucte:'thucte',goiy:'goiy'}[v]; xemLich(); }
+function nhTaoMoi(cach){ $('tuan').value=$('nTuan').value; if(cach==='mau'||cach==='full'||cach==='bosung'){ xep(cach); return; } nhTao(cach); }
+function nhMenu(v){ if(!v) return; if(v==='file'){ flMo(); return; } if(v==='mau'||v==='full'){ nhTaoMoi(v); return; } if(v==='xuat'){ nhXuat(); return; } if(v==='venhap'){ nhLayVe('nhap'); return; } if(v==='thang'){ nhLayVe('thang'); return; }
+  if(v==='lc'){ if(confirm('Bắt đầu lại bản nháp từ lịch chính thức đang dùng? (Bản nháp hiện tại được giữ, lấy lại được.)')) nhTao('lc'); return; } if(v==='truoc'){ nhTao('truoc'); return; }
+  if(v==='dongbo'){ $('nhTT').textContent='Đang đồng bộ từ app Chấm công…'; google.script.run.withSuccessHandler(function(r){ $('nhTT').textContent=r.ok?('Đã đồng bộ: '+r.caThucTe+' ca làm thật, '+r.nhanVienMoi+' nhân viên mới, '+r.nhanVienSua+' người đổi thông tin.'):r.msg; }).dongBoChamCong({pin:PIN}); } }
+
+/* (29/10) Tải lại 1 khung: giữ nội dung cũ, làm mờ + nhãn "Đang tải…" (không xoá trắng); xong / lỗi thì bỏ mờ */
+function hopTai(id){ var b=document.getElementById(id); if(!b) return; if(b.children.length && !/^\s*Đang tải/.test(b.textContent||'')) b.classList.add('hopTai'); else b.innerHTML='<p class="sub">Đang tải…</p>'; }
+function hopXong(id){ var b=document.getElementById(id); if(b) b.classList.remove('hopTai'); }
+function hopLoi(id, e){ var b=document.getElementById(id); if(!b) return; b.classList.remove('hopTai'); b.insertAdjacentHTML('afterbegin','<p style="color:#B4382F">Chưa tải được (mạng): '+String(e&&e.message||e).replace(/</g,'&lt;')+'</p>'); }
+
+/* (30/10) FILE LỊCH XẾP TAY: xem file đang đọc, kiểm tra (đọc thử 1 tuần), đổi sang file mới, dùng lại file mặc định */
+var FL_CS={TP:'Trần Phú',DD:'Đống Đa',TD:'Tản Đà',TNV:'TNV',LDD:'LĐD'};
+function flE(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function flMo(){ var d=$('nhFL'); if(!d) return; d.open=true; flTai(); d.scrollIntoView({behavior:'smooth',block:'start'}); }
+function flTuan(){ return (typeof NH!=='undefined' && NH && NH.tuan) || ($('nTuan')&&$('nTuan').value) || ''; }
+function flTai(){ var b=$('flBody'); if(!b) return; b.innerHTML='<p class="sub">Đang tải…</p>';
+  google.script.run.withSuccessHandler(function(r){ if(!r.ok){ b.innerHTML='<p style="color:#B4382F">'+flE(r.msg)+'</p>'; return; } var t=flTuan(), m=t?+t.slice(5,7):(new Date().getMonth()+1);
+    var h='<p class="sub" style="margin:6px 0"><b>Cách 1 (đơn giản):</b> trong file đang dùng, nhân bản tab tháng trước → đổi tên thành <b>"Lịch T'+m+'"</b> → xếp lịch ở đó, app tự tìm thấy.<br><b>Cách 2 (file mới):</b> tạo file Google Trang tính (không phải Excel trên máy), giữ bố cục và màu ô theo quán như file cũ – nên dùng <i>Tệp → Tạo bản sao</i> từ file cũ – đặt tab "Lịch T'+m+'", rồi dán link bên dưới → <b>Kiểm tra</b> → <b>Lưu file mới</b>.</p>';
+    ['CFMH','LDD'].forEach(function(k){ var f=r.file[k];
+      h+='<div class="nhHop" style="background:#fff;margin:8px 0"><b>'+flE(f.nhom)+'</b><br><span class="sub">Đang đọc:</span> <a href="'+f.url+'" target="_blank">'+flE(f.ten||f.id)+'</a> <span class="sub">'+(f.macDinh?'(file mặc định)':'(file đã đổi)')+'</span>'+(f.loi?'<br><span style="color:#B4382F">'+flE(f.loi)+'</span>':'')
+        +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><input id="flLink_'+k+'" placeholder="Dán link file lịch mới (để trống = kiểm tra file đang dùng)" style="flex:1;min-width:240px"><button class="second mini" style="width:auto" onclick="flKiem(\''+k+'\')">Kiểm tra</button><button class="mini" style="width:auto" onclick="flLuu(\''+k+'\')">Lưu file mới</button>'
+        +(f.macDinh?'':'<button class="second mini" style="width:auto" onclick="flMacDinh(\''+k+'\')">Dùng lại file mặc định</button>')+'</div><div id="flKQ_'+k+'" class="sub" style="margin-top:6px"></div></div>'; });
+    b.innerHTML=h; }).withFailureHandler(function(e){ b.innerHTML='<p style="color:#B4382F">Lỗi: '+flE(e.message||e)+'</p>'; }).thongTinFileLich({pin:PIN}); }
+function flKiem(k){ var o=$('flKQ_'+k), link=$('flLink_'+k).value.trim(); o.innerHTML='Đang đọc file…';
+  google.script.run.withSuccessHandler(function(r){ if(!r.ok){ o.innerHTML='<span style="color:#B4382F">✗ '+flE(r.msg)+'</span>'; return; } var tw=r.tuan.slice(8)+'/'+r.tuan.slice(5,7);
+    var h='✓ Mở được file <b>"'+flE(r.ten)+'"</b> · tab tháng: '+(r.tabThang.length?flE(r.tabThang.join(', ')):'<b style="color:#B4382F">chưa có</b>');
+    if(r.canh) h+='<br><span style="color:#9A6212">⚠️ '+flE(r.canh)+'</span>';
+    if(r.coTuan && r.soCa!=null) h+='<br>Tuần '+tw+': <b>'+r.soNguoi+' người, '+r.soCa+' ca</b>'+(r.theoQuan?' ('+Object.keys(r.theoQuan).map(function(c){ return (FL_CS[c]||c)+' '+r.theoQuan[c]; }).join(' · ')+')':'')
+      +(r.tenLa&&r.tenLa.length?'<br><span style="color:#B4382F">Tên chưa khớp hồ sơ ('+r.tenLa.length+'): '+flE(r.tenLa.join(', '))+'</span> – sửa tên trong file hoặc thêm vào hồ sơ nhân sự':'<br>Mọi tên đều khớp hồ sơ.')
+      +(r.canXem?'<br><span class="sub">'+r.canXem+' ô cần xem lại (giờ ghi lạ / thiếu giờ) – xem trong bản nháp sau khi lấy.</span>':'');
+    o.innerHTML=h; }).withFailureHandler(function(e){ o.innerHTML='Lỗi: '+flE(e.message||e); }).kiemTraFileLich({pin:PIN, nhom:k, link:link, tuan:flTuan()}); }
+function flLuu(k){ var link=$('flLink_'+k).value.trim(); if(!link){ alert('Dán link file lịch mới vào ô trước.'); return; } if(!confirm('Đổi sang file lịch mới? Từ giờ "Lấy lịch từ file quán" sẽ đọc file này.')) return;
+  google.script.run.withSuccessHandler(function(r){ alert(r.msg); if(r.ok) flTai(); }).withFailureHandler(function(e){ alert('Lỗi: '+(e.message||e)); }).luuFileLich({pin:PIN, nhom:k, link:link}); }
+function flMacDinh(k){ if(!confirm('Dùng lại file lịch mặc định?')) return; google.script.run.withSuccessHandler(function(r){ alert(r.msg); if(r.ok) flTai(); }).luuFileLich({pin:PIN, nhom:k, macDinh:true}); }
+</script>
+</body></html>

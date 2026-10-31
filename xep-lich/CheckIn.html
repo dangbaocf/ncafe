@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chấm công Ncafe</title>
+<style>
+:root{--bg:#24170F;--ink:#F6EBDD;--muted:#B89F86;--card:#33231A;--line:#4A352A;--accent:#D9A24A;--ok:#5FBF8A;--warn:#E07A5F;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;padding:16px;padding-top:calc(16px + env(safe-area-inset-top));padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+h1{font-size:15px;font-weight:600;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+h1 b{color:var(--ink);font-weight:700}
+#clock{font-size:56px;font-weight:700;letter-spacing:-1px;text-align:center;margin:14px 0 2px;font-variant-numeric:tabular-nums}
+#date{text-align:center;color:var(--muted);font-size:14px;margin-bottom:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 6px}
+.row{display:flex;gap:8px}
+input{width:100%;font-size:26px;padding:12px;border-radius:10px;border:1px solid var(--line);background:#1B100A;color:var(--ink);text-align:center;letter-spacing:2px}
+input.small{font-size:17px;letter-spacing:0;text-align:left}
+button{width:100%;font-size:18px;font-weight:700;padding:16px;border:0;border-radius:12px;background:var(--accent);color:#1B100A;margin-top:12px}
+button.second{background:transparent;color:var(--muted);border:1px solid var(--line);font-weight:500}
+button.add{width:auto;white-space:nowrap;margin-top:0;padding:0 18px;font-size:16px}
+button:disabled{opacity:.45}
+.sub{color:var(--muted);font-size:14px;margin-top:4px;line-height:1.5}
+.hint{color:var(--muted);font-size:13px;margin-top:10px;line-height:1.5}
+.person{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.person:first-child{border-top:0}
+.person .info{flex:1}
+.person .name{font-size:17px;font-weight:700}
+.person .x{background:none;border:0;color:var(--muted);font-size:22px;width:auto;padding:0 4px;margin:0}
+.tag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;margin-top:4px}
+.vao{background:#1F4A36;color:var(--ok)} .ra{background:#4A2A1F;color:#F0A58F}
+#preview{width:100%;max-height:300px;object-fit:cover;border-radius:10px;margin-top:12px;display:none;background:#000}
+.otp{border-top:1px solid var(--line);padding-top:10px;margin-top:10px}
+.otp .warn{color:var(--warn);font-size:14px}
+.res{padding:10px 0;border-top:1px solid var(--line)} .res:first-child{border-top:0}
+.res .name{font-size:18px;font-weight:700}
+.good{color:var(--ok)} .bad{color:var(--warn)}
+#bigTime{font-size:56px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums;margin-bottom:6px}
+.err{color:var(--warn);font-size:14px;margin-top:10px;text-align:center}
+.hide{display:none}
+.spin{display:inline-block;width:18px;height:18px;border:3px solid #0003;border-top-color:#1B100A;border-radius:50%;animation:s .8s linear infinite;vertical-align:middle;margin-right:8px}
+@keyframes s{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+.vt{margin-top:6px;font-size:13px;color:#7A6657}
+.vtb{margin:3px 4px 0 0;padding:5px 9px;border-radius:999px;border:1px solid #C9BBAA;background:#fff;color:#2A1D14;font-size:13px}
+.vtb.on{background:#8A5A2B;color:#fff;border-color:#8A5A2B}
+</style></head>
+<body>
+<h1><span>Chấm công</span><b id="storeName">—</b></h1>
+<div id="clock">--:--</div>
+<div id="date"></div>
+
+<div id="noStore" class="card hide"><div class="name">Thiết bị chưa được cấp quyền</div>
+<div class="sub">Link này thiếu mã cơ sở hoặc mã sai. Dùng đúng link cài trên điện thoại quán.</div></div>
+
+<!-- Bước 1: nhập mã (1 hoặc nhiều người) -->
+<div id="step1" class="card">
+  <label for="manv" style="margin-top:0">Mã nhân viên</label>
+  <div class="row">
+    <input id="manv" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="VD: 205">
+    <button class="add second" id="btnAdd" onclick="addCode()">Thêm</button>
+  </div>
+  <div id="err1" class="err"></div>
+  <div id="list" style="margin-top:10px"></div>
+  <button id="btnNext" onclick="goPhoto()">Tiếp tục</button>
+  <div class="hint">Chấm nhiều người cùng lúc: nhập từng mã rồi bấm <b>Thêm</b>. Tất cả phải có mặt rõ mặt trong cùng một ảnh.</div>
+</div>
+
+<!-- Bước 2: chụp ảnh + xác nhận -->
+<div id="step2" class="card hide">
+  <div id="list2"></div>
+  <input type="file" id="cam" accept="image/*" capture="user" class="hide" onchange="gotPhoto(this)">
+  <img id="preview" alt="">
+  <div id="otBox"></div>
+  <button id="btnCam" onclick="document.getElementById('cam').click()">Chụp ảnh</button>
+  <button id="btnSend" class="hide" onclick="send()">Xác nhận chấm công</button>
+  <button class="second" onclick="reset()">Huỷ</button>
+  <div id="err2" class="err"></div>
+</div>
+
+<!-- Bước 3: kết quả -->
+<div id="step3" class="card hide">
+  <div id="bigTime"></div>
+  <div id="results"></div>
+  <button class="second" onclick="reset()">Xong</button>
+</div>
+
+<script>
+var STORE = <?!= store ?>;
+var people=[], photo=null, photoUrl=null, otNeed=null, timer=null;
+function $(id){return document.getElementById(id);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function tick(){ var d=new Date(); $('clock').textContent=d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
+  $('date').textContent=d.toLocaleDateString('vi-VN',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'}); }
+tick(); setInterval(tick,15000);
+if(!STORE){ $('noStore').classList.remove('hide'); $('step1').classList.add('hide'); } else $('storeName').textContent=STORE.TenCS;
+function show(id){ ['step1','step2','step3'].forEach(function(s){$(s).classList.toggle('hide',s!==id);}); }
+
+function personHtml(r, removable){
+  var s='<div class="person"><div class="info"><div class="name">'+esc(r.Ten)+' <span class="sub">('+esc(r.MaNV)+')</span></div>';
+  s+='<div class="sub">'+(r.lich?'Lịch: '+esc(r.lich.Ten)+' '+esc(r.lich.GioBD)+'–'+esc(r.lich.GioKT)+(r.khacCoSo?' (xếp ở '+esc(r.lich.MaCS)+')':''):'Hôm nay không có lịch')+'</div>';
+  s+='<span class="tag '+(r.next==='VAO'?'vao':'ra')+'">'+(r.next==='VAO'?'VÀO CA':'RA CA')+'</span>';
+  if(r.next==='VAO'){   // chọn vị trí làm ca này (để app học ai pha chế, ai phục vụ)
+    var cur=r.viTriLam||(r.lich&&r.lich.ViTri)||r.ViTri||'';
+    s+='<div class="vt">Ca này làm: '+['Pha chế','Phục vụ','Thu ngân','Rửa ly','Bảo vệ'].map(function(v){ return '<button type="button" class="vtb'+(v===cur?' on':'')+'" onclick="chonVT(\''+esc(r.MaNV)+'\',\''+v+'\')">'+v+'</button>'; }).join('')+'</div>';
+    r.viTriLam=cur;
+  }
+  s+='</div>';
+  if(removable) s+='<button class="x" onclick="removeP(\''+esc(r.MaNV)+'\')" aria-label="Bỏ">×</button>';
+  return s+'</div>';
+}
+function renderList(){
+  $('list').innerHTML=people.map(function(r){return personHtml(r,true);}).join('');
+  $('btnNext').disabled = !people.length && !$('manv').value.trim();
+}
+function chonVT(ma,v){ people.forEach(function(p){ if(p.MaNV===ma) p.viTriLam=v; }); renderList(); if(!$('step2').classList.contains('hide')) $('list2').innerHTML=people.map(function(r){return personHtml(r,false);}).join(''); }
+function removeP(ma){ people=people.filter(function(p){return p.MaNV!==ma;}); renderList(); }
+function addCode(cb){
+  var m=$('manv').value.trim(); if(!m){ if(cb) cb(); return; }
+  if(people.some(function(p){return p.MaNV===m;})){ $('manv').value=''; if(cb) cb(); return; }
+  var b=$('btnAdd'); b.disabled=true; $('err1').textContent='';
+  google.script.run.withSuccessHandler(function(r){
+    b.disabled=false;
+    if(!r.ok){ $('err1').textContent=r.msg; return; }
+    people.push(r); $('manv').value=''; renderList(); $('manv').focus(); if(cb) cb();
+  }).withFailureHandler(function(){ b.disabled=false; $('err1').textContent='Lỗi mạng, thử lại'; })
+  .getStaffInfo(m, STORE.MaCS);
+}
+function goPhoto(){
+  addCode(function(){
+    if(!people.length) return;
+    $('list2').innerHTML=people.map(function(r){return personHtml(r,false);}).join('');
+    $('btnSend').textContent = people.length>1 ? 'Xác nhận chấm công '+people.length+' người' : (people[0].next==='VAO'?'Xác nhận vào ca':'Xác nhận ra ca');
+    show('step2');
+  });
+}
+$('manv').addEventListener('input',renderList);
+$('manv').addEventListener('keydown',function(e){ if(e.key==='Enter') addCode(); });
+
+function gotPhoto(inp){
+  var f=inp.files[0]; if(!f) return;
+  var img=new Image(), rd=new FileReader();
+  rd.onload=function(){ img.onload=function(){
+    var c=document.createElement('canvas'), max=people.length>1?800:640, w=img.width,h=img.height, k=Math.min(1,max/Math.max(w,h));
+    c.width=Math.round(w*k); c.height=Math.round(h*k); c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    photo=c.toDataURL('image/jpeg',0.7); photoUrl=null;
+    var p=$('preview'); p.src=photo; p.style.display='block';
+    $('btnCam').textContent='Chụp lại'; $('btnSend').classList.remove('hide');
+  }; img.src=rd.result; }; rd.readAsDataURL(f);
+}
+
+function send(){
+  var b=$('btnSend'), label=b.textContent; b.disabled=true; b.innerHTML='<span class="spin"></span>Đang lưu';
+  $('err2').textContent='';
+  var tc={}, ly={};
+  if(otNeed) otNeed.forEach(function(o){ tc[o.MaNV]=$('ot_'+o.MaNV).value.trim()||'0'; ly[o.MaNV]=$('ly_'+o.MaNV).value.trim(); });
+  google.script.run.withSuccessHandler(function(r){
+    b.disabled=false; b.textContent=label;
+    if(!r.ok && r.needOT){
+      photoUrl=r.photoUrl; otNeed=r.needOT;
+      $('otBox').innerHTML=r.needOT.map(function(o){
+        return '<div class="otp"><div class="warn">'+esc(o.Ten)+': ca kết thúc '+esc(o.gioKT)+', đã quá '+o.over+' phút</div>'+
+          '<label for="ot_'+esc(o.MaNV)+'">Số giờ tăng ca (để trống nếu không tăng ca)</label>'+
+          '<input class="small" id="ot_'+esc(o.MaNV)+'" inputmode="decimal" placeholder="VD: 1,5">'+
+          '<label for="ly_'+esc(o.MaNV)+'">Lý do / việc đã làm</label>'+
+          '<input class="small" id="ly_'+esc(o.MaNV)+'" placeholder="VD: đông khách, dọn kho"></div>';
+      }).join('');
+      $('btnCam').classList.add('hide');
+      return;
+    }
+    if(!r.ok){ $('err2').textContent=r.msg; return; }
+    $('bigTime').textContent=r.time;
+    $('results').innerHTML=r.results.map(function(x){
+      var note, cls;
+      if(x.loai==='RA' && x.tc!=='' && x.tc!=null){ note=(+x.tc>0?'Tăng ca '+x.tc+'h, chờ quản lý duyệt':'Không tính tăng ca, giờ công tính đến hết ca'); cls=''; }
+      else if(x.loai==='VAO' && x.tre>0){ note='Đi trễ '+x.tre+' phút'; cls='bad'; }
+      else if(x.loai==='RA' && x.som>0){ note='Về sớm '+x.som+' phút'; cls='bad'; }
+      else { note='Đúng giờ'; cls='good'; }
+      if(x.ghi && !(x.tc!=='' && x.tc!=null)) note+=' · '+x.ghi;
+      return '<div class="res"><div class="name">'+esc(x.Ten)+'</div><div class="sub">'+(x.loai==='VAO'?'Đã vào ca':'Đã ra ca')+(x.ca?' · '+esc(x.ca):'')+'</div><div class="'+cls+'">'+esc(note)+'</div></div>';
+    }).join('');
+    show('step3'); timer=setTimeout(reset,10000);
+  }).withFailureHandler(function(){ b.disabled=false; b.textContent='Thử lại'; $('err2').textContent='Lỗi mạng, thử lại'; })
+  .checkInGroup({codes:people.map(function(p){return p.MaNV;}), maCS:STORE.MaCS, key:STORE.Key, photo:photoUrl?null:photo, photoUrl:photoUrl, tangCa:tc, lyDo:ly, viTri:people.reduce(function(o,p){ if(p.viTriLam) o[p.MaNV]=p.viTriLam; return o; },{})});
+}
+
+function reset(){
+  clearTimeout(timer); people=[]; photo=null; photoUrl=null; otNeed=null;
+  $('manv').value=''; $('cam').value=''; $('otBox').innerHTML='';
+  var p=$('preview'); p.src=''; p.style.display='none';
+  $('btnCam').textContent='Chụp ảnh'; $('btnCam').classList.remove('hide'); $('btnSend').classList.add('hide');
+  $('err1').textContent=''; $('err2').textContent=''; renderList(); show('step1');
+}
+renderList();
+</script>
+</body></html>

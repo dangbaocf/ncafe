@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lịch của tôi – Ncafe</title>
+<style>
+:root{--bg:#24170F;--ink:#F6EBDD;--muted:#B89F86;--card:#33231A;--line:#4A352A;--accent:#D9A24A;--ok:#5FBF8A;--warn:#E07A5F;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;padding:16px;padding-top:calc(16px + env(safe-area-inset-top));padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+h1{font-size:20px;margin-bottom:12px}
+h2{font-size:15px;color:var(--muted);margin:16px 0 8px;font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+input{width:100%;font-size:22px;padding:12px;border-radius:10px;border:1px solid var(--line);background:#1B100A;color:var(--ink);text-align:center}
+input[type=date]{font-size:17px}
+button{width:100%;font-size:17px;font-weight:700;padding:14px;border:0;border-radius:12px;background:var(--accent);color:#1B100A;margin-top:12px}
+button.second{background:transparent;color:var(--muted);border:1px solid var(--line);font-weight:500}
+.day{display:grid;grid-template-columns:72px 1fr 1fr 1fr;gap:6px;align-items:center;padding:7px 0;border-top:1px solid var(--line)}
+.day:first-child{border-top:0}
+.day b{font-size:14px}
+.day small{display:block;color:var(--muted);font-weight:400}
+.tg{padding:10px 0;border-radius:8px;border:1px solid var(--line);background:#1B100A;color:var(--muted);font-size:14px;text-align:center}
+.tg.on{background:#4A2A1F;color:#F0A58F;border-color:#F0A58F;font-weight:700}
+.lich{padding:8px 0;border-top:1px solid var(--line);font-size:15px}
+.lich:first-child{border-top:0}
+.lich .d{color:var(--muted);font-size:13px}
+.sub{color:var(--muted);font-size:14px;line-height:1.5}
+.err{color:var(--warn);font-size:14px;margin-top:8px;text-align:center}
+.okmsg{color:var(--ok);font-size:14px;margin-top:8px;text-align:center}
+.hide{display:none}
+</style></head>
+<body>
+<h1>Lịch của tôi</h1>
+<div class="card" id="login">
+  <label for="manv">Mã nhân viên</label>
+  <input id="manv" inputmode="numeric" pattern="[0-9]*" placeholder="VD: 312">
+  <label for="tuan" style="margin-top:10px">Tuần (chọn ngày thứ 2)</label>
+  <input id="tuan" type="date">
+  <button onclick="load()">Xem</button>
+  <div id="err" class="err"></div>
+</div>
+
+<div id="app" class="hide">
+  <div class="card">
+    <div id="who" style="font-size:18px;font-weight:700"></div>
+    <div class="sub" id="whosub"></div>
+  </div>
+  <div class="card">
+    <h2 style="margin-top:0">Lịch làm tuần này</h2>
+    <div id="lich"></div>
+  </div>
+  <div class="card">
+    <h2 style="margin-top:0">Ngày nghỉ trong tháng <span id="thLabel"></span></h2>
+    <div class="sub">Mặc định full time nghỉ 1 ngày/tuần. Muốn làm liên tục, nghỉ ít hơn thì chọn bên dưới.</div>
+    <select id="nghi" style="width:100%;font-size:17px;padding:12px;border-radius:10px;margin-top:8px;background:#1B100A;color:var(--ink);border:1px solid var(--line)">
+      <option value="0">Mặc định (1 ngày/tuần)</option><option value="3">Nghỉ 3 ngày cả tháng</option><option value="2">Nghỉ 2 ngày cả tháng</option><option value="1">Nghỉ 1 ngày cả tháng</option>
+    </select>
+    <button class="second" onclick="saveNghi()">Lưu yêu cầu ngày nghỉ</button>
+    <div id="nmsg" class="okmsg"></div>
+  </div>
+  <div class="card">
+    <h2 style="margin-top:0">Đăng ký giờ bận (lịch học, việc riêng)</h2>
+    <div class="sub">Bấm vào ca anh/chị <b>không làm được</b>. Quán sẽ xếp lịch dựa trên đăng ký này.</div>
+    <div id="grid" style="margin-top:10px"></div>
+    <button onclick="save()">Lưu đăng ký</button>
+    <div id="msg" class="okmsg"></div>
+    <button class="second" onclick="location.reload()">Đổi người</button>
+  </div>
+</div>
+
+<script>
+var DATA=null, ban={};
+function $(id){return document.getElementById(id);}
+function d2(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+(function(){ var t=new Date(), d=(t.getDay()+6)%7, mon=new Date(t); mon.setDate(t.getDate()-d+7); $('tuan').value=d2(mon); })();
+var DN=['CN','T2','T3','T4','T5','T6','T7'];
+function load(){
+  var m=$('manv').value.trim(), t=$('tuan').value; if(!m||!t) return;
+  $('err').textContent='';
+  google.script.run.withSuccessHandler(function(r){
+    if(!r.ok){ $('err').textContent=r.msg; return; }
+    DATA=r; ban={}; r.ban.forEach(function(b){ ban[b.Ngay+'|'+b.Khoi]=true; });
+    $('who').textContent=r.Ten; $('whosub').textContent=(r.Loai==='FT'?'Full time':'Part time')+' · tuần '+r.days[0].slice(8,10)+'/'+(+r.days[0].slice(5,7))+' – '+r.days[6].slice(8,10)+'/'+(+r.days[6].slice(5,7));
+    $('lich').innerHTML = r.lich.length ? r.lich.map(function(l){ var d=new Date(l.Ngay+'T12:00:00'); return '<div class="lich"><div class="d">'+DN[d.getDay()]+' '+l.Ngay.slice(8,10)+'/'+(+l.Ngay.slice(5,7))+'</div><b>'+l.CS+'</b> · '+l.Ca+' · '+l.ViTri+(l.Ghi?' · <i>'+l.Ghi+'</i>':'')+'</div>'; }).join('') : '<div class="sub">Tuần này chưa xếp lịch, hoặc anh/chị không có ca.</div>';
+    $('thLabel').textContent=(+r.thang.slice(5,7))+'/'+r.thang.slice(0,4); $('nghi').value=String(r.nghiThang||0);
+    renderGrid(); $('login').classList.add('hide'); $('app').classList.remove('hide');
+  }).withFailureHandler(function(){ $('err').textContent='Lỗi mạng, thử lại'; }).getDangKy({maNV:m, tuan:t});
+}
+function renderGrid(){
+  $('grid').innerHTML=DATA.days.map(function(d){ var dt=new Date(d+'T12:00:00');
+    return '<div class="day"><b>'+DN[dt.getDay()]+'<small>'+d.slice(8,10)+'/'+(+d.slice(5,7))+'</small></b>'+['Sáng','Trưa','Tối'].map(function(k){ var on=ban[d+'|'+k]||ban[d+'|Cả ngày']; return '<div class="tg'+(on?' on':'')+'" onclick="tg(\''+d+'\',\''+k+'\')">'+k+(on?' ✕':'')+'</div>'; }).join('')+'</div>';
+  }).join('');
+}
+function tg(d,k){ if(ban[d+'|Cả ngày']){ delete ban[d+'|Cả ngày']; ['Sáng','Trưa','Tối'].forEach(function(x){ if(x!==k) ban[d+'|'+x]=true; }); } else { var key=d+'|'+k; if(ban[key]) delete ban[key]; else ban[key]=true; } renderGrid(); }
+function save(){
+  var list=[]; Object.keys(ban).forEach(function(k){ var p=k.split('|'); list.push({Ngay:p[0],Khoi:p[1]}); });
+  $('msg').textContent='Đang lưu…';
+  google.script.run.withSuccessHandler(function(r){ $('msg').textContent=r.ok?'Đã lưu. Quán sẽ xếp lịch theo đăng ký này.':r.msg; })
+  .withFailureHandler(function(){ $('msg').textContent='Lỗi mạng, thử lại'; }).saveDangKy({maNV:$('manv').value.trim(), tuan:$('tuan').value, ban:list});
+}
+function saveNghi(){ $('nmsg').textContent='Đang lưu…';
+  google.script.run.withSuccessHandler(function(r){ $('nmsg').textContent=r.ok?'Đã lưu. Quản lý sẽ xếp theo yêu cầu này.':r.msg; })
+  .withFailureHandler(function(){ $('nmsg').textContent='Lỗi mạng, thử lại'; }).saveNghiThang({maNV:$('manv').value.trim(), thang:DATA.thang, so:$('nghi').value}); }
+$('manv').addEventListener('keydown',function(e){ if(e.key==='Enter') load(); });
+</script>
+</body></html>
