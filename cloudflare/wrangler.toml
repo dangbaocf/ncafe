@@ -2,3 +2,18 @@ name = "ncafe-chamcong"
 main = "worker.js"
 compatibility_date = "2026-10-24"
 keep_vars = true
+
+# Đợt A (31/10 23:30): bind D1 ncafe-chamcong-d1.
+# R2 ncafe-anh-chamcong CHƯA bind vì account chưa enable R2 (lỗi 10042 lúc tạo).
+# Khi anh Bảo enable R2 trong dashboard → `wrangler r2 bucket create ncafe-anh-chamcong`
+# → thêm [[r2_buckets]] bên dưới + redeploy.
+[[d1_databases]]
+binding = "DB"
+database_name = "ncafe-chamcong-d1"
+database_id = "95cdb164-52ce-4344-9045-967eabd90946"
+preview_database_id = "95cdb164-52ce-4344-9045-967eabd90946"
+
+# [[r2_buckets]]
+# binding = "ANH"
+# bucket_name = "ncafe-anh-chamcong"
+# preview_bucket_name = "ncafe-anh-chamcong"

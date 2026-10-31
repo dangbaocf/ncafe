@@ -75,8 +75,9 @@ export async function handleChamCongD1(request, env, ctx) {
 
   if (request.method !== 'POST')
     return json({ ok: false, msg: 'Chỉ nhận POST' }, 405);
-  if (!env.DB || !env.ANH)
-    return json({ ok: false, msg: 'Worker chưa gắn D1/R2 binding (ĐỢT A chưa sẵn sàng)' }, 503);
+  if (!env.DB)
+    return json({ ok: false, msg: 'Worker chưa gắn D1 binding (ĐỢT A chưa sẵn sàng)' }, 503);
+  // R2 (env.ANH) không bắt buộc – luuAnhR2 tự fallback trả '' nếu thiếu.
 
   let body;
   try { body = await request.json(); }
