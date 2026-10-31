@@ -159,7 +159,11 @@ function apiHam(){ return {qrInfo:qrInfo, qrMo:qrMo, qrNhanVien:qrNhanVien, qrVa
     bangTinVao:bangTinVao, datBietDanh:datBietDanh,
     demCaChoDuyetT10:demCaChoDuyetT10, kiemWifiTu2510:kiemWifiTu2510, batWifiBatBuoc:batWifiBatBuoc,
     tgCallback:tgCallback, saoLuuSheetNgay:saoLuuSheetNgay,
-    qrVaoBackfill:qrVaoBackfill, qrRaBackfill:qrRaBackfill}; }   // (30/10c) tgCallback inline button; (31/10) saoLuuSheetNgay sao lưu Sheet 1 lần; (31/10 đợt A) qr*Backfill nhận ghi từ Cloudflare D1 (ctx.waitUntil)
+    qrVaoBackfill:qrVaoBackfill, qrRaBackfill:qrRaBackfill,
+    exportBangLuongT10:exportBangLuongT10,
+    exportChamCongThang:exportChamCongThang,
+    exportCaiDatAll:exportCaiDatAll,
+    exportNhanVienAll:exportNhanVienAll}; }   // (31/10 đợt A) export fn cho worker gọi qua API_KEY để so khớp lương
 /* (30/10b) Số ca "Chờ xác nhận" trong tháng 10/2026 theo quán – trước kỳ lương 3/11 để QL duyệt hết. Chỉ trả số, không tên nhân viên. */
 function demCaChoDuyetT10(){
   var today=fmtDate(new Date()), so={}, tong=0;
@@ -385,6 +389,38 @@ function qrRaBackfill(p){
   return {ok:true, dong:rowIdx};
 }
 
+/* ---- (1/11 đợt A) Export cho worker gọi qua API_KEY, dùng để so khớp lương song song ----
+ * KHÔNG check PIN vì doPost đã check env.API_KEY (worker ncafe-chamcong). Chỉ worker có
+ * API_KEY secret, nên nhân viên không gọi được qua /cham-cong/api route (ALLOW cũng
+ * cần list, worker build_worker.py gatekeep). */
+function exportBangLuongT10(p){
+  var th=String((p&&p.thang)||'2026-10');
+  var cc=duLieuThang(th), nhap=nhapThang(th), ung=tamUngThang(th), M=mucLuong(), le=ngayLeMap();
+  var list=rows('NhanVien').filter(function(n){ var m=up(n.MaNV); return cc[m] || nhap[m] || ung[m] || (dangLam(n) && nghinTien(n.LuongCoBan)>0 && String(n.KieuLuong)==='Cố định'); })
+    .map(function(n){ try{ return tinhNguoi(n, cc[up(n.MaNV)]||[], nhap, ung, M, le, th); } catch(e){ return {MaNV:n.MaNV, Ten:n.Ten, _loi:e.message}; } })
+    .sort(function(a,b){ return a.MaNV<b.MaNV?-1:1; });
+  return {ok:true, thang:th, list:list, soNV:list.length};
+}
+function exportChamCongThang(p){
+  var th=String((p&&p.thang)||'2026-10');
+  var out=[]; ccRows().forEach(function(r){ if(dateKey(r.Ngay).slice(0,7)===th) out.push({ID:r.ID, Ngay:dateKey(r.Ngay), MaNV:String(r.MaNV||''), MaCS:String(r.MaCS||''),
+    MaCa:String(r.MaCa||''), CaBD:hhmm(r.CaBD), CaKT:hhmm(r.CaKT), ViTri:String(r.ViTri||''),
+    Vao:hhmm(r.Vao), Ra:hhmm(r.Ra), TreMin:+r.TreMin||0, GioThuc:+r.GioThuc||0, KhaiLoai:String(r.KhaiLoai||''),
+    KhaiGio:+r.KhaiGio||0, GioTinh:+r.GioTinh||0, TrangThai:String(r.TrangThai||'')}); });
+  return {ok:true, thang:th, soCa:out.length, cc:out};
+}
+function exportCaiDatAll(p){
+  var out={}; rows('CaiDat').forEach(function(r){ out[String(r.Key)]=String(r.Value); });
+  return {ok:true, cfg:out, soKhoa:Object.keys(out).length};
+}
+function exportNhanVienAll(p){
+  var list=rows('NhanVien').map(function(n){ return {MaNV:String(n.MaNV), Ten:String(n.Ten||''), ViTri:String(n.ViTri||''),
+    ChucVu:String(n.ChucVu||''), Loai:String(n.Loai||''), CoSoChinh:String(n.CoSoChinh||''),
+    LuongGio:+n.LuongGio||0, LuongCoBan:+n.LuongCoBan||0, KieuLuong:String(n.KieuLuong||''),
+    NgayVao:String(n.NgayVao||'').slice(0,10), NgaySinh:String(n.NgaySinh||'').slice(0,10),
+    GioChuanNgay:+n.GioChuanNgay||0, NgayChuan:+n.NgayChuan||0, TrangThai:String(n.TrangThai||'Đang làm')}; });
+  return {ok:true, list:list, so:list.length};
+}
 function tgCallback(update){
   try{
     if(!update || !update.callback_query) return {ok:true, bo:'not_callback'};

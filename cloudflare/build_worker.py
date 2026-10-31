@@ -23,7 +23,7 @@ def chuyen(html):
     assert '<?' not in h
     return h
 P={'/quan-ly':chuyen(QL), '/cham-cong':chuyen(QR), '/gio-cong':chuyen(LT), '/khao-sat':chuyen(KS), '/lich-cua-toi':chuyen(LT)}
-ALLOW=['qrInfo','qrMo','qrNhanVien','qrVao','qrRa','gioCongCuaToi','ksDanhSach','ksXacMinh','ksGui','lichCuaToi','luuDangKyBanNV','themRanhThem','xoaRanhThem','nhanCa','huyNhanCa','xinPhep','baoQuenCham','phanHoi','baoHong','dsBaoHongNV','bangTinVao','datBietDanh','demCaChoDuyetT10','kiemWifiTu2510','batWifiBatBuoc','tgCallback','saoLuuSheetNgay']
+ALLOW=['qrInfo','qrMo','qrNhanVien','qrVao','qrRa','gioCongCuaToi','ksDanhSach','ksXacMinh','ksGui','lichCuaToi','luuDangKyBanNV','themRanhThem','xoaRanhThem','nhanCa','huyNhanCa','xinPhep','baoQuenCham','phanHoi','baoHong','dsBaoHongNV','bangTinVao','datBietDanh','demCaChoDuyetT10','kiemWifiTu2510','batWifiBatBuoc','tgCallback','saoLuuSheetNgay','exportBangLuongT10','exportChamCongThang','exportCaiDatAll','exportNhanVienAll']
 worker='''/**
  * Ncafe – trang nhân viên chạy trên Cloudflare (quét QR chấm công, lịch của tôi, giờ công, khảo sát).
  * Trang tải ngay từ Cloudflare (nhanh, định vị và camera chạy chắc chắn); dữ liệu vẫn lưu ở app Chấm công trên Google.
