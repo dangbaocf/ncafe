@@ -235,8 +235,10 @@ export async function wifiChan(env, cs, nv, loai, p) {
   const asOrg = String((p && p.asOrg) || '');
   const w = await wifiKiem(env, cs.MaCS, ip);
   if (!w.bat || w.ok) return null;
+  // Chỉ chặn khi Bắt buộc. 'Cảnh báo' / 'Tắt' → cho qua (chỉ ghi cảnh báo "Cách quán…"/"IP lạ").
+  if (w.cheDo !== 'batbuoc') return null;
   if (String(await cfg(env, 'WIFI_CHO_XAC_NHAN') || 'Không') !== 'Có') {
-    // Fallback: chế độ Bắt buộc cũ – chặn
+    // Bắt buộc + chưa bật "Tự nhận" → chặn
     return { ok: false, msg: 'Hãy kết nối Wi-Fi của quán rồi chấm lại' };
   }
   const mobile = wifiLaMobile(asOrg);
