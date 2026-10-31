@@ -9,22 +9,34 @@ Worker nhận quét QR → ghi D1 → trả NV 1–2s → nền gửi sang Googl
 - Duyệt giờ + lương vẫn ở Apps Script + Sheet. Sheet lưu bản copy chữ thuần, không bị tự đổi kiểu.
 - Chạy SONG SONG ≥ 1 tuần: Worker D1 là primary; Apps Script `qrVao`/`qrRa` cũ chạy nền để backfill Sheet.
 
-### Cài đặt chuyển SANG D1 trong đợt A (chốt 31/10 chiều – không để Worker đọc Sheet rồi sửa):
-- `WifiQuan` – IP từng quán (CRUD trong UI).
-- `Ca` – giờ ca theo quán (CRUD).
-- `NHAC_NHO_PHUT`, `TRU_GIO_TRE_PHUT` – ngưỡng trễ.
-- `WIFI_CHO_XAC_NHAN_NV`, `WIFI_CHO_XAC_NHAN_GIO` – luật tự nhận IP (mặc định 2 NV / 2 giờ, admin đổi được).
-- `TG_CHAT_TP`, `TG_CHAT_DD`, `TG_CHAT_TD`, `TG_CHAT_TNV`, `TG_CHAT_LDD`, `TG_CHAT` – group Telegram.
-- `TG_ADMIN_IDS` – Telegram ID admin được bấm xác nhận.
-- `WIFI_CHE_DO`, `WIFI_CHO_XAC_NHAN` – công tắc Wi-Fi.
+### Cài đặt chuyển SANG D1 trong đợt A (chốt 31/10 tối – GỘP TOÀN BỘ):
+- **Wi-Fi**: `WifiQuan` (CRUD IP từng quán), `WIFI_CHE_DO`, `WIFI_CHO_XAC_NHAN`, `WIFI_CHO_XAC_NHAN_NV`, `WIFI_CHO_XAC_NHAN_GIO` (luật tự nhận IP: 2 NV / 2 giờ, chỉnh được), `WIFI_TU_MAT_MANG`, `WIFI_TU_THEM`.
+- **Ca**: bảng `Ca` (giờ BD/KT theo quán).
+- **Ngưỡng**: `NHAC_NHO_PHUT`, `TRU_GIO_TRE_PHUT`, `TRE_PHUT`, `TRE_XEM_LAI_PHUT`, `VE_SOM_PHUT`, `RA_MUON_PHUT`, `LECH_PHUT`, `LAM_TRON_PHUT`, `TANG_CA_TU_PHUT`, `GIO_BAT_THUONG_NGAY`, `GIO_BAT_THUONG_THANG`, `QR_BAN_KINH`, `GIO_DEM_TU`.
+- **Cơm**: `COM_TU_*` + `COM_GIA_*` (theo vị trí), `COM_FT_LUON`, `COM_NGAY_GAY`.
+- **Lương**: `LUONG_*` (đơn giá theo vị trí), `GIO_CHUAN_NGAY`, `NGAY_CHUAN`, `HE_SO_TANG_CA`, `KY_TANG_LUONG_THANG`, `NGAY_TRA_LUONG`, `DOT_1_DEN`, `DOT_2_DEN`.
+- **Telegram**: `TG_CHAT_TP/DD/TD/TNV/LDD`, `TG_CHAT`, `TG_ADMIN_IDS`, `TG_WEBHOOK_SECRET`, `TG_ANH`, `TG_MUC`, `TG_NHAC_CA`, `TG_NHAC_LUC`, `TG_NHAC_SAU_PHUT`, `TG_TONGKET`, `TG_TONGKET_GIO`, `NHAC_DUYET`, `NHAC_DUYET_GIO`, `NHAC_DUYET_DA`.
+- **Nhân viên**: toàn bộ hồ sơ bảng `NhanVien` (MaNV, Ten, ViTri, ChucVu, Loai, CoSoChinh, SDT, TrangThai, LuongGio, LuongCoBan, KieuLuong, NgayVao, NgaySinh, ViTriKiem, SinhVien, TangCaDuoc, CoDinh, BietDanh).
+- **CoSo**: bảng `CoSo` (MaCS, TenCS, GioMo, GioDong, ViDo, KinhDo, BanKinh, QRVer).
+- **Phân quyền**: `PHAN_QUYEN` (tab quyền QL).
+- **Phản hồi**: `PHAN_HOI_NGAY`, `DE_XUAT_GIO`.
+- **Lưu trữ/sao lưu**: `LUU_TRU_SAU_NGAY`, `DRIVE_FOLDER_ID`, `LUU_TRU_FOLDER_ID`, `SAO_LUU_FOLDER_ID`.
+- **Khác**: `DOC_LICH` (dù không dùng theo luật B, giữ cấu hình), `TU_DUYET_KHOP` (set 'Không' theo luật B), `BANGTIN_URL`, `BANGTIN_KEY`, `CF_URL`, `LICH_SHEET_ID`, `XEP_LICH_URL`.
 
-### Cài đặt VẪN ở Sheet trong đợt A (chuyển đợt sau):
-- Lương, cơm, đơn giá, hệ số tăng ca, nghỉ có lương, mức cơm theo vị trí…
-- Mọi cài đặt "lương" khác (chưa dùng cho chấm).
+### Mã bí mật – chép NGUYÊN giá trị cũ (KHÔNG đổi) sang `wrangler secret put` trong đợt A:
+- `QR_SECRET` (giữ nguyên → QR cũ dùng tiếp), `QRVer` (lưu D1 CoSo, không secret).
+- `TG_TOKEN` (secret).
+- `FEED_SECRET` (secret, trùng BANGTIN_KEY – chọn 1 nguồn).
+- `API_KEY` (secret, đã có trong worker ncafe-chamcong).
+- `ADMIN_PIN`, `QL_PIN` (secret, hoặc hashed trong D1 CaiDat với cột `IsSecret=1` ẩn khỏi UI).
 
-### Mã bí mật (chuyển cuối cùng, chọn tối quán vắng):
-- `QR_SECRET`, `API_KEY`, `TG_TOKEN`, `FEED_SECRET` → Cloudflare `wrangler secret put`. Giữ nguyên giá trị.
-- Khi chuyển mã bí mật, bước này tách thành đợt riêng – không gộp vào A.
+Chức năng **"ĐỔI mã"** (sinh mã mới) nằm ở màn hình Cài đặt, có cảnh báo + bắt gõ XÁC NHẬN. KHÔNG đổi trong đợt A.
+
+### Tạm vẫn ở Sheet (chuyển đợt sau khi anh Bảo báo):
+- `ChamCong` row: cột `TrangThai` + `GioTinh` + `XacNhanBoi` + `XacNhanLuc` + `Cach` (phần duyệt).
+- `BangLuong`, `TamUng`, `DuyetDot`, `ChotThang`, `NhatKySua` (duyệt + lương).
+- Apps Script `xnDuyet`, `bangLuong`, `tinhNguoi`, `phieuLuong` giữ nguyên công thức.
+- Worker ghi bản sao `ChamCong` sang Sheet dạng CHỮ THUẦN để Apps Script dùng.
 
 ## Hạ tầng cần tạo (sau khi có GitHub, trước khi deploy)
 ```bash

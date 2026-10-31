@@ -160,8 +160,10 @@ Thay cho mọi yêu cầu trước. Anh Bảo cho em TỰ LÀM toàn bộ theo t
 4. Google Sheet rút về vai trò **nơi NHẬN BẢN XUẤT** (sao lưu, xem, in). Không còn là nguồn thật.
 5. Wi-Fi giữ `Cảnh báo`, CHƯA bật Bắt buộc.
 
-### Thứ tự 8 đợt (lịch ~6–8 tuần)
-Anh Bảo đổi thứ tự 31/10 chiều: **A → C → B → D → Cài đặt → E → Xuất/nhập → Mã bí mật** (A trước để giải quyết chậm 6:30). Deploy chính **chỉ sau 3/11**. Khi port chấm công sang Worker, **ÁP luật B luôn**: KHÔNG port phần khớp/đọc lịch, trễ tính theo giờ ca NV tự chọn, lịch chỉ để xem (nếu Xếp lịch còn chạy). A không được deploy khi chưa push lên GitHub; chạy song song ≥ 1 tuần; không cutover 1–3/11.
+### Thứ tự 5 đợt (lịch ~5–7 tuần, chốt 31/10 tối – anh Bảo gộp lại)
+**A → C → B → D → Xuất/nhập**. Deploy chính **chỉ sau 3/11**. A không deploy khi chưa push GitHub (ĐÃ CÓ `dangbaocf/ncafe` 31/10 chiều). Chạy song song ≥ 1 tuần, không cutover 1–3/11.
+
+Khi port chấm công, **ÁP luật B luôn**: KHÔNG port phần khớp/đọc lịch, trễ tính theo giờ ca NV tự chọn (ca phát sinh so với giờ tự nhập); lịch Xếp lịch CHỈ ĐỂ XEM trong "Lịch của tôi" (NV) + trang "Hôm nay" (QL) nếu có; bỏ nhãn "có lịch chưa đến"/"ngoài lịch", bỏ kiểu duyệt "theo lịch" (QL dùng "duyệt theo đề xuất"); Xếp lịch lỗi → hiện "chưa có lịch", không báo lỗi, chấm công vẫn chạy.
 - **C. TRA CỨU** trong tab Xác nhận giờ (3–5 ngày). Xem mục "Việc chờ deploy sau 3/11" bên dưới.
 - **B. Tách Xếp lịch** (3–5 ngày). Chấm công KHÔNG đọc lịch nữa; trễ = so với giờ ca NV tự chọn (ca phát sinh: so với giờ tự nhập); ≤10' nhắc nhở, >10' trễ. Bỏ "có lịch chưa đến", nhãn "ngoài lịch", kiểu duyệt "theo lịch". GIỮ lịch CHỈ ĐỂ XEM trong "Lịch của tôi" (NV) + trang Hôm nay (QL) nếu có lịch; Xếp lịch hỏng → hiện "chưa có lịch", không báo lỗi. Không chạm app Xếp lịch, không chạy lại 136 bài thử Xếp lịch.
 - **D. Kiểm tra tự động** (2–3 ngày). Telegram DM thẳng admin (bot `@Cpmhchamcongbot`, anh đã /start lúc 18:34 ngày 31/10 – em lấy chat ID từ webhook update, **KHÔNG được getUpdates vì sẽ phá webhook `tgCallback` đang chạy**). Sáng 6:00 kiểm NV/QL/QR/Worker/Telegram; tối 23:00 kiểm ca dài, quên chấm ra, chấm trùng, 2 quán chồng giờ, lệch giờ duyệt vs giờ quét >30', ca chờ duyệt quá lâu, IP lạ chờ xác nhận, lượt thiếu CF↔Sheet. Khoá sổ đợt: admin upload file Sheet bảng lương thật, app so từng NV (giờ, cơm, tăng ca, nghỉ có lương) – chỉ so, KHÔNG tự sửa. Ổn 1 dòng `✅ Ổn`; không tin = bộ kiểm hỏng. Giờ chỉnh được trong Cài đặt.
