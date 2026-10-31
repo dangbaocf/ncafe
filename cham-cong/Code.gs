@@ -399,7 +399,8 @@ function exportBangLuongT10(p){
   var list=rows('NhanVien').filter(function(n){ var m=up(n.MaNV); return cc[m] || nhap[m] || ung[m] || (dangLam(n) && nghinTien(n.LuongCoBan)>0 && String(n.KieuLuong)==='Cố định'); })
     .map(function(n){ try{ return tinhNguoi(n, cc[up(n.MaNV)]||[], nhap, ung, M, le, th); } catch(e){ return {MaNV:n.MaNV, Ten:n.Ten, _loi:e.message}; } })
     .sort(function(a,b){ return a.MaNV<b.MaNV?-1:1; });
-  return {ok:true, thang:th, list:list, soNV:list.length};
+  // Export thêm nhap + ung + muc để D1 so khớp
+  return {ok:true, thang:th, list:list, soNV:list.length, nhap:nhap, ung:ung, muc:M, le:le};
 }
 function exportChamCongThang(p){
   var th=String((p&&p.thang)||'2026-10');

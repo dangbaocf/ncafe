@@ -78,33 +78,44 @@ async function main() {
   const rBL = await post('/cham-cong/api', { fn: 'exportBangLuongT10', args: [{ thang: '2026-10' }] });
   if (!rBL.body || !rBL.body.ok) { console.error('Lỗi BL:', rBL); process.exit(1); }
   const blAS = rBL.body.list;
-  console.log('  Apps Script tính ' + blAS.length + ' NV');
+  const nhap = rBL.body.nhap || {};
+  const ung  = rBL.body.ung  || {};
+  const muc  = rBL.body.muc  || { an: {}, them: [] };
+  console.log('  Apps Script tính ' + blAS.length + ' NV, nhap=' + Object.keys(nhap).length + ' NV, ung=' + Object.keys(ung).length);
 
   const env = mkEnv(rCfg.body.cfg);
 
-  const soKhop = { gio: 0, com: 0, tienLuong: 0 };
+  const soKhop = { gio: 0, com: 0, tienLuong: 0, tn: 0, thuc: 0 };
   const lech = [];
   for (const asRow of blAS) {
     const ma = String(asRow.MaNV).toUpperCase();
     const nv = nvMap[ma];
     if (!nv) { lech.push({ ma, loi: 'không thấy NV' }); continue; }
     const cc = ccByNV[ma] || [];
-    const d1 = await tinhNhanh(env, nv, cc, '2026-10');
+    const d1 = await tinhNhanh(env, nv, cc, '2026-10', nhap, ung, muc);
     const dGio = Math.abs((d1.gio || 0) - (asRow.gio || 0));
     const dCom = Math.abs((d1.tienCom || 0) - (asRow.com || 0));
     const dLuong = Math.abs((d1.tienLuong || 0) - (asRow.tienLuong || 0));
+    const dTn = Math.abs((d1.tn || 0) - (asRow.tn || 0));
+    const dThuc = Math.abs((d1.thuc || 0) - (asRow.thuc || 0));
 
     if (dGio <= 0.02) soKhop.gio++;
     if (dCom <= 0.02) soKhop.com++;
-    // tienLuong D1 skeleton = gio × luongGio (chưa cộng tăng ca, nghỉ có lương…) → khớp 100% hiếm
     if (dLuong <= 0.5) soKhop.tienLuong++;
+    if (dTn <= 1) soKhop.tn++;
+    if (dThuc <= 1) soKhop.thuc++;
 
-    if (dGio > 0.02 || dCom > 0.5 || dLuong > 50) {
+    if (dGio > 0.02 || dCom > 0.5 || dThuc > 5) {
       lech.push({
-        ma, ten: asRow.Ten, gioAS: asRow.gio, gioD1: d1.gio,
+        ma, ten: asRow.Ten,
+        gioAS: asRow.gio, gioD1: d1.gio,
         comAS: asRow.com, comD1: d1.tienCom,
         tienAS: asRow.tienLuong, tienD1: d1.tienLuong,
-        luongGioAS: asRow.luong, luongGioD1: d1.luongGio
+        tnAS: asRow.tn, tnD1: d1.tn,
+        thucAS: asRow.thuc, thucD1: d1.thuc,
+        codinh: d1.codinh, lcbAS: asRow.lcb, lcbD1: d1.lcb,
+        gioTCAS: asRow.gioTC, gioTCD1: d1.gioTC,
+        gioThieuAS: asRow.gioThieu, gioThieuD1: d1.gioThieu
       });
     }
   }
@@ -113,6 +124,8 @@ async function main() {
   console.log('  Giờ (sai số ≤ 0.02h):      ' + soKhop.gio + '/' + blAS.length);
   console.log('  Cơm (sai số ≤ 0.02):        ' + soKhop.com + '/' + blAS.length);
   console.log('  Tiền lương (sai số ≤ 0.5): ' + soKhop.tienLuong + '/' + blAS.length);
+  console.log('  Tổng nhận TN (sai số ≤ 1): ' + soKhop.tn + '/' + blAS.length);
+  console.log('  Thực nhận (sai số ≤ 1):    ' + soKhop.thuc + '/' + blAS.length);
   console.log('  Lệch đáng kể: ' + lech.length + ' NV\n');
 
   if (lech.length) {

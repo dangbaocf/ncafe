@@ -8,6 +8,10 @@ Trả lời bằng tiếng Việt. Mỗi lần sửa lỗi: tóm tắt LỖI GÌ
 > Khi anh Bảo chốt yêu cầu mới → cập nhật file này + thêm test tương ứng.
 
 ## 0. Luật làm việc
+- **Luật XONG (chốt 1/11 lúc 00:30)**:
+  1. Chỉ được đánh dấu ✓ / báo "XONG" khi việc ĐÚNG ĐỦ như lệnh, ĐANG CHẠY THẬT, có BẰNG CHỨNG (số test đạt, số liệu khớp, kết quả đo).
+  2. Làm một phần / khung / chưa lên bản chính / chưa thử thật → ghi "CHƯA XONG – đã làm được…, còn thiếu…". KHÔNG đánh ✓.
+  3. Mỗi báo cáo rà lại MỌI ✓ theo luật này; chưa đạt → chuyển "CHƯA XONG" + nói rõ còn thiếu gì.
 - Trước khi sửa: giải thích bằng tiếng Việt sẽ sửa gì, chờ anh Bảo đồng ý.
 - Giữ nguyên mọi yêu cầu cũ; mỗi yêu cầu mới phải có test.
 - Chạy toàn bộ test trước khi deploy; có test fail thì KHÔNG deploy.
