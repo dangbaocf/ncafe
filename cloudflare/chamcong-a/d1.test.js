@@ -8,6 +8,12 @@ import {
   wifiChan, wifiKiem, wifiLaMobile, wifiQueueCho,
   cfgTat, hhmm, toMin, chuDau, tenNgan, ipKhop, fmtDT
 } from './d1.js';
+import {
+  caiDatDoc, caiDatGhi,
+  wifiQuanDs, wifiQuanLuu, wifiQuanBo,
+  wifiChoDs, wifiChoXuLy,
+  nhatKyDs, DEFAULTS
+} from './caidat.js';
 
 /* --------- Mock env.DB (minimal D1 interface) --------- */
 function mkDB() {
@@ -51,6 +57,20 @@ function mkDB() {
       return tables.WifiCho.filter(r => r.MaCS === args[0] && r.IP === args[1] && r.TrangThai === 'Cho').map(r => ({ ID: r.ID, CCID: r.CCID }));
     if ((m = s.match(/^SELECT CanhBao FROM ChamCong WHERE ID = \?1$/)))
       return tables.ChamCong.filter(r => r.ID === args[0]).map(r => ({ CanhBao: r.CanhBao }));
+
+    /* Pattern specific cho CanhBao update (caidat.js wifiChoXuLy + d1.js wifiXoaCB)
+     * phải đứng TRƯỚC pattern startsWith('UPDATE ChamCong SET') kẻo generic nuốt mất. */
+    if (s.match(/^UPDATE ChamCong SET CanhBao = \?1, Updated = \?2 WHERE ID = \?3$/)) {
+      const r = tables.ChamCong.find(x => x.ID === args[2]);
+      if (r) { r.CanhBao = args[0]; r.Updated = args[1]; }
+      return { success: true };
+    }
+    /* Pattern specific cho WifiCho 4-arg (caidat.js wifiChoXuLy) phải đứng TRƯỚC generic 3-arg. */
+    if (s.match(/^UPDATE WifiCho SET TrangThai = \?1, XuLyBoi = \?2, LucXong = \?3 WHERE ID = \?4$/)) {
+      const r = tables.WifiCho.find(x => x.ID === args[3]);
+      if (r) { r.TrangThai = args[0]; r.XuLyBoi = args[1]; r.LucXong = args[2]; }
+      return { success: true };
+    }
 
     // INSERT / UPDATE helpers – rất đơn giản
     if (s.startsWith('INSERT INTO ChamCong')) {
@@ -106,7 +126,76 @@ function mkDB() {
       }
       return { success: true };
     }
-    if (s.startsWith('INSERT INTO NhatKySua')) { tables.NhatKySua.push({ args }); return { success: true }; }
+    if (s.startsWith('INSERT INTO NhatKySua')) {
+      // Hai dạng: (1) 8 args từ ghiNhatKy caidat.js (Luc, Boi, Bang, Khoa, Cot, Cu, Moi, LyDo)
+      //           (2) legacy wifiThemTuNhan trong d1.js (chuỗi dài kiểu NULL + concat)
+      tables.NhatKySua.push({
+        ID: tables.NhatKySua.length + 1,
+        Luc: args[0], Boi: args[1], Bang: args[2], Khoa: args[3],
+        Cot: args[4], Cu: args[5], Moi: args[6], LyDo: args[7]
+      });
+      return { success: true };
+    }
+
+    /* ---- caidat.js: CaiDat ---- */
+    if (s === 'SELECT Key, Value, Updated, UpdatedBy FROM CaiDat')
+      return tables.CaiDat.map(r => ({ Key: r.Key, Value: r.Value, Updated: r.Updated || '', UpdatedBy: r.UpdatedBy || '' }));
+    if ((m = s.match(/^SELECT Value FROM CaiDat WHERE Key = \?1$/)))
+      return tables.CaiDat.filter(r => r.Key === args[0]).map(r => ({ Value: r.Value }));
+    if (s.startsWith('INSERT INTO CaiDat(Key, Value, Updated, UpdatedBy)')) {
+      const r = tables.CaiDat.find(x => x.Key === args[0]);
+      if (r) { r.Value = args[1]; r.Updated = args[2]; r.UpdatedBy = args[3]; }
+      else tables.CaiDat.push({ Key: args[0], Value: args[1], Updated: args[2], UpdatedBy: args[3] });
+      return { success: true };
+    }
+
+    /* ---- caidat.js: WifiQuan ---- */
+    if (s === 'SELECT IP, MaCS, GhiChu, Ngay, Boi, TrangThai FROM WifiQuan ORDER BY MaCS, IP')
+      return tables.WifiQuan.slice().sort((a, b) => (a.MaCS + a.IP).localeCompare(b.MaCS + b.IP))
+        .map(r => ({ IP: r.IP, MaCS: r.MaCS, GhiChu: r.GhiChu || '', Ngay: r.Ngay || '', Boi: r.Boi || '', TrangThai: r.TrangThai || 'Dùng' }));
+    if ((m = s.match(/^SELECT TrangThai, GhiChu FROM WifiQuan WHERE IP = \?1 AND MaCS = \?2$/)))
+      return tables.WifiQuan.filter(r => r.IP === args[0] && r.MaCS === args[1])
+        .map(r => ({ TrangThai: r.TrangThai, GhiChu: r.GhiChu || '' }));
+    if ((m = s.match(/^SELECT 1 FROM WifiQuan WHERE IP = \?1 AND MaCS = \?2$/)))
+      return tables.WifiQuan.filter(r => r.IP === args[0] && r.MaCS === args[1]).slice(0, 1).map(() => ({ '1': 1 }));
+    if (s.startsWith('UPDATE WifiQuan SET TrangThai = ?1, GhiChu = ?2 WHERE IP = ?3 AND MaCS = ?4')) {
+      const r = tables.WifiQuan.find(x => x.IP === args[2] && x.MaCS === args[3]);
+      if (r) { r.TrangThai = args[0]; r.GhiChu = args[1]; }
+      return { success: true };
+    }
+    if (s.startsWith("INSERT INTO WifiQuan(IP, MaCS, GhiChu, Ngay, Boi, TrangThai) VALUES(?1,?2,?3,?4,?5,'Dùng')")) {
+      tables.WifiQuan.push({ IP: args[0], MaCS: args[1], GhiChu: args[2], Ngay: args[3], Boi: args[4], TrangThai: 'Dùng' });
+      return { success: true };
+    }
+    if (s.startsWith('INSERT INTO WifiQuan(IP, MaCS, GhiChu, Ngay, Boi, TrangThai) VALUES(?1,?2,?3,?4,?5,?6)')) {
+      tables.WifiQuan.push({ IP: args[0], MaCS: args[1], GhiChu: args[2], Ngay: args[3], Boi: args[4], TrangThai: args[5] });
+      return { success: true };
+    }
+    if (s.match(/^UPDATE WifiQuan SET TrangThai = 'Bỏ' WHERE IP = \?1 AND MaCS = \?2$/)) {
+      const r = tables.WifiQuan.find(x => x.IP === args[0] && x.MaCS === args[1]);
+      if (r) r.TrangThai = 'Bỏ';
+      return { success: true };
+    }
+
+    /* ---- caidat.js: WifiCho queue ---- */
+    if (s.startsWith('SELECT ID, Luc, MaCS, MaNV, Ten, IP, AsOrg, CCID, Loai, TrangThai, XuLyBoi, LucXong FROM WifiCho')
+        && s.includes("TrangThai='Cho'"))
+      return tables.WifiCho.filter(r => r.TrangThai === 'Cho')
+        .sort((a, b) => (a.Luc < b.Luc ? 1 : -1))
+        .map(r => ({ ID: r.ID, Luc: r.Luc, MaCS: r.MaCS, MaNV: r.MaNV, Ten: r.Ten, IP: r.IP, AsOrg: r.AsOrg || '', CCID: r.CCID || '', Loai: r.Loai || '', TrangThai: r.TrangThai, XuLyBoi: r.XuLyBoi || '', LucXong: r.LucXong || '' }));
+    if ((m = s.match(/^SELECT MaCS, IP, CCID FROM WifiCho WHERE ID = \?1$/)))
+      return tables.WifiCho.filter(r => r.ID === args[0]).map(r => ({ MaCS: r.MaCS, IP: r.IP, CCID: r.CCID }));
+    // UPDATE WifiCho 4-arg + UPDATE ChamCong CanhBao đã được xử lý sớm ở trên
+
+    /* ---- caidat.js: NhatKySua query ---- */
+    if (s.startsWith('SELECT ID, Luc, Boi, Bang, Khoa, Cot, Cu, Moi, LyDo FROM NhatKySua')) {
+      let rs = tables.NhatKySua.slice();
+      if (s.includes('WHERE Bang = ?1')) rs = rs.filter(r => r.Bang === args[0]);
+      rs.sort((a, b) => b.ID - a.ID);
+      const lim = args[args.length - 1];
+      return rs.slice(0, lim);
+    }
+
     throw new Error('MOCK không hiểu SQL: ' + s.slice(0, 160));
   }
 
@@ -146,7 +235,7 @@ async function T(name, fn) {
 }
 
 function mkEnv() {
-  const env = { DB: mkDB(), ANH: mkANH(), QR_SECRET: 'test-secret' };
+  const env = { DB: mkDB(), ANH: mkANH(), QR_SECRET: 'test-secret', ADMIN_PIN: '1234', QL_PIN: '5678' };
   env.DB._tables.CoSo.push({ MaCS: 'TP', TenCS: 'Trần Phú', GioMo: '06:30', GioDong: '22:30', ViDo: 16.0702, KinhDo: 108.2167, BanKinh: 100, QRVer: '1' });
   env.DB._tables.CoSo.push({ MaCS: 'DD', TenCS: 'Đống Đa', GioMo: '06:30', GioDong: '22:30', ViDo: null, KinhDo: null, BanKinh: 100, QRVer: '1' });
   env.DB._tables.Ca.push({ MaCa: 'FT1', TenCa: 'Full sáng', GioBD: '06:30', GioKT: '14:30', SoGio: 8 });
@@ -253,6 +342,132 @@ async function main() {
     if (r.tuXacNhan !== false || r.khopLich !== false) return 'luật B: không tự xác nhận';
     const row = env.DB._tables.ChamCong[0];
     if (row.TrangThai !== 'Chờ xác nhận' || !row.AnhRa) return 'row sai: ' + JSON.stringify(row);
+    return true;
+  });
+
+  /* ============ CAI DAT (D1 CRUD) ============ */
+
+  await T('caiDatDoc PIN sai → ok:false', async () => {
+    const env = mkEnv();
+    const r = await caiDatDoc(env, { pin: '0000' });
+    return (r.ok === false && /sai/i.test(r.msg)) || 'r=' + JSON.stringify(r);
+  });
+
+  await T('caiDatDoc admin PIN → trả nhóm + keys đầy đủ (merge defaults với DB)', async () => {
+    const env = mkEnv();
+    const r = await caiDatDoc(env, { pin: '1234' });
+    if (!r.ok) return 'r=' + JSON.stringify(r);
+    if (!Array.isArray(r.nhom) || r.nhom.length !== 10) return 'nhom length=' + r.nhom.length;
+    // WIFI_CHE_DO ở DB là 'Bắt buộc' (seed) → daSua=true, Value='Bắt buộc'
+    const wifi = r.keys.wifi.find(x => x.Key === 'WIFI_CHE_DO');
+    if (!wifi || wifi.Value !== 'Bắt buộc' || !wifi.daSua) return 'WIFI_CHE_DO sai: ' + JSON.stringify(wifi);
+    // TRE_PHUT chưa seed → dùng macDinh='10', daSua=false
+    const tre = r.keys.nguong.find(x => x.Key === 'TRE_PHUT');
+    if (!tre || tre.Value !== '10' || tre.daSua) return 'TRE_PHUT sai: ' + JSON.stringify(tre);
+    // Secret: QR_SECRET không set env → daCai=false, Value=''
+    const qr = r.keys.bimat.find(x => x.Key === 'QR_SECRET');
+    if (!qr || qr.Value !== '••••••' && qr.Value !== '') return 'QR_SECRET sai: ' + JSON.stringify(qr);
+    return true;
+  });
+
+  await T('caiDatGhi upsert + log NhatKy; đổi WIFI_CHE_DO Bắt buộc → Cảnh báo', async () => {
+    const env = mkEnv();
+    const r = await caiDatGhi(env, { pin: '1234', kv: { WIFI_CHE_DO: 'Cảnh báo', TRE_PHUT: '15' }, lyDo: 'thử' });
+    if (!r.ok || r.doi !== 2) return 'r=' + JSON.stringify(r);
+    const cd = env.DB._tables.CaiDat.find(x => x.Key === 'WIFI_CHE_DO');
+    if (!cd || cd.Value !== 'Cảnh báo' || !cd.UpdatedBy) return 'cd=' + JSON.stringify(cd);
+    const nk = env.DB._tables.NhatKySua;
+    if (nk.length !== 2) return 'NhatKy count=' + nk.length;
+    if (nk[0].Bang !== 'CaiDat' || nk[0].Cu !== 'Bắt buộc' || nk[0].Moi !== 'Cảnh báo') return 'NhatKy sai: ' + JSON.stringify(nk[0]);
+    return true;
+  });
+
+  await T('caiDatGhi reject khoá bí mật + khoá chỉ đọc + validate kiểu', async () => {
+    const env = mkEnv();
+    const r = await caiDatGhi(env, { pin: '1234', kv: {
+      QR_SECRET: 'abc',          // secret → reject
+      DOC_LICH: 'Có',            // ro → reject
+      TRE_PHUT: 'abc',           // int sai định dạng → reject
+      GIO_DEM_TU: '25:70',       // time sai → reject
+      TG_MUC: 'khac'             // enum ngoài ds → reject
+    } });
+    if (r.doi !== 0) return 'không được ghi, doi=' + r.doi;
+    if (!r.loi || r.loi.length !== 5) return 'phải có 5 lỗi, có ' + (r.loi||[]).length;
+    return true;
+  });
+
+  await T('caiDatGhi QL PIN (không phải admin) → từ chối', async () => {
+    const env = mkEnv();
+    const r = await caiDatGhi(env, { pin: '5678', kv: { TRE_PHUT: '12' } });
+    return (r.ok === false) || 'QL không được ghi cài đặt, r=' + JSON.stringify(r);
+  });
+
+  await T('wifiQuanDs + wifiQuanLuu + wifiQuanBo', async () => {
+    const env = mkEnv();
+    const r1 = await wifiQuanDs(env, { pin: '1234' });
+    if (!r1.ok || !Array.isArray(r1.ds)) return 'r1=' + JSON.stringify(r1);
+    const start = r1.ds.length;
+    const r2 = await wifiQuanLuu(env, { pin: '1234', ip: '192.168.1.1', maCS: 'DD', ghiChu: 'Modem Viettel' });
+    if (!r2.ok) return 'r2=' + JSON.stringify(r2);
+    const r3 = await wifiQuanDs(env, { pin: '1234' });
+    if (r3.ds.length !== start + 1) return 'không thêm; count=' + r3.ds.length;
+    const r4 = await wifiQuanBo(env, { pin: '1234', ip: '192.168.1.1', maCS: 'DD' });
+    if (!r4.ok) return 'r4=' + JSON.stringify(r4);
+    const row = env.DB._tables.WifiQuan.find(x => x.IP === '192.168.1.1' && x.MaCS === 'DD');
+    if (!row || row.TrangThai !== 'Bỏ') return 'row sau Bỏ: ' + JSON.stringify(row);
+    return true;
+  });
+
+  await T('wifiChoDs + wifiChoXuLy "da" → thêm vào WifiQuan + xoá CB "IP chờ xác nhận"', async () => {
+    const env = mkEnv();
+    // Tạo 1 row ChamCong có CB IP chờ, 1 row WifiCho tương ứng
+    env.DB._tables.ChamCong.push({ ID: 'cc1', MaNV: '201', MaCS: 'TP', TrangThai: 'Đang làm', CanhBao: 'Cách quán 200m; IP chờ xác nhận (10.0.0.5)', Vao: '06:35', Ngay: '2026-10-31' });
+    env.DB._tables.WifiCho.push({ ID: 'wc1', Luc: fmtDT(new Date()), MaCS: 'TP', MaNV: '201', Ten: 'Thanh', IP: '10.0.0.5', AsOrg: 'FPT', CCID: 'cc1', Loai: 'VAO', TrangThai: 'Cho' });
+    const r1 = await wifiChoDs(env, { pin: '1234' });
+    if (!r1.ok || r1.ds.length !== 1) return 'r1=' + JSON.stringify(r1);
+    const r2 = await wifiChoXuLy(env, { pin: '1234', id: 'wc1', hanh: 'da' });
+    if (!r2.ok) return 'r2=' + JSON.stringify(r2);
+    const wq = env.DB._tables.WifiQuan.find(x => x.IP === '10.0.0.5' && x.MaCS === 'TP');
+    if (!wq) return 'phải thêm WifiQuan';
+    const cc = env.DB._tables.ChamCong.find(x => x.ID === 'cc1');
+    if (/IP chờ xác nhận/i.test(cc.CanhBao || '')) return 'phải xoá CB IP chờ, còn: ' + cc.CanhBao;
+    if (!/Cách quán 200m/.test(cc.CanhBao)) return 'phải giữ CB khác: ' + cc.CanhBao;
+    return true;
+  });
+
+  await T('wifiChoXuLy "tuchoi" → đánh dấu TuChoi, KHÔNG thêm WifiQuan', async () => {
+    const env = mkEnv();
+    env.DB._tables.WifiCho.push({ ID: 'wc2', Luc: fmtDT(new Date()), MaCS: 'TP', MaNV: '201', Ten: 'Thanh', IP: '10.9.9.9', CCID: '', Loai: 'VAO', TrangThai: 'Cho' });
+    const startWq = env.DB._tables.WifiQuan.length;
+    const r = await wifiChoXuLy(env, { pin: '1234', id: 'wc2', hanh: 'tuchoi' });
+    if (!r.ok) return 'r=' + JSON.stringify(r);
+    const wc = env.DB._tables.WifiCho.find(x => x.ID === 'wc2');
+    if (wc.TrangThai !== 'TuChoi') return 'phải TuChoi, có ' + wc.TrangThai;
+    if (env.DB._tables.WifiQuan.length !== startWq) return 'không được thêm WifiQuan khi từ chối';
+    return true;
+  });
+
+  await T('nhatKyDs trả record mới nhất; lọc theo bảng', async () => {
+    const env = mkEnv();
+    // 2 lần ghi caiDat → 2 nhật ký
+    await caiDatGhi(env, { pin: '1234', kv: { TRE_PHUT: '12' } });
+    await caiDatGhi(env, { pin: '1234', kv: { TRE_PHUT: '13' } });
+    await wifiQuanLuu(env, { pin: '1234', ip: '10.1.1.1', maCS: 'TP' });   // thêm 1 nhật ký bảng WifiQuan
+    const r1 = await nhatKyDs(env, { pin: '1234', gioiHan: 10 });
+    if (!r1.ok || r1.ds.length !== 3) return 'r1 count=' + r1.ds.length;
+    // Sắp xếp DESC: wifi là mới nhất
+    if (r1.ds[0].Bang !== 'WifiQuan') return 'thứ tự sai, [0]=' + r1.ds[0].Bang;
+    const r2 = await nhatKyDs(env, { pin: '1234', bang: 'CaiDat' });
+    if (r2.ds.length !== 2) return 'lọc CaiDat count=' + r2.ds.length;
+    return r2.ds.every(x => x.Bang === 'CaiDat') ? true : 'lọc không chuẩn';
+  });
+
+  await T('DEFAULTS có đủ ≥ 70 khoá, mỗi khoá có nhom thuộc NHOM', async () => {
+    const keys = Object.keys(DEFAULTS);
+    if (keys.length < 70) return 'chỉ có ' + keys.length + ' khoá, cần ≥ 70';
+    const nhomMa = ['bimat','wifi','nguong','com','luong','tg','bt','luutru','xeplich','khac'];
+    const sai = keys.filter(k => !nhomMa.includes(DEFAULTS[k].nhom));
+    if (sai.length) return 'nhóm sai: ' + sai.join(',');
     return true;
   });
 

@@ -126,8 +126,10 @@ CREATE INDEX IF NOT EXISTS idx_wificho_ccid ON WifiCho(CCID);
 CREATE TABLE IF NOT EXISTS CaiDat (
   Key TEXT PRIMARY KEY,
   Value TEXT,
-  Updated TEXT DEFAULT CURRENT_TIMESTAMP
+  Updated TEXT DEFAULT CURRENT_TIMESTAMP,
+  UpdatedBy TEXT               -- tag người sửa (role:pin**), xem NhatKySua để biết chi tiết
 );
+-- Nếu DB cũ chưa có cột UpdatedBy, chạy riêng: ALTER TABLE CaiDat ADD COLUMN UpdatedBy TEXT;
 
 CREATE TABLE IF NOT EXISTS ThietBi (
   MaNV TEXT,

@@ -83,7 +83,7 @@ input[type=date],input[type=month]{width:auto;min-width:140px;text-align:left}
 <div class="panel" id="view"></div><p class="sub" id="doTG" style="margin-top:14px;font-size:12px;color:#8A817C"></p></div></div>
 <script>
 var DSVT=['Pha chế','Phục vụ','Rửa ly','Bảo vệ','Quản lý','Support'], DSCV=['Trưởng ca','Quản lý','Phó quản lý'];
-var $=function(i){return document.getElementById(i);}, NN=10, PIN='', ROLE='', SUA=false, Q={}, TEN='', VER_TRANG='CC 30/10c', STORES=[], CS={}, CUR='hom';
+var $=function(i){return document.getElementById(i);}, NN=10, PIN='', ROLE='', SUA=false, Q={}, TEN='', VER_TRANG='CC 30/10d', STORES=[], CS={}, CUR='hom';
 // (29/10) Tự phát hiện file QuanLy bị DÁN CHỒNG (dán bản mới mà chưa Ctrl+A xoá bản cũ): bản cũ nằm sau sẽ đè bản mới → báo rõ cách sửa
 var __BAN_NAY=VER_TRANG; window.addEventListener('load',function(){ setTimeout(function(){ if(VER_TRANG===__BAN_NAY) return; var b=document.createElement('div');
   b.style.cssText='margin:10px auto;max-width:1100px;padding:12px 14px;border-radius:10px;background:#B4382F;color:#fff;font:600 15px/1.45 system-ui,sans-serif';
@@ -689,7 +689,9 @@ function veCD(){ run('caiDat',{},function(c){ var h='';
   h+='<details class="hs" id="napBox"><summary>Nạp / xoá dữ liệu giờ công (tháng cũ, sửa dữ liệu chấm sai)</summary><div id="napIn"></div></details>';
   h+='<div class="hs" id="tgBox"><b>Thông báo Telegram</b><p class="sub">Đang tải…</p></div>';
   h+='<div class="hs" id="ltBox"><b>Lưu trữ theo tháng</b><p class="sub">Đang tải…</p></div>';
-  $('view').innerHTML=h; taiLuuTru(); taiTelegram(); taiHeSo(); taiDanhMuc(); veNap(); taiPQ();
+  // (31/10 đợt A) Cài đặt D1 – bản thử: 70+ khoá chia 14 nhóm trong Cloudflare D1, chưa cutover
+  if(ROLE==='admin') h+='<details class="hs" id="cdD1Box" style="border:2px dashed #2F5D62;background:#F5FBFA"><summary><b>⚡ Cài đặt D1 (đợt A – bản thử)</b> <span class="sub">70+ khoá chia 10 nhóm, lưu Cloudflare D1. Chưa cutover; đổi ở đây chưa áp vào app chính cho đến khi anh Bảo duyệt.</span></summary><div id="cdD1In"><p class="sub">Đang tải…</p></div></details>';
+  $('view').innerHTML=h; taiLuuTru(); taiTelegram(); taiHeSo(); taiDanhMuc(); veNap(); taiPQ(); if(ROLE==='admin') taiCDD1();
   var xoa=function(){ $('view').querySelectorAll('[data-xoadong]').forEach(function(b){ b.onclick=function(){ b.closest('tr').remove(); }; }); }; xoa();
   $('tkThem').onclick=function(){ $('tkT').insertAdjacentHTML('beforeend',dongTK({Ten:'',PIN:'',VaiTro:'Quản lý',SuaGio:'Không',GhiChu:'',Quan:''})); xoa(); };
   $('caThem').onclick=function(){ $('caT').insertAdjacentHTML('beforeend',dongCa({MaCa:'',TenCa:'',GioBD:'',GioKT:'',CoSo:'ALL'})); xoa(); };
@@ -770,6 +772,47 @@ function dongTK(t){ return '<tr><td><input data-k="Ten" value="'+esc(t.Ten)+'"><
 function dongCa(x){ return '<tr><td><input data-k="MaCa" value="'+esc(x.MaCa)+'" style="width:70px"></td><td><input data-k="TenCa" value="'+esc(x.TenCa)+'"></td><td><input data-k="GioBD" type="time" value="'+esc(x.GioBD)+'"></td><td><input data-k="GioKT" type="time" value="'+esc(x.GioKT)+'"></td><td><input data-k="CoSo" value="'+esc(x.CoSo)+'" style="width:110px"></td><td><button class="mini" data-xoadong="1">Xoá</button></td></tr>'; }
 function veNK(){ run('nhatKySua',{thang:''},function(r){ $('view').innerHTML='<p class="sub">Mọi lần admin sửa giờ, lương, hệ số, tạm ứng, chốt / mở chốt đều ghi ở đây (300 dòng gần nhất).</p><div class="scroll"><table><tr><th>Lúc</th><th>Ai</th><th>Tháng</th><th>Mã NV</th><th>Mục</th><th>Cũ</th><th>Mới</th></tr>'+r.list.map(function(x){ return '<tr><td>'+esc(x.Luc)+'</td><td>'+esc(x.Boi)+'</td><td>'+esc(x.Thang)+'</td><td>'+esc(x.MaNV)+'</td><td>'+esc(x.Muc)+'</td><td>'+esc(x.Cu)+'</td><td>'+esc(x.Moi)+'</td></tr>'; }).join('')+'</table></div>'; }); }
 
+/* (31/10 đợt A) Cài đặt D1 – gọi thẳng Worker /cham-cong-d1/cai-dat/* (KHÔNG qua google.script.run).
+ * Worker chưa bind D1 sẽ trả 503 → báo "chưa sẵn sàng". Khi deploy xong hạ tầng (sau 3/11), UI tự hoạt động. */
+function cfD1(path, body){ return fetch('/cham-cong-d1/cai-dat/'+path, { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(Object.assign({pin:PIN}, body||{})) })
+  .then(function(r){ return r.json().then(function(j){ return { status:r.status, body:j }; }); }); }
+function taiCDD1(){ var box=$('cdD1In'); if(!box) return;
+  cfD1('doc').then(function(x){ if(x.status===503){ box.innerHTML='<p class="sub" style="color:#8A6212">⏳ Cloudflare D1 chưa gắn (worker chưa `wrangler d1 create` + bind). UI hoạt động khi anh Bảo deploy hạ tầng sau 3/11.</p>'; return; }
+    if(x.status===403 || !x.body.ok){ box.innerHTML='<p style="color:#B4382F">'+esc((x.body&&x.body.msg)||'Không đọc được')+'</p>'; return; }
+    veCDD1(x.body);
+  }).catch(function(e){ box.innerHTML='<p style="color:#B4382F">Lỗi mạng: '+esc(e.message||e)+'</p>'; }); }
+function veCDD1(r){ var box=$('cdD1In'), tenNhom={bimat:'🔐 Mã bí mật',wifi:'📶 Wi-Fi',nguong:'⏱ Ngưỡng',com:'🍚 Cơm',luong:'💰 Lương',tg:'📢 Telegram',bt:'📰 Bảng tin',luutru:'📦 Lưu trữ / ảnh',xeplich:'📅 Xếp lịch',khac:'🔧 Khác'};
+  var h='<p class="sub">Chỉ ADMIN. Thay đổi được ghi vào bảng <code>NhatKySua</code>. Mã bí mật (QR_SECRET, TG_TOKEN…) chỉ hiện ••••; đổi qua <code>wrangler secret put</code>.</p>';
+  r.nhom.forEach(function(g){ var ds=r.keys[g[0]]||[]; if(!ds.length) return;
+    h+='<details class="hs" open><summary><b>'+esc(tenNhom[g[0]]||g[1])+'</b> <span class="sub">· '+ds.length+' khoá</span></summary><div class="g" style="display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:8px">';
+    ds.forEach(function(k){ var ten=esc(k.nhan||k.Key), help=k.help?' <span class="sub" title="'+esc(k.help)+'">ⓘ</span>':'', dauSua=k.daSua?' <span class="pill ok" style="font-size:10px">đã sửa</span>':'';
+      var ctl;
+      if(k.kieu==='secret') ctl='<input value="'+(k.daCai?'••••••':'')+'" disabled style="width:100%;background:#F5F5F5"> <button class="mini" disabled title="Dùng wrangler secret put">ĐỔI</button>';
+      else if(k.kieu==='ro') ctl='<input value="'+esc(k.Value)+'" disabled style="width:100%;background:#F5F5F5">';
+      else if(k.kieu==='bool') ctl='<select data-cdd1="'+esc(k.Key)+'" style="width:100%"><option'+(k.Value==='Có'?' selected':'')+'>Có</option><option'+(k.Value!=='Có'?' selected':'')+'>Không</option></select>';
+      else if(k.kieu==='enum') ctl='<select data-cdd1="'+esc(k.Key)+'" style="width:100%">'+k.ds.map(function(o){ return '<option'+(k.Value===o?' selected':'')+'>'+esc(o)+'</option>'; }).join('')+'</select>';
+      else if(k.kieu==='time') ctl='<input type="time" data-cdd1="'+esc(k.Key)+'" value="'+esc(k.Value)+'" style="width:100%">';
+      else if(k.kieu==='json') ctl='<textarea data-cdd1="'+esc(k.Key)+'" rows="3" style="width:100%;font:12px monospace;padding:4px">'+esc(k.Value)+'</textarea>';
+      else ctl='<input data-cdd1="'+esc(k.Key)+'" value="'+esc(k.Value)+'" style="width:100%">';
+      h+='<span style="min-width:260px;flex:1"><label style="font-size:12px;color:#6B6460">'+ten+help+dauSua+' <span class="sub" style="font-size:11px">· '+esc(k.Key)+'</span></label>'+ctl+'</span>';
+    });
+    h+='</div><button class="btn" data-cdd1Luu="'+g[0]+'" style="margin-top:8px">Lưu '+esc(g[1])+'</button></details>';
+  });
+  h+='<details class="hs"><summary><b>📝 Nhật ký sửa (D1)</b></summary><div id="cdD1Nk"><p class="sub">Bấm để tải…</p><button class="mini" onclick="taiCDD1NK()">Tải 100 dòng gần nhất</button></div></details>';
+  box.innerHTML=h;
+  box.querySelectorAll('[data-cdd1Luu]').forEach(function(b){ b.onclick=function(){ var nhom=b.dataset.cdd1Luu, kv={};
+    box.querySelectorAll('[data-cdd1]').forEach(function(i){ var k=i.dataset.cdd1, def=(r.keys[nhom]||[]).find(function(x){ return x.Key===k; }); if(def) kv[k]=i.value; });
+    b.disabled=true; b.textContent='Đang lưu…';
+    cfD1('ghi', {kv:kv, lyDo:'UI đợt A'}).then(function(x){ b.disabled=false; b.textContent='Lưu '+(({bimat:'Mã bí mật',wifi:'Wi-Fi',nguong:'Ngưỡng',com:'Cơm',luong:'Lương',tg:'Telegram',bt:'Bảng tin',luutru:'Lưu trữ / ảnh',xeplich:'Xếp lịch',khac:'Khác'})[nhom]||nhom);
+      if(x.body.ok){ baoNhanh('Đã lưu '+(x.body.doi||0)+' khoá'+(x.body.loi&&x.body.loi.length?' · '+x.body.loi.length+' lỗi':'')); if(x.body.loi&&x.body.loi.length) alert('Lỗi:\n- '+x.body.loi.join('\n- ')); taiCDD1(); }
+      else alert('Lỗi: '+(x.body.msg||'không rõ'));
+    }).catch(function(e){ b.disabled=false; alert('Lỗi mạng: '+e.message); }); }; }); }
+function taiCDD1NK(){ var box=$('cdD1Nk'); if(!box) return; box.innerHTML='<p class="sub">Đang tải…</p>';
+  cfD1('nhat-ky', {gioiHan:100}).then(function(x){ if(!x.body.ok){ box.innerHTML='<p style="color:#B4382F">'+esc(x.body.msg||'')+'</p>'; return; }
+    if(!x.body.ds.length){ box.innerHTML='<p class="sub">Chưa có nhật ký.</p>'; return; }
+    box.innerHTML='<div class="scroll"><table><tr><th>Lúc</th><th>Ai</th><th>Bảng</th><th>Khoá</th><th>Cũ</th><th>Mới</th><th>Lý do</th></tr>'+x.body.ds.map(function(k){ return '<tr><td class="sub">'+esc(k.Luc)+'</td><td>'+esc(k.Boi)+'</td><td>'+esc(k.Bang)+'</td><td><code>'+esc(k.Khoa)+'</code></td><td>'+esc(k.Cu)+'</td><td><b>'+esc(k.Moi)+'</b></td><td class="sub">'+esc(k.LyDo||'')+'</td></tr>'; }).join('')+'</table></div>';
+  }); }
+
 /* (29/10) Tải lại 1 khung: giữ nội dung cũ, làm mờ + nhãn "Đang tải…" (không xoá trắng); xong / lỗi thì bỏ mờ */
 function hopTai(id){ var b=document.getElementById(id); if(!b) return; if(b.children.length && !/^\s*Đang tải/.test(b.textContent||'')) b.classList.add('hopTai'); else b.innerHTML='<p class="sub">Đang tải…</p>'; }
 function hopXong(id){ var b=document.getElementById(id); if(b) b.classList.remove('hopTai'); }
@@ -816,4 +859,4 @@ setInterval(function(){ if(!document.hidden) capNhatSo(true); }, 120000);
 document.addEventListener('visibilitychange', function(){ if(!document.hidden) capNhatSo(false); });
 document.addEventListener('click', function(e){ if(e.target.closest && e.target.closest('#tabs .tab, #subtabs .tabcon')) setTimeout(function(){ capNhatSo(false); }, 1500); });
 </script></body></html>
-<!-- HẾT QuanLy.html – bản CC 30/10a (dán đủ thì dòng này nằm cuối cùng) -->
+<!-- HẾT QuanLy.html – bản CC 30/10d (dán đủ thì dòng này nằm cuối cùng) -->
