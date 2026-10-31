@@ -29,15 +29,20 @@ worker='''/**
  * Trang tải ngay từ Cloudflare (nhanh, định vị và camera chạy chắc chắn); dữ liệu vẫn lưu ở app Chấm công trên Google.
  * Biến môi trường cần đặt (Settings → Variables): APPS_SCRIPT_URL = link /exec của app Chấm công; API_KEY = khoá API trong tab Cài đặt.
  * Trang quản lý: /quan-ly (30/10 – thay link Apps Script; dữ liệu vẫn ở Google).
+ * Đợt A (31/10): route /cham-cong-d1/* ghi thẳng D1 (nếu env.DB + env.ANH đã bind), KHÔNG phá route cũ.
  * Routes: caphemuoihue.com/cham-cong, caphemuoihue.com/cham-cong/*, caphemuoihue.com/lich-cua-toi, caphemuoihue.com/gio-cong, caphemuoihue.com/khao-sat
  */
+import { handleChamCongD1 } from './chamcong-a/handler.js';
 const PAGES = '''+json.dumps(P,ensure_ascii=False)+''';
 const ALLOW = '''+json.dumps(ALLOW)+''';
 const ALLOW_QL = '''+json.dumps(ALLOW_QL)+''';   // trang quản lý /quan-ly – hàm nào cũng tự kiểm mã PIN
 function json(o, status){ return new Response(JSON.stringify(o), {status: status||200, headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}}); }
 export default {
-  async fetch(request, env){
+  async fetch(request, env, ctx){
     const url=new URL(request.url); const path=url.pathname.replace(/\\/+$/,'') || '/';
+    // Đợt A: thử delegate sang handler D1 trước (nếu khớp /cham-cong-d1/* path). Null = tiếp tục route cũ.
+    const d1Resp = await handleChamCongD1(request, env, ctx);
+    if (d1Resp) return d1Resp;
     if(path==='/tg/webhook'){
       if(request.method!=='POST') return new Response('ok',{status:200});
       const sec=request.headers.get('x-telegram-bot-api-secret-token')||'';
