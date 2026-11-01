@@ -36,6 +36,12 @@ Trả lời bằng tiếng Việt. Mỗi lần sửa lỗi: tóm tắt LỖI GÌ
    - Ghi kế hoạch lên `NHAT-KY.md` (sẽ sửa file nào, vì sao) rồi **DỪNG, chờ anh gõ "OK"** mới làm.
    - Việc khác (sửa UI nhẹ, thêm fn mới chưa động data, viết docs): cứ làm + ghi nhật ký.
 
+**8. NEN-CU.md là nền (1/11 chốt 11:30)**:
+   - Lệnh anh chỉ nói phần THAY ĐỔI. Mọi mục `NEN-CU.md` mặc định giữ nguyên và chạy như cũ.
+   - Trước khi sửa: liệt kê các mục NEN-CU đụng/phụ thuộc → ghi `NHAT-KY.md`.
+   - Sau khi sửa: kiểm lại từng mục đó còn chạy đúng.
+   - Phát hiện thứ trong code cũ mà NEN-CU chưa có → bổ sung NEN-CU trước, rồi mới làm tiếp.
+
 **7. Mọi việc GHI LÊN GOOGLE DRIVE (1/11 chốt 12:30)** – để Claude bên ngoài kiểm:
    - Thư mục `ncafe-code/` trong Drive:
      - `hien-tai/` = toàn bộ `~/Documents/ncafe/` (bỏ `node_modules`, `.git`, secrets).
