@@ -1,10 +1,30 @@
 # Sổ cập nhật – Ncafe Chấm Công
 
 Mỗi bản 1 khối, bản mới nhất ở ĐẦU. Luật đặt tên: CLAUDE.md luật 0.
+**Giờ ghi là giờ VN thực lấy từ server log** (fmtDT output).
 
 ---
 
-## CC 01/11e – deploy 1/11 12:00 (V1 Telegram + CC 01/11d UX)
+## CC 01/11g – deploy 1/11 11:14 giờ VN
+
+**Sửa**:
+- Tin Telegram CF D1 thiếu ảnh + format khác bản cũ → port đúng format `tgSuKien` AS (Code.gs L847–852): "✅ 11:13 · Trần Phú\nTên (mã) vào ca 6:30–12:00 · Phục vụ · nhắc nhở: trễ 1'"...
+- Kèm ảnh qua `sendPhoto` multipart (nếu `TG_ANH='Có'` + có `p.photo` dataURL).
+- Múi giờ: log TelegramLog server dùng `fmtDT` = UTC+7 = giờ VN. Log hiển thị 10:54, 11:13 khớp đúng giờ anh nhìn. Em sửa CAP-NHAT về đúng giờ server log, không ước lượng.
+
+**Giữ nguyên**: Luật test → admin only, retry 3 lần, log D1 TelegramLog, choose chat từ TG_CHAT_<CS>.
+
+**Test**: PV-TEST VAO/RA → log có với "chat not found" (bot chưa /start). Fix hiệu lực khi anh /start bot.
+
+**Mã bản**: Worker `bfb471c4` · Apps Script @139 (gắn bản chính AKfycbyx_…FztzoFXW) · git tag `CC-01-11g`.
+
+**Anh cần làm**:
+- Mở Telegram → tìm `@Cpmhchamcongbot` → nhắn `/start`. Rồi báo em, em test lại.
+- Kiểm 3 group TP/DD/LDD sáng nay có nhận 12 tin bù (12/14 record 08:33–09:47, 2 TNV đã có từ 10:56).
+
+---
+
+## CC 01/11f – deploy 1/11 10:30 giờ VN (V1 Worker Telegram trực tiếp)
 
 **Sửa (V1)**:
 - **BUG LỚN**: CF D1 route KHÔNG gửi Telegram khi chấm vào/ra (bản gốc d1.js chỉ trả `_tg` object nhưng không gọi AS tgSuKien). → Khi anh deploy CF, tin Telegram sáng nay có thể THIẾU.
