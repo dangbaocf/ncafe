@@ -316,7 +316,7 @@ export async function qrInfo(env, p) {
 
 export async function qrNhanVien(env, p) {
   const n = await getNhanVien(env, p.maNV);
-  if (!n || !(await dangLam(n))) return { ok: false, msg: 'Mã nhân viên không hợp lệ' };
+  if (!n || !(await dangLam(n))) return { ok: false, msg: 'Mã nhân viên không hợp lệ', duPhong: true };
   const mo = await caDangMo(env, n.MaNV);
   return {
     ok: true,
@@ -332,7 +332,8 @@ export async function qrMo(env, request, p) {
   if (!info.ok) return info;
   const ip = (request.headers.get('CF-Connecting-IP') || '').trim();
   const w = await wifiKiem(env, info.store.MaCS, ip);
-  const out = { ok: true, store: info.store, wifi: { bat: w.bat, ok: w.ok, cheDo: w.cheDo } };
+  // Trả cfBat để QR.html biết nên dùng CF route hay fallback (lệnh 1/11: BUG - trước đó không trả).
+  const out = { ok: true, store: info.store, cfBat: info.cfBat, wifi: { bat: w.bat, ok: w.ok, cheDo: w.cheDo } };
   if (String(p.maNV || '').trim()) {
     const nvInfo = await qrNhanVien(env, p);
     if (nvInfo && nvInfo.ok) out.nv = nvInfo;
@@ -364,7 +365,7 @@ export async function qrVao(env, request, p, ctx) {
   if (!info.ok) return info;
   const cs = info.store;
   const n = await getNhanVien(env, p.maNV);
-  if (!n || !(await dangLam(n))) return { ok: false, msg: 'Mã nhân viên không hợp lệ' };
+  if (!n || !(await dangLam(n))) return { ok: false, msg: 'Mã nhân viên không hợp lệ', duPhong: true };
   const ip = (request.headers.get('CF-Connecting-IP') || '').trim();
   const asOrg = ((request.cf && request.cf.asOrganization) || '').trim();
   const wc = await wifiChan(env, cs, n, 'VAO', { ip, asOrg });

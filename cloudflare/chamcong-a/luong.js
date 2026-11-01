@@ -58,12 +58,23 @@ export async function tinhComNgay(env, gioDaDuyet, nv) {
   return { coCom, mucNghin: coCom ? comGia : 0, nguong: ngTu, ly: coCom ? ('đủ ' + ngTu + 'h đã duyệt') : '' };
 }
 
-/** trangThaiRow – đơn giản hoá từ Code.gs. */
+/** Chuẩn hoá TrangThai: xoá BOM/ZWSP/REPLACEMENT và chuẩn hoá chữ Đ bị corrupted.
+ *  Lý do: Sheet đôi khi có cell chứa "��ã xác nhận" (0xFFFD×2 thay cho Đ) do copy-paste
+ *  từ external source. AS strict compare cũng miss, nhưng dùng `ngay[d]+=g` chạy luôn
+ *  trong Luong.gs → gio AS include. D1 phải match để cùng kết quả. */
+export function normTT(s) {
+  let t = String(s || '').replace(/[\uFEFF\u200B\u200C\u200D]+/g, '');
+  // "??ã xác nhận" → "Đã xác nhận" (recover từ corrupt char)
+  if (/^\uFFFD+ã /.test(t)) t = 'Đ' + t.replace(/^\uFFFD+/, '');
+  if (/^\uFFFD+ang /.test(t)) t = 'Đ' + t.replace(/^\uFFFD+/, '');
+  return t.trim();
+}
+
+/** trangThaiRow – đơn giản hoá từ Code.gs + normalize. */
 export function trangThaiRow(r, hom) {
-  const tt = String(r.TrangThai || '');
+  const tt = normTT(r.TrangThai);
   if (tt === 'Đã xác nhận' || tt === 'Đã xong' || tt === 'Chờ xác nhận' || tt === 'Quên chấm ra') return tt;
   if (tt === 'Đang làm') {
-    // Nếu ngày < hôm nay và vẫn Đang làm → Quên chấm ra
     if (hom && String(r.Ngay) < hom) return 'Quên chấm ra';
     return 'Đang làm';
   }
@@ -117,6 +128,7 @@ export async function tinhNhanh(env, nv, cc, thang, nhap, ung, muc) {
   const hom = thang + '-32';
   let gio = 0, gioTC = 0, gioThieu = 0, soCa = 0, choXN = 0, quen = 0;
   const gioNgay = {}, ngayMap = {}, soNgayCo = {};
+  const dong = [];   // (port AS: dong push BẤT KỂ duyet; non-FT tienLuong tính Σ x.g×muc – gồm cả Chờ xác nhận)
   for (const r of cc) {
     const d = String(r.Ngay || '').slice(0, 10);
     if (!d.startsWith(thang + '-')) continue;
@@ -124,12 +136,16 @@ export async function tinhNhanh(env, nv, cc, thang, nhap, ung, muc) {
     const tt = trangThaiRow(r, hom);
     if (tt === 'Chờ xác nhận') choXN++;
     if (tt === 'Quên chấm ra') { quen++; continue; }
-    if (tt !== 'Đã xác nhận' && tt !== 'Đã xong') continue;
+    if (tt === 'Đang làm') continue;
     const g = +r.GioTinh || 0;
     const caG = caGio(r);
-    const tc = g > caG ? g - caG : 0;
     const thieu = g < caG ? caG - g : 0;
-    gio += g; gioTC += tc; gioThieu += thieu;
+    const duyet = (tt === 'Đã xác nhận' || tt === 'Đã xong');
+    const tc = (duyet && g > caG) ? g - caG : 0;
+    gioThieu += thieu;
+    dong.push({ d, g, tc, thieu, duyet });
+    if (!duyet) continue;
+    gio += g; gioTC += tc;
     gioNgay[d] = (gioNgay[d] || 0) + g;
     ngayMap[d] = true;
     soNgayCo[d] = true;
@@ -146,20 +162,41 @@ export async function tinhNhanh(env, nv, cc, thang, nhap, ung, muc) {
   // Lương giờ (hoặc cố định)
   const luongGio = await luongGioNV(env, nv);
   const lcbNV = nghinTien(nv.LuongCoBan);
-  const luongNgay = codinh ? (lcbNV / ngayChuan) : 0;
-  const luongGioQD = codinh ? (luongNgay / gioChuan) : luongGio;
 
-  // Tiền lương chính
+  // Tiền lương chính – port đúng AS tinhNguoi:
+  //   FT (codinh): sum theo ngày × mức/ngàyChuan × (1+ hs lễ) – trừ thiếu × mức/ngàyChuan/gioChuan + tc × hệ số
+  //   Non-FT: sum theo dong (TẤT CẢ ca, kể cả Chờ xác nhận) × mức ngày + tc × mức × (hs-1) + lễ × mức × (hs-1)
+  //   NOTE: AS code cộng tienLuong CHO CẢ Chờ xác nhận. Mâu thuẫn CLAUDE.md L1 ("ca chưa duyệt KHÔNG tính").
+  //   Em port đúng AS code hiện tại để match 100%. Cần anh Bảo quyết: đây là bug hay intended?
+  const suaMuc = codinh ? (nh.lcb !== undefined && nh.lcb !== '') : (nh.luong !== undefined && nh.luong !== '');
+  const _le = (muc && muc.le) || {};   // chưa dùng – placeholder ngày lễ
+  const nhapLcb = suaMuc && codinh ? so(nh.lcb) : lcbNV;
+  const nhapLuongGio = suaMuc && !codinh ? so(nh.luong) : luongGio;
+  const mucDay = (_d) => suaMuc ? (codinh ? nhapLcb : nhapLuongGio) : (codinh ? lcbNV : luongGio);
+  const luongNgay = codinh ? (nhapLcb / ngayChuan) : 0;
+  const luongGioQD = codinh ? (luongNgay / gioChuan) : nhapLuongGio;
   let tienLuong = 0;
   if (codinh) {
-    // FT cố định: cộng theo ngày có công, trừ thiếu giờ, cộng tăng ca × hsTC
     const soNgayLam = Math.round((soNgay - gioThieu / gioChuan) * 100) / 100;
-    tienLuong = soNgayLam * (lcbNV / ngayChuan) + gioTC * luongGioQD * hsTC;
+    let t = 0;
+    const ngaySet = Object.keys(gioNgay);
+    ngaySet.forEach(d => { t += mucDay(d) / ngayChuan * (1 + (_le[d] ? _le[d] - 1 : 0)); });
+    dong.forEach(x => { const q = mucDay(x.d) / ngayChuan / gioChuan; t += -x.thieu * q + x.tc * q * hsTC; });
+    tienLuong = t;
+    void soNgayLam;
   } else {
-    // Giờ: cộng gio × luong + tăng ca × luong × (hsTC - 1)
-    const g = (nh.gio !== undefined && nh.gio !== '') ? so(nh.gio) : gio;
-    const l = (nh.luong !== undefined && nh.luong !== '') ? so(nh.luong) : luongGio;
-    tienLuong = g * l + gioTC * l * (hsTC - 1);
+    if (nh.gio !== undefined && nh.gio !== '') {
+      const g2 = so(nh.gio); const l = suaMuc ? so(nh.luong) : luongGio;
+      tienLuong = g2 * l + gioTC * l * (hsTC - 1);
+    } else {
+      // Non-FT theo giờ: dong.forEach GỒM Chờ xác nhận (port AS)
+      let t2 = 0;
+      dong.forEach(x => {
+        const m = mucDay(x.d);
+        t2 += x.g * m + x.tc * m * (hsTC - 1) + (_le[x.d] ? x.g * (_le[x.d] - 1) * m : 0);
+      });
+      tienLuong = t2;
+    }
   }
 
   // Mục cộng/trừ (nhap)

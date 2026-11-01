@@ -142,6 +142,7 @@ export const DEFAULTS = {
   // --- Khác ---
   'CF_URL':             { nhom:'khac', nhan:'URL Cloudflare NV', giaTri:'https://ncafe-chamcong.dangbao-mt.workers.dev', kieu:'text' },
   'CF_CHAM_CONG_BAT':   { nhom:'khac', nhan:'🔥 CÔNG TẮC: Chấm công qua Cloudflare', giaTri:'Có', kieu:'bool', help:'Bật → QR.html gọi /cham-cong-d1/qr/*. Tắt KHẨN CẤP → dùng đường cũ (Apps Script). Mặc định BẬT sau 1/11.' },
+  'PHIEN_GIO':          { nhom:'khac', nhan:'Giữ đăng nhập (giờ)',           giaTri:'12', kieu:'int',  help:'Trang quản lý tự nhớ đăng nhập trong N giờ (localStorage). Mặc định 12. Admin đổi tại đây.' },
   'TRA_CUU_MAX_NGAY':   { nhom:'khac', nhan:'Tra cứu: tối đa N ngày', giaTri:'93', kieu:'int' },
   'TRA_CUU_CHIA_TRANG': { nhom:'khac', nhan:'Tra cứu: chia trang / N dòng', giaTri:'100', kieu:'int' },
   'RECONCILE_GIO':      { nhom:'khac', nhan:'Giờ reconcile CF↔Sheet đêm', giaTri:'02:00', kieu:'time' }

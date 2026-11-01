@@ -163,7 +163,8 @@ function apiHam(){ return {qrInfo:qrInfo, qrMo:qrMo, qrNhanVien:qrNhanVien, qrVa
     exportBangLuongT10:exportBangLuongT10,
     exportChamCongThang:exportChamCongThang,
     exportCaiDatAll:exportCaiDatAll,
-    exportNhanVienAll:exportNhanVienAll}; }   // (31/10 đợt A) export fn cho worker gọi qua API_KEY để so khớp lương
+    exportNhanVienAll:exportNhanVienAll,
+    exportLichSuLuong:exportLichSuLuong}; }   // (31/10 đợt A) export fn cho worker gọi qua API_KEY để so khớp lương
 /* (30/10b) Số ca "Chờ xác nhận" trong tháng 10/2026 theo quán – trước kỳ lương 3/11 để QL duyệt hết. Chỉ trả số, không tên nhân viên. */
 function demCaChoDuyetT10(){
   var today=fmtDate(new Date()), so={}, tong=0;
@@ -422,6 +423,15 @@ function exportNhanVienAll(p){
     GioChuanNgay:+n.GioChuanNgay||0, NgayChuan:+n.NgayChuan||0, TrangThai:String(n.TrangThai||'Đang làm')}; });
   return {ok:true, list:list, so:list.length};
 }
+function exportLichSuLuong(p){
+  var r = (SS.getSheetByName('LichSuLuong')?rows('LichSuLuong'):[]).map(function(x){
+    return {MaNV:String(x.MaNV||''), Kieu:String(x.Kieu||''), Ngay:dateKey(x.Ngay), Tu:+x.Tu||0, Len:+x.Len||0, TuMacDinh:String(x.TuMacDinh||'')};
+  });
+  var lk = (SS.getSheetByName('LuongKhoang')?rows('LuongKhoang'):[]).map(function(x){
+    return {ID:String(x.ID), MaNV:String(x.MaNV||''), Tu:dateKey(x.TuNgay), Den:dateKey(x.DenNgay), Kieu:String(x.Kieu||'gio'), GiaTri:+x.GiaTri||0, GhiChu:String(x.GhiChu||'')};
+  });
+  return {ok:true, lsLuong:r, luongKhoang:lk};
+}
 function tgCallback(update){
   try{
     if(!update || !update.callback_query) return {ok:true, bo:'not_callback'};
@@ -650,7 +660,7 @@ function rowOut(r, role, today){ var o={ID:r.ID, Ngay:dateKey(r.Ngay), MaNV:Stri
 function dangNhap(p){ try{ return dangNhap_(p); }catch(e){ return {ok:false, msg:'Lỗi máy chủ khi đăng nhập: '+(e&&e.message||e)+' – báo người cài app (bản '+VER+')'}; } }
 function dangNhap_(p){ var tk=taiKhoan(p.pin); if(!tk) return {ok:false,msg:'Sai mã'}; var role=tk.role;
   var xl=String(cfg('XEP_LICH_URL')||''); if(xl && /\/exec$/.test(xl)) xl+='?page=admin';
-  return {ok:true, role:role, ten:tk.ten, suaGio:tk.suaGio, quyen:quyenMap(tk), xepLichUrl:xl, nn:nguongXN().nn, dsViTri:dsViTri(), dsChucVu:dmDs('DS_CHUC_VU'), ver:VER, appUrl:(function(){ try{ return ScriptApp.getService().getUrl(); }catch(e){ return ''; } })(), stores:rows('CoSo').map(function(c){ return {MaCS:c.MaCS,TenCS:c.TenCS}; }), coLich:!!cfg('LICH_SHEET_ID')}; }
+  return {ok:true, role:role, ten:tk.ten, suaGio:tk.suaGio, quyen:quyenMap(tk), xepLichUrl:xl, nn:nguongXN().nn, dsViTri:dsViTri(), dsChucVu:dmDs('DS_CHUC_VU'), ver:VER, appUrl:(function(){ try{ return ScriptApp.getService().getUrl(); }catch(e){ return ''; } })(), stores:rows('CoSo').map(function(c){ return {MaCS:c.MaCS,TenCS:c.TenCS}; }), coLich:!!cfg('LICH_SHEET_ID'), phienGio:(+cfg('PHIEN_GIO')||12)}; }
 function homNay(p){ var _q=khongQuyen(p.pin,'hom',1); if(_q) return _q; var role=authRole(p.pin); if(!role) return {ok:false,msg:'Sai mã'}; return homNayNoiBo(p.ngay, role); }
 function homNayNoiBo(ngay, role){
   var d=ngay||fmtDate(new Date()), today=fmtDate(new Date()), cm=caMap(), nv={}; rows('NhanVien').forEach(function(n){ nv[up(n.MaNV)]=n; });
