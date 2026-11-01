@@ -7,6 +7,49 @@ Trả lời bằng tiếng Việt. Mỗi lần sửa lỗi: tóm tắt LỖI GÌ
 > Yêu cầu mới mâu thuẫn với yêu cầu cũ → hỏi anh Bảo trước, không tự quyết.
 > Khi anh Bảo chốt yêu cầu mới → cập nhật file này + thêm test tương ứng.
 
+## BÀI HỌC 1/11 – CỔNG CHẶN BẮT BUỘC (ưu tiên tuyệt đối)
+
+4 cổng TRƯỚC MỖI LẦN DEPLOY. Thiếu 1 = KHÔNG deploy.
+
+**(1) DỮ LIỆU** – mọi bảng bị đụng tới:
+- Đếm số dòng + so từng cột giữa nguồn cũ (Sheet) và nguồn mới (D1).
+- Bảng trống hoặc lệch số dòng/giá trị → DỪNG, chép lại cho khớp.
+- Ví dụ sự cố 1/11: D1 `NhanVien` trống 0 rows khi deploy → "Mã NV không hợp lệ" cho mọi NV.
+
+**(2) ĐỐI CHIẾU BẢN CŨ** – việc chuyển đổi / viết lại chức năng:
+- Giao diện + tính năng + danh sách + thông báo GIỐNG HỆT bản cũ (Apps Script), trừ chỗ anh Bảo đã quyết đổi (ghi CLAUDE.md).
+- Lập bảng Giống/Khác trước khi deploy; chỗ KHÁC không nằm trong quyết định → sửa cho giống bản cũ.
+- Ví dụ sự cố 1/11: D1 `qrNhanVien` trả cấu trúc khác AS (thiếu `cas, next, lich`) → QR.html crash → trang trắng ở 5 quán.
+
+**(3) TRÌNH DUYỆT** – không chỉ gọi API:
+- Mở đúng trang trên trình duyệt THẬT (Chrome / Safari / Zalo). Playwright nếu được, Chrome headless nếu không.
+- Đi ĐỦ luồng: mở QR → nhập mã → chọn ca → chụp ảnh → "Đã chấm" → quét lại → chấm ra. 5 quán.
+- Dùng mã thử PV-TEST / NV-TEST, không mã thật.
+- Gọi API thôi là CHƯA ĐỦ (vì không bắt được lỗi render / JS crash).
+
+**(4) NGƯỜI THẬT** – thay đổi đụng trang NV / QL:
+- Nhờ anh Bảo hoặc 1 QL thử bằng điện thoại thật ở 1 quán trước khi coi là XONG.
+- Chỉ sau khi người thật xác nhận → mới báo "ĐÃ XONG".
+
+### Dữ liệu test
+- TUYỆT ĐỐI không dùng mã nhân viên thật để test. Chỉ mã thử (`NV-TEST`, `PV-TEST`...). Lượt test gắn cờ `TEST` (field riêng hoặc `GhiChu='TEST'`).
+- Dọn dữ liệu test CHỈ theo cờ `TEST`, KHÔNG theo giờ / mã lượt / ID range (nguy cơ xoá nhầm lượt thật).
+
+### Giờ deploy
+- KHÔNG deploy trong giờ cao điểm chấm công: **06:00–07:30**, **14:00–15:00**, **16:30–17:30**. Trừ bản sửa lỗi khiến NV KHÔNG chấm được.
+- Thay đổi lớn (chuyển hệ thống / đổi cách lưu): chạy NGẦM song song trước, khớp 100% → mới chuyển hẳn.
+
+### Dự phòng khi đang chạy
+- Trang QR gặp BẤT KỲ lỗi nào (mạng, kết quả lạ, > 5 giây, giao diện không hiện) → tự chuyển đường cũ, NV không thấy lỗi.
+- Ghi log MỌI lượt quét (thành công, lỗi, rơi về đường cũ) để truy nguyên.
+- Tự kiểm 10 phút/lần trong giờ mở quán: mở QR 5 quán bằng mã thử → tới màn chọn ca. Lỗi → Telegram admin NGAY.
+
+### Báo cáo
+- Chỉ báo XONG khi đúng đủ như lệnh + đang chạy thật + qua đủ 4 cổng + có bằng chứng.
+- Làm một phần = "CHƯA XONG – còn thiếu…". Không tự nhận XONG bỏ qua 4 cổng.
+
+---
+
 ## 0. Luật làm việc
 - **Luật XONG (chốt 1/11 lúc 00:30)**:
   1. Chỉ được đánh dấu ✓ / báo "XONG" khi việc ĐÚNG ĐỦ như lệnh, ĐANG CHẠY THẬT, có BẰNG CHỨNG (số test đạt, số liệu khớp, kết quả đo).
