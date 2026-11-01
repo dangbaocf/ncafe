@@ -4,6 +4,38 @@ Mỗi bản 1 khối, bản mới nhất ở ĐẦU. Luật đặt tên: CLAUDE.
 
 ---
 
+## CC 01/11e – deploy 1/11 12:00 (V1 Telegram + CC 01/11d UX)
+
+**Sửa (V1)**:
+- **BUG LỚN**: CF D1 route KHÔNG gửi Telegram khi chấm vào/ra (bản gốc d1.js chỉ trả `_tg` object nhưng không gọi AS tgSuKien). → Khi anh deploy CF, tin Telegram sáng nay có thể THIẾU.
+- Fix: `qrVao` + `qrRa` thêm `ctx.waitUntil(backfillSheet('qrGuiTelegram', {...}))`. Apps Script fn `qrGuiTelegram` nhận _tg object + gọi `tgSuKien` (hoặc gửi admin only nếu `test:true`).
+- Mã test (PV-TEST / NV-TEST / TEST-*) → tin chỉ gửi `TG_ADMIN_IDS`, không gửi group quán (CLAUDE.md luật 3).
+
+**Sửa (CC 01/11d UX, gộp)**:
+- Bỏ 1 confirm thừa: `luuViTriQuan` → toast "Đã lưu vị trí…".
+- Save button trong Cài đặt: toast "Đã lưu" + chống bấm 2 lần (`class='dang'`).
+- Lỗi khi lưu → giữ dữ liệu đang nhập, báo rõ.
+- Nút "Quay lại" trong dialog con (Sửa form Xác nhận giờ, Lương theo ngày, Mã QR). Text "Đóng" / "✕" → "← Quay lại".
+- Lịch sử trình duyệt: tab chuyển dùng `history.pushState` → Back điện thoại/trình duyệt quay về tab trước, không văng ra khỏi trang.
+
+**Tính năng mới**: `qrGuiTelegram(_tg)` + luồng gửi Telegram cho CF D1 route. Nút Quay lại các dialog. Toast "Đã lưu".
+
+**Giữ nguyên**: Lương Sheet AS, khoá sổ T10, QR cũ, cấu trúc tab, phân quyền. Nút Duyệt/Từ chối/Xoá/Sửa tab Xác nhận giờ (CC 01/11b).
+
+**Test**: cc 153/0 + d1 17/0 + luong 7/0. Chấm PV-TEST qua CF D1 OK (`/tmp/test_v1_tele.py`). Record Sheet có + đã dọn theo cờ.
+
+**Rollback**: Worker `d0c76943` CC 01/11c · Apps Script @136.
+
+**Mã bản**: Worker `2be77731` · Apps Script @137 · git tag `CC-01-11e` (pending push).
+
+**Anh cần làm (bằng chứng V1 còn thiếu)**:
+1. Mở Telegram group admin → tin có "🧪 [TEST VAO] PV TEST (PV-TEST) · quán TP · 10:48" + "🧪 [TEST RA]"? CÓ = V1 fix OK.
+2. Kiểm 5 group quán sáng nay (TP, DD, TD, TNV, LDD): có tin vào/ra của 5 NV thật (210 Mai LDD 06:24, 504 Hùng TP 06:27, 103 Nhỏ DD 07:23, 216 NhiH DD 07:24, 309 Lam DD 07:25)? Thiếu nhóm nào → em bổ sung bù qua `qrGuiTelegram` thủ công (chờ anh xác nhận trước).
+
+**V1 CHƯA XONG** – chờ anh xác nhận bằng chứng Telegram.
+
+---
+
 ## CC 01/11c – deploy 1/11 11:55
 
 **Sửa + Mới**:

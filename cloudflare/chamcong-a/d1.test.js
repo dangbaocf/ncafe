@@ -53,6 +53,8 @@ function mkDB() {
       return [...new Set(tables.WifiCho.filter(r => r.MaCS === args[0] && r.IP === args[1] && r.TrangThai === 'Cho' && r.Luc >= args[2] && r.MaNV !== args[3]).map(r => r.MaNV))].map(x => ({ MaNV: x }));
     if ((m = s.match(/^SELECT 1 FROM ThietBi WHERE MaNV = \?1 AND Dev = \?2 LIMIT 1$/)))
       return tables.ThietBi.filter(r => r.MaNV === args[0] && r.Dev === args[1]).slice(0, 1);
+    if ((m = s.match(/^SELECT KhoaDen FROM ThietBi WHERE Dev = \?1 AND MaNV = '_sdt4_'$/)))
+      return tables.ThietBi.filter(r => r.Dev === args[0] && r.MaNV === '_sdt4_').map(r => ({ KhoaDen: r.KhoaDen || null }));
     if ((m = s.match(/^SELECT ID, CCID FROM WifiCho WHERE MaCS = \?1 AND IP = \?2 AND TrangThai = 'Cho'$/)))
       return tables.WifiCho.filter(r => r.MaCS === args[0] && r.IP === args[1] && r.TrangThai === 'Cho').map(r => ({ ID: r.ID, CCID: r.CCID }));
     if ((m = s.match(/^SELECT CanhBao FROM ChamCong WHERE ID = \?1$/)))

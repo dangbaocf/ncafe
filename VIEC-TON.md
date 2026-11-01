@@ -1,8 +1,24 @@
 # Việc tồn (cập nhật 1/11/2026)
 
-Mọi việc anh Bảo giao chưa XONG. Mỗi việc 1 dòng: **tên** – trạng thái – thứ tự (theo lệnh anh).
-Luật XONG (CLAUDE.md luật 0): ✓ khi đúng đủ + đang chạy thật + có bằng chứng.
+Mọi việc anh Bảo giao chưa XONG. Mỗi việc 1 dòng: **tên** – trạng thái – thứ tự.
+Luật XONG (CLAUDE.md): ✓ khi đúng đủ + đang chạy thật + có bằng chứng.
 Xong mỗi việc → cập nhật file này, báo anh 1 dòng.
+
+## Hàng đợi V1-V9 (1/11 chốt)
+
+- **V1 TELEGRAM** – CHƯA. Kiểm tin chấm công từ 06:00 ở 5 group quán; thiếu → tìm nguyên nhân, vá. Xong khi: chấm PV-TEST → đúng group, đúng 1 tin. Bằng chứng: ảnh tin + bảng 5 group Có/Không từ sáng.
+- **V2 ĐƯỜNG CŨ VỀ D1** – CHƯA. Mọi lượt qua Apps Script phải tự về D1. Bổ sung các lượt sáng nay còn thiếu. Xong khi: PV-TEST qua đường cũ → hiện ở D1 + trang QL. Bằng chứng: số lượt đường cũ hôm nay = số đã về D1.
+- **V3 WI-FI** – CHƯA. Thêm dải IPv6 các quán (Nhỏ 103 bị chặn 2402:800:…); Sheet "Cảnh báo" → đúng "Bắt buộc". Xong khi: IPv6 quán chấm được, IP lạ vẫn chặn. Bằng chứng: bảng IP từng quán + kết quả thử.
+- **V4 TỰ PHỤC HỒI** – CHƯA. QR lỗi/>5s/không hiện → tự chuyển đường cũ (đã có cham() wrapper); Telegram lỗi → gửi lại; 23:30 so D1–Sheet, lệch → tự gửi bù. Bằng chứng: bảng 3 tình huống + kết quả.
+- **V5 TỰ KIỂM + NHỊP TIM** – CHƯA. Mỗi 10' 05:45–22:30 kiểm QR 5 quán + app NV + QL + bảng tin + đồng bộ + Telegram. Lỗi → group admin kèm mô tả cho Claude Code. 05:45 + 23:30 luôn gửi "Báo cáo hệ thống" dù ổn. DỪNG chờ anh xác nhận nhận.
+- **V6 ĐIỀU KHIỂN TỪ XA** – CHƯA. Hướng dẫn MacBook cắm điện, không ngủ, tự chạy sau khởi động, điều khiển Claude Code từ điện thoại. DỪNG chờ anh thử.
+- **V7 KIỂM KÊ HỆ THỐNG (KIEM-KE.md)** – CHƯA. 8 phần: QR 5 quán, app NV, trang QL, Telegram, bảng tin, cron, D1–Sheet, nối Xếp lịch. Mỗi phần: màn hình/nút/hàm/bảng/cron/link + bản đồ liên thông. Đối chiếu 4 nguồn: code cũ, cài đặt Sheet, dữ liệu T6–T10, CLAUDE.md. Đánh số mọi yêu cầu CLAUDE.md. DỪNG gửi anh duyệt.
+- **V8 ĐỐI SOÁT TOÀN HỆ THỐNG** – CHƯA. Theo kế hoạch V7 đã duyệt. 8 phần × 3 lớp (màn hình/liên thông/dữ liệu). Khác (ngoài quyết định) → vá, 1 bản update/chỗ.
+- **V9 CHUYỂN TRANG QUẢN LÝ** – CHƯA (bước 1 Nguyên trạng đã deploy /quanlychamcong-thu, chờ anh test). T11+ dữ liệu D1, T10 trở về Sheet (chỉ xem). Lương T10 phải khớp 64/64. T11 chạy song song. DỪNG danh sách kiểm tra duyệt + DỪNG trước trỏ link thật.
+
+---
+
+## Việc cũ sau V9 (xếp sau, bỏ việc trùng V3+V9)
 
 ## Thứ tự ưu tiên
 

@@ -572,6 +572,14 @@ export async function qrVao(env, request, p, ctx) {
       ViDo: cb.lat || null, KinhDo: cb.lng || null, KhoangCach: cb.kc || null,
       ThietBi: String(p.deviceId || ''), IP: ip, AsOrg: asOrg
     }));
+    // (V1 1/11) Telegram vào ca: CF D1 trước đây không gửi, giờ gọi AS qrGuiTelegram qua waitUntil
+    const isTest = /^(PV-TEST|NV-TEST|TEST-)/i.test(String(n.MaNV));
+    ctx.waitUntil(backfillSheet(env, 'qrGuiTelegram', {
+      loai: 'VAO', cs: up(cs.MaCS), tenCS: cs.TenCS, ten: tenNgan(n.Ten),
+      ma: String(n.MaNV), gio: vao, ca: c.GioBD + '–' + c.GioKT,
+      viTri: p.viTri || n.ViTri, tre, cb: cb.cb, tuDo: c.MaCa === 'KHAC',
+      anh: anhUrl, test: isTest
+    }));
   }
 
   return {
@@ -664,6 +672,15 @@ export async function qrRa(env, request, p, ctx) {
       KhaiTu: tu, KhaiDen: den, KhaiGhiChu: String(p.ghiChu || ''),
       CoMat: coMat, LyDo: String(p.lyDo || ''), TrangThai: tt, GioTinh: gioTinh,
       AnhRa: anhRa, CanhBao: cbFinal
+    }));
+    const isTest = /^(PV-TEST|NV-TEST|TEST-)/i.test(String(n.MaNV));
+    ctx.waitUntil(backfillSheet(env, 'qrGuiTelegram', {
+      loai: 'RA', cs: up(cs.MaCS), tenCS: cs.TenCS, ten: tenNgan(n.Ten),
+      ma: String(n.MaNV), gio: ra, ca: mo.CaBD + '–' + mo.CaKT,
+      khaiLoai: loai, khaiGio, caGio: caG, gioThuc: thuc,
+      vao: mo.Vao, tu, den, coMat, lyDo: String(p.lyDo || ''),
+      cb: cbFinal, ghiChu: String(p.ghiChu || ''), choDuyet: true, khopLich: false,
+      anh: anhRa, test: isTest
     }));
   }
 

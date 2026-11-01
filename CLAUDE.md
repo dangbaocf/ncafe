@@ -7,6 +7,33 @@ Trả lời bằng tiếng Việt. Mỗi lần sửa lỗi: tóm tắt LỖI GÌ
 > Yêu cầu mới mâu thuẫn với yêu cầu cũ → hỏi anh Bảo trước, không tự quyết.
 > Khi anh Bảo chốt yêu cầu mới → cập nhật file này + thêm test tương ứng.
 
+## LUẬT CỐ ĐỊNH 1/11 (ưu tiên tuyệt đối, từ nay anh Bảo không nhắc lại)
+
+**1. Phạm vi**: Chuyển đổi = GIỐNG HỆT bản cũ, trừ chỗ anh đã quyết đổi (ghi CLAUDE.md).
+   Update = chỉ làm ĐÚNG phần được yêu cầu. Sai đâu sửa đó, không viết lại.
+
+**2. Trước mỗi deploy** – thiếu 1 = KHÔNG deploy:
+   - Đếm dòng + so cột dữ liệu bị đụng (nguồn cũ vs mới).
+   - Mở trang THẬT trên trình duyệt, đi đủ luồng bằng mã thử PV-TEST.
+   - Chạy lại test cũ + kiểm liên thông các phần liên quan (QR, app NV, bảng tin, Telegram, Sheet, D1…).
+
+**3. Test chỉ PV-TEST**:
+   - TUYỆT ĐỐI không dùng mã NV thật.
+   - Lượt test gắn cờ `TEST` (field riêng hoặc `GhiChu='TEST'`).
+   - Dọn CHỈ theo cờ TEST ở D1 + Sheet + Telegram.
+   - Tin test chỉ gửi group admin, không gửi group quán.
+
+**4. Giờ deploy** – không deploy trong:
+   - **06:00–07:30**, **14:00–15:00**, **16:30–17:30**.
+   - Trừ: lỗi làm NV KHÔNG CHẤM ĐƯỢC hoặc QL KHÔNG NHẬN TIN CHẤM CÔNG.
+
+**5. Mỗi lần sửa = 1 bản `CC [DD/MM][chữ cái]`**:
+   - Ghi `CAP-NHAT.md` (bản mới nhất ở đầu, có mã Worker + số bản Apps Script để rollback).
+   - Báo anh TỐI ĐA 5 dòng + bằng chứng (số test đạt, số liệu khớp, kết quả đo).
+   - **Thiếu bằng chứng = CHƯA XONG**.
+
+---
+
 ## BÀI HỌC 1/11 – CỔNG CHẶN BẮT BUỘC (ưu tiên tuyệt đối)
 
 4 cổng TRƯỚC MỖI LẦN DEPLOY. Thiếu 1 = KHÔNG deploy.

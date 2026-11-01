@@ -4,7 +4,7 @@
  * Chỉ ĐỌC lịch đã xếp từ app Xếp lịch (CaiDat LICH_SHEET_ID) để biết ca hôm nay và so đúng lịch.
  * App Xếp lịch chỉ ĐỌC Sheet này để học. Hai app không sửa dữ liệu của nhau.
  *******************************************************/
-var VER='CC 01/11c';
+var VER='CC 01/11e';
 var SS = SpreadsheetApp.getActiveSpreadsheet();
 
 // (30/10) Utilities.formatDate rất chậm trên máy chủ Google (~1–2 ms / lần; bảng lương gọi ~6.000 lần nhưng chỉ ~100 giá trị khác nhau → ~12 giây).
@@ -166,7 +166,8 @@ function apiHam(){ return {qrInfo:qrInfo, qrMo:qrMo, qrNhanVien:qrNhanVien, qrVa
     exportNhanVienAll:exportNhanVienAll,
     exportLichSuLuong:exportLichSuLuong,
     xoaLuotTheoID:xoaLuotTheoID,
-    qrDangKySdtBackfill:qrDangKySdtBackfill}; }   // (31/10 đợt A) export fn cho worker gọi qua API_KEY để so khớp lương + (1/11) xoá test + đăng ký SDT cách A
+    qrDangKySdtBackfill:qrDangKySdtBackfill,
+    qrGuiTelegram:qrGuiTelegram}; }   // (31/10 đợt A) export fn cho worker gọi qua API_KEY để so khớp lương + (1/11) xoá test + đăng ký SDT cách A + V1 Telegram CF D1
 /* (30/10b) Số ca "Chờ xác nhận" trong tháng 10/2026 theo quán – trước kỳ lương 3/11 để QL duyệt hết. Chỉ trả số, không tên nhân viên. */
 function demCaChoDuyetT10(){
   var today=fmtDate(new Date()), so={}, tong=0;
@@ -357,6 +358,23 @@ function saoLuuSheetNgay(p){
  * KHÔNG cần PIN – authz đã qua API_KEY ở lớp doPost. */
 /** (1/11 Việc 2 cách A) NV đăng ký SĐT lần đầu qua QR. Worker gọi fn này (API_KEY).
  *  Ghi SDT vào Sheet NhanVien, đánh dấu SdtCho='Có' (QL duyệt sau). */
+/** (V1 1/11) Gửi Telegram cho lượt chấm qua CF D1. Nhận _tg object từ Worker (API_KEY).
+ *  Mã TEST/PV-TEST → gửi admin only (không spam group quán). */
+function qrGuiTelegram(p){
+  if (!p || !p.loai) return {ok:false, msg:'Thiếu loai'};
+  if (p.test || /^(PV-TEST|NV-TEST|TEST-)/i.test(String(p.ma||''))) {
+    // Test: gửi admin only
+    var ids = String(cfg('TG_ADMIN_IDS')||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+    if (!ids.length) return {ok:false, msg:'Chưa cài TG_ADMIN_IDS, không gửi tin test'};
+    var ten = String(p.ten||p.ma||'?'); var cs = String(p.cs||'?');
+    var msg = '🧪 [TEST ' + p.loai + '] ' + ten + ' (' + p.ma + ') · quán ' + cs + ' · ' + p.gio + ' · ca ' + (p.ca||'?');
+    ids.forEach(function(id){ try{ tgGui(id, msg); }catch(e){} });
+    return {ok:true, test:true, so:ids.length};
+  }
+  try{ tgSuKien(p); }catch(e){ return {ok:false, err:e.message}; }
+  return {ok:true};
+}
+
 function qrDangKySdtBackfill(p){
   if (!p || !p.MaNV || !p.SDT) return {ok:false, msg:'Thiếu MaNV/SDT'};
   var sh = SS.getSheetByName('NhanVien'); if (!sh) return {ok:false, msg:'Thiếu bảng NhanVien'};
