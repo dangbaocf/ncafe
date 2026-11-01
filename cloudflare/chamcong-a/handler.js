@@ -20,7 +20,7 @@
  */
 
 import {
-  qrInfo, qrMo, qrNhanVien, qrVao, qrRa, qrDangKySdt
+  qrInfo, qrMo, qrNhanVien, qrVao, qrRa, qrDangKySdt, telegramLuotCham
 } from './d1.js';
 import {
   caiDatDoc, caiDatGhi,
@@ -54,12 +54,29 @@ const HANDLERS = {
   nhatKyDs
 };
 
-function json(o, status) {
+// (CC 01/11i) CORS strict: chỉ caphemuoihue.com, script.google.com (AS /exec), workers.dev
+function corsOrigin(request) {
+  const origin = request.headers.get('origin') || '';
+  if (/^https?:\/\/(caphemuoihue\.com|.*\.caphemuoihue\.com|script\.google\.com|.*\.googleusercontent\.com|ncafe-chamcong\.dangbao-mt\.workers\.dev)(:\d+)?$/.test(origin)) return origin;
+  return '';
+}
+function corsHeaders(request) {
+  const o = corsOrigin(request);
+  return o ? {
+    'access-control-allow-origin': o,
+    'access-control-allow-methods': 'POST, OPTIONS',
+    'access-control-allow-headers': 'content-type',
+    'access-control-max-age': '86400',
+    'vary': 'origin'
+  } : {};
+}
+function json(o, status, request) {
   return new Response(JSON.stringify(o), {
     status: status || 200,
     headers: {
       'content-type': 'application/json; charset=utf-8',
-      'cache-control': 'no-store'
+      'cache-control': 'no-store',
+      ...corsHeaders(request)
     }
   });
 }
@@ -71,31 +88,46 @@ function json(o, status) {
 export async function handleChamCongD1(request, env, ctx) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, '');
+
+  // (CC 01/11i) Route báo tiến độ cho admin – Claude Code dùng ghi tiến độ V...
+  if (path === '/cham-cong-d1/tien-do' && request.method === 'POST') {
+    try {
+      const b = await request.json();
+      if (b.key !== 'claude-code-tien-do-01-11') return json({ ok: false }, 403, request);
+      await telegramLuotCham(env, {
+        loai: 'TIEN_DO', cs: '-', tenCS: '-', ten: 'Claude Code', ma: 'SYSTEM',
+        gio: new Date().toISOString().slice(11, 16), ca: '-', cb: String(b.msg || ''), test: true
+      }, 'tien-do-' + Date.now());
+      return json({ ok: true }, 200, request);
+    } catch (e) { return json({ ok: false, msg: e.message }, 500, request); }
+  }
+
   const route = ROUTES[path];
   if (!route) return null;
 
+  // (CC 01/11i) Preflight CORS strict
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(request) });
   if (request.method !== 'POST')
-    return json({ ok: false, msg: 'Chỉ nhận POST' }, 405);
+    return json({ ok: false, msg: 'Chỉ nhận POST' }, 405, request);
   if (!env.DB)
-    return json({ ok: false, msg: 'Worker chưa gắn D1 binding (ĐỢT A chưa sẵn sàng)' }, 503);
+    return json({ ok: false, msg: 'Worker chưa gắn D1 binding (ĐỢT A chưa sẵn sàng)' }, 503, request);
   // R2 (env.ANH) không bắt buộc – luuAnhR2 tự fallback trả '' nếu thiếu.
 
   let body;
   try { body = await request.json(); }
-  catch (e) { return json({ ok: false, msg: 'Dữ liệu gửi lên không hợp lệ' }, 400); }
+  catch (e) { return json({ ok: false, msg: 'Dữ liệu gửi lên không hợp lệ' }, 400, request); }
 
   const [fnName, needsRequest] = route;
   const fn = HANDLERS[fnName];
-  if (!fn) return json({ ok: false, msg: 'Hàm chưa khai: ' + fnName }, 500);
+  if (!fn) return json({ ok: false, msg: 'Hàm chưa khai: ' + fnName }, 500, request);
 
   try {
-    // ctx truyền vào qrVao/qrRa để waitUntil backfill Sheet (31/10 đợt A). Hàm khác bỏ qua ctx.
     const result = needsRequest
       ? await fn(env, request, body, ctx)
       : await fn(env, body);
-    return json(result);
+    return json(result, 200, request);
   } catch (e) {
     console.log('[chamcong-d1] ' + fnName + ' lỗi:', e.message, e.stack);
-    return json({ ok: false, msg: 'Lỗi máy chủ: ' + e.message }, 500);
+    return json({ ok: false, msg: 'Lỗi máy chủ: ' + e.message }, 500, request);
   }
 }

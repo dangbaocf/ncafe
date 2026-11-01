@@ -36,6 +36,11 @@ Trả lời bằng tiếng Việt. Mỗi lần sửa lỗi: tóm tắt LỖI GÌ
    - Ghi kế hoạch lên `NHAT-KY.md` (sẽ sửa file nào, vì sao) rồi **DỪNG, chờ anh gõ "OK"** mới làm.
    - Việc khác (sửa UI nhẹ, thêm fn mới chưa động data, viết docs): cứ làm + ghi nhật ký.
 
+**9. Báo tiến độ qua Telegram admin (1/11 chốt 11:40)**:
+   - Bắt đầu mỗi việc: gửi `▶️ Bắt đầu V… – tên việc` vào `TG_ADMIN_IDS` qua Worker.
+   - Xong: `✅ Xong V… – kết quả 1 dòng` hoặc `⛔ Dừng V… – cần anh: …`.
+   - Khi anh gõ "tiến độ": trả bảng ngắn (đã xong hôm nay | đang làm | chờ anh | tiếp theo).
+
 **8. NEN-CU.md là nền (1/11 chốt 11:30)**:
    - Lệnh anh chỉ nói phần THAY ĐỔI. Mọi mục `NEN-CU.md` mặc định giữ nguyên và chạy như cũ.
    - Trước khi sửa: liệt kê các mục NEN-CU đụng/phụ thuộc → ghi `NHAT-KY.md`.

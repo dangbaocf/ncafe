@@ -156,24 +156,38 @@ Em quét grep các regex / số cứng trong Code.gs, chọn những cái quan t
 ## 10. CẦN ANH BẢO CHỤP MÀN HÌNH (không đọc được từ code)
 
 ### 10.1 Script Properties (Thuộc tính tập lệnh)
-Mở `script.google.com` → project **Chấm công Ncafe** → menu bánh răng (⚙️) → **Cài đặt dự án** → cuộn xuống phần **Thuộc tính tập lệnh** (Script Properties).
-- Chụp màn hình danh sách (tên khoá; **che giá trị** nếu bí mật).
-- Em thấy code HIỆN KHÔNG DÙNG `PropertiesService` (grep rỗng), nhưng vẫn có thể còn giá trị từ phiên bản cũ.
+**✅ ĐÃ KIỂM 1/11 11:30**: Script Properties **RỖNG** – không có khoá nào (anh Bảo chụp ảnh xác nhận).
+Toàn bộ cấu hình nằm trong Sheet `CaiDat` (80 khoá, đã chép sang D1 65 khớp + 6 secret → wrangler + 9 lệch dấu + 2 tự quản lý).
+→ KHÔNG cần chép Script Properties sang CF.
+
+Script ID: `1f1OnkFGnpq02FXZkhFNvbr7KuE_MlpwGvLF-CAco8HfZVoYE-k-VcuuH` (khớp CLAUDE.md).
 
 ### 10.2 Trình kích hoạt (Triggers)
-Mở Apps Script → menu trái → ⏰ **Trình kích hoạt** → chụp bảng:
-- Hàm được chạy
-- Loại sự kiện (Clock, Spreadsheet, Form…)
-- Nguồn
-- Loại thời gian (phút, giờ, ngày)
-- Tần suất
+**✅ ĐÃ KIỂM 1/11 11:30**: 2 trigger (anh Bảo chụp ảnh xác nhận), khớp code tạo auto.
 
-Em thấy code tạo 2 trigger auto (`tuDongLuuTru` 3:00 + `tgMoi15Phut` 15') nhưng có thể còn trigger khác anh thêm tay.
+| # | Hàm | Loại | Sự kiện | Lần chạy gần nhất | Tỷ lệ lỗi |
+|---|---|---|---|---|---|
+| 4.1 | `tuDongLuuTru` | Dựa theo thời gian | Phần đầu (daily) | 03:06:15 1/11/2026 | 0% |
+| 4.2 | `tgMoi15Phut` | Dựa theo thời gian | Phần đầu (15 phút) | 11:25:22 1/11/2026 | 0.17% |
+
+**Không có trigger nào khác**. Code tự tạo 2 trigger này nếu thiếu (Code.gs L61 + L867 `tgDamBaoTrigger`).
+Lưu ý: `tgMoi15Phut` tỷ lệ lỗi 0.17% – rất nhỏ (1 trong ~600 lần) → giữ nguyên, không cần vá ngay.
 
 ### 10.3 Bản triển khai
-Script Apps → **Triển khai** → **Quản lý bản triển khai** → chụp danh sách.
-- Chính: `AKfycbyx_dtu8KSl5sqtHihWyDLmlhoV-Ea9g_MPeMfk7a_gHI6obVgEKXfsCUehFztzoFXW` (@139 CC 01/11g).
-- Có bản khác không?
+**✅ ĐÃ KIỂM 1/11 11:30** (anh Bảo chụp ảnh xác nhận):
+
+**Đang hoạt động**:
+| Tên bản | Phiên bản | Giờ deploy | ID bản triển khai |
+|---|---|---|---|
+| **CC 01/11g** (chính, chuẩn) | 139 | **11:13** 1/11/2026 | `AKfycbyx_dtu8KSl5sqtHihWyDLmlhoV-Ea9g_MPeMfk7a_gHI6obVgEKXfsCUehFztzoFXW` |
+| Chưa có tên × 5 | ? | ? | khác ID |
+
+**Đã lưu trữ**: CC 01/11f, CC 01/11e, (còn nữa).
+
+**Cảnh báo**: 5 bản "Chưa có tên" đang hoạt động = 5 URL khác chạy code cũ. Người/máy nhớ URL cũ vẫn gọi được. **Anh Bảo nên** mở từng bản → đổi tên hoặc lưu trữ. Em không tự dọn (có thể phá chức năng nào đó anh đang dùng).
+
+### 10.4 Ứng dụng web URL CC 01/11g
+`https://script.google.com/macros/s/AKfycbyx_dtu8KSl5sqtHihWyDLmlhoV-Ea9g_MPeMfk7a_gHI6obVgEKXfsCUehFztzoFXW/exec` – URL `/exec` giữ nguyên sau mọi `clasp redeploy -V N` (luật CLAUDE.md).
 
 ---
 

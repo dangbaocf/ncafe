@@ -83,7 +83,7 @@ input[type=date],input[type=month]{width:auto;min-width:140px;text-align:left}
 <div class="panel" id="view"></div><p class="sub" id="doTG" style="margin-top:14px;font-size:12px;color:#8A817C"></p></div></div>
 <script>
 var DSVT=['Pha chế','Phục vụ','Rửa ly','Bảo vệ','Quản lý','Support'], DSCV=['Trưởng ca','Quản lý','Phó quản lý'];
-var $=function(i){return document.getElementById(i);}, NN=10, PIN='', ROLE='', SUA=false, Q={}, TEN='', VER_TRANG='CC 01/11g', STORES=[], CS={}, CUR='hom';
+var $=function(i){return document.getElementById(i);}, NN=10, PIN='', ROLE='', SUA=false, Q={}, TEN='', VER_TRANG='CC 01/11i', STORES=[], CS={}, CUR='hom';
 // (29/10) Tự phát hiện file QuanLy bị DÁN CHỒNG (dán bản mới mà chưa Ctrl+A xoá bản cũ): bản cũ nằm sau sẽ đè bản mới → báo rõ cách sửa
 var __BAN_NAY=VER_TRANG; window.addEventListener('load',function(){ setTimeout(function(){ if(VER_TRANG===__BAN_NAY) return; var b=document.createElement('div');
   b.style.cssText='margin:10px auto;max-width:1100px;padding:12px 14px;border-radius:10px;background:#B4382F;color:#fff;font:600 15px/1.45 system-ui,sans-serif';
@@ -175,10 +175,10 @@ function veTabCon(t){ var g=nhomCua(t), sb=$('subtabs'); document.querySelectorA
   sb.innerHTML=dc.map(function(x){ return '<button class="tabcon'+(x[0]===t?' on':'')+'" data-t="'+x[0]+'">'+x[1]+'</button>'; }).join(''); sb.querySelectorAll('.tabcon').forEach(function(b){ b.onclick=function(){ tab(b.dataset.t); }; }); }
 function qTab(t){ var x=TAB_QUYEN.filter(function(a){ return a[0]===t; })[0]; return x?(Q[x[2]]||0):0; }
 function tab(t,fromBack){ CUR_TRUOC=CUR; if(t!==CUR){ RUN_VE=''; RUN_KEY_VE=''; } CUR=t; setTimeout(luuTT,0);
-  // (CC 01/11g) History: mỗi tab push state → Back điện thoại/trình duyệt quay về tab trước, không văng khỏi trang
+  // (CC 01/11i) History: mỗi tab push state → Back điện thoại/trình duyệt quay về tab trước, không văng khỏi trang
   if(!fromBack){ try{ history.pushState({tab:t}, '', '#'+t); }catch(e){} }
   $('view').classList.toggle('chixem', qTab(t)<2); veTabCon(t); ({hong:veHongQL,hom:veHom,lich:veLich,duyet:veXN,ns:veNS,ks:veKS,qr:veQR,luong:function(){ if(LKY.giu){ LKY.giu=false; } else { LCS=''; LKY={tu:'',den:'',tuy:false}; } veLuong(); },cs:veCS,tra:veTra,phieu:vePhieu,nk:veNK,cd:veCD,tb:veTB})[t](); }
-// (CC 01/11g) popstate: Back → quay tab trước; nếu không có state → ở tab hiện tại (chặn văng ra)
+// (CC 01/11i) popstate: Back → quay tab trước; nếu không có state → ở tab hiện tại (chặn văng ra)
 window.addEventListener('popstate', function(e){ if(!PIN) return; var t=(e.state && e.state.tab) || (location.hash.replace('#','') || 'hom'); if(t && t!==CUR && qTab(t)>=1) tab(t, true); });
 /* (29/10) Thông báo sự kiện: nhân viên thấy ở đầu "Lịch của tôi" các mục trong 45 ngày tới */
 function veTB(){ var nam=today().slice(0,4); run('dsSuKien',{},function(r){ var DN=['CN','T2','T3','T4','T5','T6','T7'], tn=function(d){ return DN[new Date(d+'T12:00:00').getDay()]+' '+d.slice(8)+'/'+d.slice(5,7)+'/'+d.slice(0,4); };
@@ -316,7 +316,7 @@ function ganXN(r){ var v=$('view'), goi=function(fn,p,ok){ google.script.run.wit
   v.querySelectorAll('[data-chonca]').forEach(function(b){ b.onclick=function(){ var k=b.dataset.chonca.split('|'); r.list.forEach(function(o){ if(o.MaCS===k[0] && o.Ca===k[1] && (!k[2]||o.Ngay===k[2]) && o.TrangThai==='Chờ xác nhận') XNS.chon[o.ID]=true; }); v.querySelectorAll('[data-chon]').forEach(function(c){ c.checked=!!XNS.chon[c.dataset.chon]; }); veXNBar(); }; });
   v.querySelectorAll('[data-chonkhop]').forEach(function(b){ b.onclick=function(){ var k=b.dataset.chonkhop.split('|'); r.list.forEach(function(o){ if(o.MaCS===k[0] && o.Ca===k[1] && (!k[2]||o.Ngay===k[2]) && o.TrangThai==='Chờ xác nhận' && o.Khop) XNS.chon[o.ID]=true; }); v.querySelectorAll('[data-chon]').forEach(function(c){ c.checked=!!XNS.chon[c.dataset.chon]; }); veXNBar(); }; });
   v.querySelectorAll('[data-duyet]').forEach(function(b){ b.onclick=function(){ b.disabled=true; goi('xnDuyet',{ids:[b.dataset.duyet],cach:'dexuat'}); }; });
-  // (CC 01/11g) Nút Từ chối: bắt lý do, không reload trang, ghi lịch sử
+  // (CC 01/11i) Nút Từ chối: bắt lý do, không reload trang, ghi lịch sử
   v.querySelectorAll('[data-tuchoi]').forEach(function(b){ b.onclick=function(){ var ly=prompt('Lý do từ chối lượt chấm của '+b.dataset.ten+' (bắt buộc):'); if(!ly||!ly.trim()){ if(ly!==null) alert('Phải ghi lý do để từ chối'); return; } b.disabled=true; goi('xnTuChoi',{id:b.dataset.tuchoi,lyDo:ly.trim()}); }; });
   v.querySelectorAll('[data-sua]').forEach(function(b){ b.onclick=function(){ XNS.sua=XNS.sua===b.dataset.sua?'':b.dataset.sua; XNS.nhanh=''; veXNVe(); }; });
   v.querySelectorAll('[data-huysua]').forEach(function(b){ b.onclick=function(){ XNS.sua=''; veXNVe(); }; });
@@ -701,15 +701,15 @@ function veCD(){ run('caiDat',{},function(c){ var h='';
   h+='<details class="hs" id="napBox"><summary>Nạp / xoá dữ liệu giờ công (tháng cũ, sửa dữ liệu chấm sai)</summary><div id="napIn"></div></details>';
   h+='<div class="hs" id="tgBox"><b>Thông báo Telegram</b><p class="sub">Đang tải…</p></div>';
   h+='<div class="hs" id="ltBox"><b>Lưu trữ theo tháng</b><p class="sub">Đang tải…</p></div>';
-  // (31/10 đợt A) Cài đặt D1 – bản thử: 70+ khoá chia 14 nhóm trong Cloudflare D1, chưa cutover
-  if(ROLE==='admin') h+='<details class="hs" id="cdD1Box" style="border:2px dashed #2F5D62;background:#F5FBFA"><summary><b>⚡ Cài đặt D1 (đợt A – bản thử)</b> <span class="sub">70+ khoá chia 10 nhóm, lưu Cloudflare D1. Chưa cutover; đổi ở đây chưa áp vào app chính cho đến khi anh Bảo duyệt.</span></summary><div id="cdD1In"><p class="sub">Đang tải…</p></div></details>';
+  // (CC 01/11i) Cài đặt D1 – Cloudflare ĐANG CHẠY THẬT đọc D1. Sửa ở phần trên (Sheet) KHÔNG tự sang D1 → có thể lệch.
+  if(ROLE==='admin') h+='<details class="hs" id="cdD1Box" style="border:2px dashed #2F5D62;background:#F5FBFA"><summary><b>⚡ Cài đặt D1 (Cloudflare đang đọc)</b> <span class="sub" style="color:#B4382F">⚠️ Lưu ý: Sheet (phần trên) và D1 là 2 nguồn RIÊNG, không tự đồng bộ. Mỗi lần đổi 1 chỗ, phải đổi cả 2 cho khớp.</span></summary><div id="cdD1In"><p class="sub">Đang tải…</p></div></details>';
   $('view').innerHTML=h; taiLuuTru(); taiTelegram(); taiHeSo(); taiDanhMuc(); veNap(); taiPQ(); if(ROLE==='admin') taiCDD1();
   var xoa=function(){ $('view').querySelectorAll('[data-xoadong]').forEach(function(b){ b.onclick=function(){ b.closest('tr').remove(); }; }); }; xoa();
   $('tkThem').onclick=function(){ $('tkT').insertAdjacentHTML('beforeend',dongTK({Ten:'',PIN:'',VaiTro:'Quản lý',SuaGio:'Không',GhiChu:'',Quan:''})); xoa(); };
   $('caThem').onclick=function(){ $('caT').insertAdjacentHTML('beforeend',dongCa({MaCa:'',TenCa:'',GioBD:'',GioKT:'',CoSo:'ALL'})); xoa(); };
   $('qThem').onclick=function(){ var ma=prompt('Mã quán mới (VD: CR):'); if(!ma) return; var ten=prompt('Tên quán:'); if(!ten) return; google.script.run.withSuccessHandler(function(x){ if(!x.ok) alert(x.msg); veCD(); }).luuQuan({pin:PIN,list:[{MaCS:ma,TenCS:ten}]}); };
   var lay=function(id){ return Array.prototype.slice.call($(id).querySelectorAll('tr')).slice(1).map(function(tr){ var o={}; tr.querySelectorAll('[data-k]').forEach(function(i){ o[i.dataset.k]=i.value; }); if(tr.dataset.ma) o.MaCS=tr.dataset.ma; return o; }); };
-  // (CC 01/11g) Thay alert() → baoNhanh() toast cho success; chống bấm 2 lần qua `.dang`
+  // (CC 01/11i) Thay alert() → baoNhanh() toast cho success; chống bấm 2 lần qua `.dang`
   var luu=function(fn,p,ok,nut){ if(nut){ nut.classList.add('dang'); } google.script.run.withSuccessHandler(function(x){ if(nut) nut.classList.remove('dang'); if(x.ok){ baoNhanh(ok); veCD(); } else alert(x.msg); }).withFailureHandler(function(e){ if(nut) nut.classList.remove('dang'); alert('Lỗi: '+(e.message||e)+'\nDữ liệu bạn nhập được giữ nguyên.'); })[fn](Object.assign({pin:PIN},p)); };
   $('tkLuu').onclick=function(){ luu('luuTaiKhoan',{list:lay('tkT')},'Đã lưu tài khoản',this); };
   $('qLuu').onclick=function(){ luu('luuQuan',{list:lay('qT')},'Đã lưu quán',this); };
@@ -726,12 +726,13 @@ function tgDocForm(){ var c=TGC; if(!c || !$('tgTok')) return; c.token=$('tgTok'
   c.muc=$('tgMuc').value; c.anh=$('tgAnh').value; c.nhacCa=$('tgNhac').value; c.sauPhut=$('tgSau').value; c.tongKet=$('tgTk').value; c.gio=$('tgGio').value; }
 function veTelegram(){ var c=TGC; var opt=function(v){ var L=TGN.slice(); if(v && !L.some(function(g){return g.id===v;})) L.unshift({id:v,ten:'nhóm đã chọn ('+v+')'}); return '<option value="">– không –</option>'+L.map(function(g){ return '<option value="'+esc(g.id)+'"'+(g.id===v?' selected':'')+'>'+esc(g.ten)+'</option>'; }).join(''); };
   var h='<b>Thông báo Telegram</b><p class="sub">Ai chấm công ở quán nào, tin gửi vào <b>nhóm của quán đó</b>. <b>Cách nối:</b> 1) Telegram tìm <b>@BotFather</b> → gõ <code>/newbot</code> → đặt tên → copy mã bot. 2) Mỗi quán tạo 1 nhóm (anh + quản lý quán) → thêm bot vào nhóm → nhắn 1 tin bất kỳ trong nhóm. 3) Dán mã bot dưới đây → <b>Lấy nhóm</b> → chọn nhóm → <b>Lưu</b> → <b>Gửi thử</b>.</p>';
-  h+='<div class="bar" style="margin-top:6px"><div style="flex:1;min-width:260px"><label>Mã bot (từ @BotFather)</label><input id="tgTok" value="'+esc(c.token)+'" placeholder="123456789:AA..." style="width:100%;text-align:left"></div><button class="btn g" id="tgLay">Lấy nhóm</button></div><p class="sub" id="tgMsg"></p>';
+  h+='<div class="bar" style="margin-top:6px"><div style="flex:1;min-width:260px"><label>Mã bot (từ @BotFather) <button type="button" class="mini" id="tgTokHien" style="padding:2px 8px;font-size:11px">Hiện/Ẩn</button></label><input id="tgTok" type="password" value="'+esc(c.token)+'" placeholder="••••" style="width:100%;text-align:left" autocomplete="off"></div><button class="btn g" id="tgLay">Lấy nhóm</button></div><p class="sub" id="tgMsg"></p>';
   h+='<div class="bar"><div><label>Nhóm chung (mọi quán)</label><select id="tgChung">'+opt(c.chung)+'</select></div>'+c.stores.map(function(s){ return '<div><label>Nhóm riêng '+esc(s.TenCS)+'</label><select data-tgcs="'+s.MaCS+'">'+opt(c.rieng[s.MaCS])+'</select></div>'; }).join('')+'</div><p class="sub">Quán có nhóm riêng thì tin quán đó vào nhóm riêng; quán để trống thì vào nhóm chung.</p>';
   var co=function(id,v){ return '<select id="'+id+'"><option'+(v==='Có'?' selected':'')+'>Có</option><option'+(v!=='Có'?' selected':'')+'>Không</option></select>'; };
   h+='<div class="bar"><div><label>Báo vào / ra ca</label><select id="tgMuc"><option value="tatca"'+(c.muc==='tatca'?' selected':'')+'>Từng người vào / ra</option><option value="chuy"'+(c.muc==='chuy'?' selected':'')+'>Chỉ chuyện cần chú ý</option><option value="tat"'+(c.muc==='tat'?' selected':'')+'>Tắt</option></select></div><div><label>Gửi kèm ảnh chấm công</label>'+co('tgAnh',c.anh||'Có')+'</div><div><label>Nhắc quên chấm công khi hết ca</label>'+co('tgNhac',c.nhacCa)+'</div><div><label>Sau khi hết ca (phút)</label><input id="tgSau" value="'+c.sauPhut+'" inputmode="numeric" style="width:70px"></div><div><label>Tổng kết cuối ngày</label>'+co('tgTk',c.tongKet)+'</div><div><label>Lúc (giờ)</label><input id="tgGio" value="'+c.gio+'" inputmode="numeric" style="width:60px"></div><button class="btn" id="tgLuu">Lưu</button><button class="btn g" id="tgThu">Gửi thử</button></div>';
   h+='<p class="sub"><b>Nhắc quên chấm công:</b> mỗi ca kết thúc được 60 phút (sửa được), app báo vào nhóm của quán: ai đã vào mà quên chấm ra, ai có lịch mà không chấm công. Ca nào đủ thì không báo. "Chỉ chuyện cần chú ý": vào trễ, về sớm, tăng / giảm ca, ca tự điền, điện thoại mới, đứng xa quán, cần duyệt.</p>';
   $('tgBox').innerHTML=h;
+  if($('tgTokHien')) $('tgTokHien').onclick=function(){ var i=$('tgTok'); i.type = i.type==='password'?'text':'password'; };
   $('tgLay').onclick=function(){ tgDocForm(); $('tgMsg').textContent='Đang tìm nhóm…'; google.script.run.withSuccessHandler(function(r){ if(!r.ok){ $('tgMsg').textContent=r.msg; return; } TGN=r.nhom;
     var bao=r.nhom.length?('Tìm thấy '+r.nhom.length+' nhóm. Chọn nhóm cho từng quán rồi bấm Lưu.'):'Chưa thấy nhóm nào: thêm bot vào nhóm, nhắn 1 tin trong nhóm rồi bấm lại.';
     veTelegram(); $('tgMsg').textContent=bao; }).tgLayNhom({pin:PIN,token:$('tgTok').value}); };   // vẽ lại tại chỗ, giữ nguyên mã bot và các ô đang chọn
@@ -787,8 +788,10 @@ function veNK(){ run('nhatKySua',{thang:''},function(r){ $('view').innerHTML='<p
 
 /* (31/10 đợt A) Cài đặt D1 – gọi thẳng Worker /cham-cong-d1/cai-dat/* (KHÔNG qua google.script.run).
  * Worker chưa bind D1 sẽ trả 503 → báo "chưa sẵn sàng". Khi deploy xong hạ tầng (sau 3/11), UI tự hoạt động. */
-function cfD1(path, body){ return fetch('/cham-cong-d1/cai-dat/'+path, { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(Object.assign({pin:PIN}, body||{})) })
-  .then(function(r){ return r.json().then(function(j){ return { status:r.status, body:j }; }); }); }
+// (CC 01/11i) Dùng absolute URL CF Worker để fetch khi trang mở qua AS (origin khác). CORS worker đã cho phép.
+var CF_URL_WK = (location.hostname==='ncafe-chamcong.dangbao-mt.workers.dev' || location.pathname==='/quanlychamcong-thu' || location.pathname==='/quan-ly') ? '' : 'https://ncafe-chamcong.dangbao-mt.workers.dev';
+function cfD1(path, body){ return fetch(CF_URL_WK + '/cham-cong-d1/cai-dat/'+path, { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(Object.assign({pin:PIN}, body||{})) })
+  .then(function(r){ return r.json().then(function(j){ return { status:r.status, body:j }; }).catch(function(){ return { status:r.status, body:{ok:false, msg:'Server trả không phải JSON (có thể trang mở trong iframe cross-origin, chưa áp CORS)'} }; }); }); }
 function taiCDD1(){ var box=$('cdD1In'); if(!box) return;
   cfD1('doc').then(function(x){ if(x.status===503){ box.innerHTML='<p class="sub" style="color:#8A6212">⏳ Cloudflare D1 chưa gắn (worker chưa `wrangler d1 create` + bind). UI hoạt động khi anh Bảo deploy hạ tầng sau 3/11.</p>'; return; }
     if(x.status===403 || !x.body.ok){ box.innerHTML='<p style="color:#B4382F">'+esc((x.body&&x.body.msg)||'Không đọc được')+'</p>'; return; }
@@ -872,4 +875,4 @@ setInterval(function(){ if(!document.hidden) capNhatSo(true); }, 120000);
 document.addEventListener('visibilitychange', function(){ if(!document.hidden) capNhatSo(false); });
 document.addEventListener('click', function(e){ if(e.target.closest && e.target.closest('#tabs .tab, #subtabs .tabcon')) setTimeout(function(){ capNhatSo(false); }, 1500); });
 </script></body></html>
-<!-- HẾT QuanLy.html – bản CC 01/11g (dán đủ thì dòng này nằm cuối cùng) -->
+<!-- HẾT QuanLy.html – bản CC 01/11i (dán đủ thì dòng này nằm cuối cùng) -->

@@ -4,7 +4,7 @@
  * Chỉ ĐỌC lịch đã xếp từ app Xếp lịch (CaiDat LICH_SHEET_ID) để biết ca hôm nay và so đúng lịch.
  * App Xếp lịch chỉ ĐỌC Sheet này để học. Hai app không sửa dữ liệu của nhau.
  *******************************************************/
-var VER='CC 01/11g';
+var VER='CC 01/11i';
 var SS = SpreadsheetApp.getActiveSpreadsheet();
 
 // (30/10) Utilities.formatDate rất chậm trên máy chủ Google (~1–2 ms / lần; bảng lương gọi ~6.000 lần nhưng chỉ ~100 giá trị khác nhau → ~12 giây).
@@ -167,7 +167,8 @@ function apiHam(){ return {qrInfo:qrInfo, qrMo:qrMo, qrNhanVien:qrNhanVien, qrVa
     exportLichSuLuong:exportLichSuLuong,
     xoaLuotTheoID:xoaLuotTheoID,
     qrDangKySdtBackfill:qrDangKySdtBackfill,
-    qrGuiTelegram:qrGuiTelegram}; }   // (31/10 đợt A) export fn cho worker gọi qua API_KEY để so khớp lương + (1/11) xoá test + đăng ký SDT cách A + V1 Telegram CF D1
+    qrGuiTelegram:qrGuiTelegram,
+    exportCoSoAll:exportCoSoAll}; }   // (31/10 đợt A) export fn cho worker gọi qua API_KEY để so khớp lương + (1/11) xoá test + đăng ký SDT cách A + V1 Telegram CF D1
 /* (30/10b) Số ca "Chờ xác nhận" trong tháng 10/2026 theo quán – trước kỳ lương 3/11 để QL duyệt hết. Chỉ trả số, không tên nhân viên. */
 function demCaChoDuyetT10(){
   var today=fmtDate(new Date()), so={}, tong=0;
@@ -478,6 +479,18 @@ function xoaLuotTheoID(p){
   xoa.forEach(function(r){ sh.deleteRow(r); });
   try{ ghiNhatKy('CF xoá test', '', '', 'Xoá lượt test 1/11', '', ids.join(',').slice(0,200)); }catch(e){}
   return {ok:true, soXoa:xoa.length, idXoa:ids};
+}
+
+/** (V12 1/11) Pull CoSo đầy đủ (bao gồm ViDo/KinhDo) cho CF D1 sync. API_KEY auth. */
+function exportCoSoAll(p){
+  var list = rows('CoSo').map(function(c){ return {
+    MaCS: String(c.MaCS||''), TenCS: String(c.TenCS||''),
+    GioMo: hhmm(c.GioMo), GioDong: hhmm(c.GioDong),
+    ViDo: (c.ViDo!==''&&c.ViDo!=null)?+c.ViDo:null,
+    KinhDo: (c.KinhDo!==''&&c.KinhDo!=null)?+c.KinhDo:null,
+    BanKinh: +c.BanKinh||100, QRVer: String(c.QRVer||'')
+  }; });
+  return {ok:true, list:list, so:list.length};
 }
 
 function exportLichSuLuong(p){
