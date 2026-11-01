@@ -465,6 +465,105 @@ export async function qrMo(env, request, p) {
   return out;
 }
 
+/* ----------- Telegram gửi trực tiếp (V1 1/11, CC 01/11f) -----------
+ * Worker gọi Telegram Bot API trực tiếp, không qua Apps Script. Lý do:
+ *   - 5 group quán sáng nay không nhận tin → Worker gọi AS fn Telegram ngầm có thể lỗi im lặng.
+ *   - Gửi trực tiếp = ít hop, log rõ, retry được.
+ * Mỗi gửi ghi log D1 TelegramLog (giờ, group, lượt chấm, ok+message_id, lỗi+lý do).
+ * Mã test (PV-TEST, NV-TEST, TEST-*) → chỉ gửi TG_ADMIN_IDS (không spam group quán).
+ */
+export async function telegramGui(env, chatId, text, meta, lanThu) {
+  lanThu = lanThu || 1;
+  if (!env.TG_TOKEN || !chatId) {
+    await telegramGhiLog(env, { ...meta, chatId, ok: 0, loiMsg: 'Thiếu TG_TOKEN hoặc chatId', lanThu });
+    return { ok: false, msg: 'Thiếu TG_TOKEN hoặc chatId' };
+  }
+  try {
+    const r = await fetch('https://api.telegram.org/bot' + env.TG_TOKEN + '/sendMessage', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' })
+    });
+    const j = await r.json();
+    if (j.ok) {
+      await telegramGhiLog(env, { ...meta, chatId, ok: 1, messageId: String(j.result?.message_id || ''), lanThu });
+      return { ok: true, messageId: j.result?.message_id };
+    }
+    // Lỗi API Telegram
+    const err = j.description || ('HTTP ' + r.status);
+    await telegramGhiLog(env, { ...meta, chatId, ok: 0, loiMsg: err, lanThu });
+    // Retry 3 lần (exponential): 1s, 3s, 9s
+    if (lanThu < 3) {
+      await new Promise(resolve => setTimeout(resolve, lanThu * 2000 + 1000));
+      return telegramGui(env, chatId, text, meta, lanThu + 1);
+    }
+    return { ok: false, msg: err };
+  } catch (e) {
+    await telegramGhiLog(env, { ...meta, chatId, ok: 0, loiMsg: 'Fetch lỗi: ' + e.message, lanThu });
+    if (lanThu < 3) {
+      await new Promise(resolve => setTimeout(resolve, lanThu * 2000 + 1000));
+      return telegramGui(env, chatId, text, meta, lanThu + 1);
+    }
+    return { ok: false, msg: e.message };
+  }
+}
+
+async function telegramGhiLog(env, p) {
+  try {
+    await env.DB.prepare(
+      "INSERT INTO TelegramLog(Luc, Loai, MaNV, MaCS, ChatID, GroupTen, LuotID, TinHieu, Ok, MessageID, LoiMsg, LanThu) " +
+      "VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)"
+    ).bind(
+      fmtDT(new Date()), String(p.loai || ''), String(p.maNV || ''), String(p.maCS || ''),
+      String(p.chatId || ''), String(p.groupTen || ''), String(p.luotID || ''),
+      String(p.tinHieu || '').slice(0, 500), p.ok ? 1 : 0,
+      String(p.messageId || ''), String(p.loiMsg || '').slice(0, 300), p.lanThu || 1
+    ).run();
+  } catch (e) {}
+}
+
+/** Build text Telegram cho vao/ra. */
+function telegramText(_tg) {
+  const emo = _tg.loai === 'VAO' ? '🟢' : '🔴';
+  const tag = _tg.test ? '🧪 <b>[TEST]</b> ' : '';
+  const treTxt = (+_tg.tre > 0) ? ' · ⏰ trễ ' + _tg.tre + "'" : '';
+  const kh = _tg.loai === 'RA' ? (_tg.khaiLoai === 'du' ? ' · đủ ca' : (_tg.khaiLoai === 'tang' ? ' · ⬆ tăng ca' : ' · ⬇ giảm ca')) : '';
+  return tag + emo + ' <b>' + (_tg.loai === 'VAO' ? 'Vào' : 'Ra') + ' ca</b> · ' + _tg.ten + ' (' + _tg.ma + ') · ' + _tg.cs + ' · ' + _tg.gio + ' · ca ' + (_tg.ca || '?') + kh + treTxt;
+}
+
+/** Chọn chat: test → TG_ADMIN_IDS. Thực → TG_CHAT_<MaCS> hoặc TG_CHAT (chung). */
+async function telegramChonChat(env, _tg) {
+  if (_tg.test) {
+    const admin = String(await cfg(env, 'TG_ADMIN_IDS') || '').split(',').map(s => s.trim()).filter(Boolean);
+    return admin.map(id => ({ chatId: id, groupTen: 'admin' }));
+  }
+  const quan = String(await cfg(env, 'TG_CHAT_' + up(_tg.cs)) || '').trim();
+  if (quan) return [{ chatId: quan, groupTen: 'quán ' + _tg.cs }];
+  const chung = String(await cfg(env, 'TG_CHAT') || '').trim();
+  if (chung) return [{ chatId: chung, groupTen: 'chung' }];
+  return [];
+}
+
+/** Gửi Telegram cho 1 lượt (vao hoặc ra). */
+export async function telegramLuotCham(env, _tg, luotID) {
+  const chats = await telegramChonChat(env, _tg);
+  if (!chats.length) {
+    const errMsg = _tg.test
+      ? 'TG_ADMIN_IDS trống – không gửi tin test được. Admin cần cài trong Cài đặt → Telegram.'
+      : 'TG_CHAT_' + up(_tg.cs) + ' và TG_CHAT (chung) đều trống – không có nhóm nhận tin';
+    await telegramGhiLog(env, { loai: _tg.loai, maNV: _tg.ma, maCS: _tg.cs, chatId: '', groupTen: '', luotID, tinHieu: telegramText(_tg), ok: 0, loiMsg: errMsg });
+    return { ok: false, msg: errMsg };
+  }
+  const text = telegramText(_tg);
+  const results = [];
+  for (const c of chats) {
+    const r = await telegramGui(env, c.chatId, text, {
+      loai: _tg.loai, maNV: _tg.ma, maCS: _tg.cs, groupTen: c.groupTen, luotID, tinHieu: text
+    });
+    results.push(r);
+  }
+  return { ok: results.every(r => r.ok), results };
+}
+
 /* ----------- Backfill Sheet (31/10 đợt A) -----------
  * Gọi qua ctx.waitUntil sau khi ghi D1. Apps Script fn qrVaoBackfill / qrRaBackfill
  * nhận record, chèn Sheet dạng chữ thuần, idempotent theo ID. Lỗi fetch → bỏ qua, không
@@ -572,14 +671,13 @@ export async function qrVao(env, request, p, ctx) {
       ViDo: cb.lat || null, KinhDo: cb.lng || null, KhoangCach: cb.kc || null,
       ThietBi: String(p.deviceId || ''), IP: ip, AsOrg: asOrg
     }));
-    // (V1 1/11) Telegram vào ca: CF D1 trước đây không gửi, giờ gọi AS qrGuiTelegram qua waitUntil
+    // (V1 CC 01/11f) Telegram vào ca: Worker gọi Telegram Bot API TRỰC TIẾP + log D1 TelegramLog
     const isTest = /^(PV-TEST|NV-TEST|TEST-)/i.test(String(n.MaNV));
-    ctx.waitUntil(backfillSheet(env, 'qrGuiTelegram', {
+    ctx.waitUntil(telegramLuotCham(env, {
       loai: 'VAO', cs: up(cs.MaCS), tenCS: cs.TenCS, ten: tenNgan(n.Ten),
       ma: String(n.MaNV), gio: vao, ca: c.GioBD + '–' + c.GioKT,
-      viTri: p.viTri || n.ViTri, tre, cb: cb.cb, tuDo: c.MaCa === 'KHAC',
-      anh: anhUrl, test: isTest
-    }));
+      viTri: p.viTri || n.ViTri, tre, cb: cb.cb, test: isTest
+    }, id));
   }
 
   return {
@@ -674,14 +772,13 @@ export async function qrRa(env, request, p, ctx) {
       AnhRa: anhRa, CanhBao: cbFinal
     }));
     const isTest = /^(PV-TEST|NV-TEST|TEST-)/i.test(String(n.MaNV));
-    ctx.waitUntil(backfillSheet(env, 'qrGuiTelegram', {
+    ctx.waitUntil(telegramLuotCham(env, {
       loai: 'RA', cs: up(cs.MaCS), tenCS: cs.TenCS, ten: tenNgan(n.Ten),
       ma: String(n.MaNV), gio: ra, ca: mo.CaBD + '–' + mo.CaKT,
       khaiLoai: loai, khaiGio, caGio: caG, gioThuc: thuc,
       vao: mo.Vao, tu, den, coMat, lyDo: String(p.lyDo || ''),
-      cb: cbFinal, ghiChu: String(p.ghiChu || ''), choDuyet: true, khopLich: false,
-      anh: anhRa, test: isTest
-    }));
+      cb: cbFinal, test: isTest
+    }, mo.ID));
   }
 
   return {

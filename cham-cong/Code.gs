@@ -4,7 +4,7 @@
  * Chỉ ĐỌC lịch đã xếp từ app Xếp lịch (CaiDat LICH_SHEET_ID) để biết ca hôm nay và so đúng lịch.
  * App Xếp lịch chỉ ĐỌC Sheet này để học. Hai app không sửa dữ liệu của nhau.
  *******************************************************/
-var VER='CC 01/11e';
+var VER='CC 01/11f';
 var SS = SpreadsheetApp.getActiveSpreadsheet();
 
 // (30/10) Utilities.formatDate rất chậm trên máy chủ Google (~1–2 ms / lần; bảng lương gọi ~6.000 lần nhưng chỉ ~100 giá trị khác nhau → ~12 giây).

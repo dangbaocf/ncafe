@@ -32,6 +32,19 @@ Trả lời bằng tiếng Việt. Mỗi lần sửa lỗi: tóm tắt LỖI GÌ
    - Báo anh TỐI ĐA 5 dòng + bằng chứng (số test đạt, số liệu khớp, kết quả đo).
    - **Thiếu bằng chứng = CHƯA XONG**.
 
+**6. Việc rủi ro cao (1/11 chốt 12:30)** – đụng QR chấm công / xoá-sửa dữ liệu thật D1 hoặc Sheet / cách tính lương / chuyển trang quản lý:
+   - Ghi kế hoạch lên `NHAT-KY.md` (sẽ sửa file nào, vì sao) rồi **DỪNG, chờ anh gõ "OK"** mới làm.
+   - Việc khác (sửa UI nhẹ, thêm fn mới chưa động data, viết docs): cứ làm + ghi nhật ký.
+
+**7. Mọi việc GHI LÊN GOOGLE DRIVE (1/11 chốt 12:30)** – để Claude bên ngoài kiểm:
+   - Thư mục `ncafe-code/` trong Drive:
+     - `hien-tai/` = toàn bộ `~/Documents/ncafe/` (bỏ `node_modules`, `.git`, secrets).
+     - `ban-cu/` = snapshot code AS trước 31/10 (từ git).
+     - `NHAT-KY.md` = mỗi việc theo mẫu, mới nhất ở trên: giờ bắt đầu, lệnh anh nguyên văn, kế hoạch, đã sửa, test (nguyên văn output), deploy, bằng chứng, trạng thái XONG/CHƯA.
+     - `thay-doi/` = diff mỗi bản update (`CC-01-11f.diff`).
+   - Cập nhật Drive: lúc bắt đầu việc (kế hoạch), sau sửa/test, sau deploy.
+   - Nếu máy chưa cài Google Drive for Desktop → hướng dẫn anh cài trước.
+
 ---
 
 ## BÀI HỌC 1/11 – CỔNG CHẶN BẮT BUỘC (ưu tiên tuyệt đối)
