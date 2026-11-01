@@ -47,7 +47,12 @@ function cham(fn, args, ok, loi){
   var ctrl = new AbortController(), tHan = setTimeout(function(){ ctrl.abort(); }, 5000), xong = false;
   fetch('/cham-cong-d1/qr/'+CF_URL_D1[fn], { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(args), signal: ctrl.signal })
     .then(function(r){ clearTimeout(tHan); if(!r.ok || r.status >= 500) throw new Error('CF '+r.status); return r.json(); })
-    .then(function(j){ xong = true; if(fn==='qrMo' && j && j.ok){ CF_BAT = (j.cfBat !== false); if(!CF_BAT) return cu(); } ok(j); })
+    .then(function(j){ xong = true;
+      // 1/11 fix: cfBat=false từ qrMo → chuyển hẳn sang đường cũ cho call sau
+      if(fn==='qrMo' && j && j.ok){ CF_BAT = (j.cfBat !== false); if(!CF_BAT) return cu(); }
+      // 1/11 fix: D1 trả duPhong:true (NV chưa chép, hoặc lỗi lạ) → tự fallback đường cũ, NV không thấy lỗi
+      if(j && j.ok===false && j.duPhong){ try{ console.warn('CF duPhong:', j.msg); }catch(_){} return cu(); }
+      ok(j); })
     .catch(function(e){ clearTimeout(tHan); if(xong) return; try{ console.warn('CF fallback:', e && e.message); }catch(_){} cu(); });
 }
 // Lấy vị trí: lần 1 nhanh (wifi / mạng di động, vài giây – đủ cho bán kính 100m), lần 2 bằng GPS cho chính xác hơn. Bị chặn thì báo nhân viên cách bật.

@@ -439,7 +439,7 @@ export async function qrRa(env, request, p, ctx) {
   if (!info.ok) return info;
   const cs = info.store;
   const n = await getNhanVien(env, p.maNV);
-  if (!n) return { ok: false, msg: 'Mã nhân viên không hợp lệ' };
+  if (!n) return { ok: false, msg: 'Mã nhân viên không hợp lệ', duPhong: true };
   const loai = p.khaiLoai === 'dung' ? 'du' : p.khaiLoai;
   if (['du', 'tang', 'giam'].indexOf(loai) < 0) return { ok: false, msg: 'Chọn: đủ ca, tăng ca hoặc giảm ca' };
   const ip = (request.headers.get('CF-Connecting-IP') || '').trim();
