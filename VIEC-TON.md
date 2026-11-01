@@ -4,9 +4,9 @@ Mọi việc anh Bảo giao chưa XONG. Mỗi việc 1 dòng: **tên** – trạ
 Luật XONG (CLAUDE.md): ✓ khi đúng đủ + đang chạy thật + có bằng chứng.
 Xong mỗi việc → cập nhật file này, báo anh 1 dòng.
 
-## Hàng đợi V1-V9 (1/11 chốt)
+## Hàng đợi V1-V12 (1/11 chốt)
 
-- **V1 TELEGRAM** – CHƯA. Kiểm tin chấm công từ 06:00 ở 5 group quán; thiếu → tìm nguyên nhân, vá. Xong khi: chấm PV-TEST → đúng group, đúng 1 tin. Bằng chứng: ảnh tin + bảng 5 group Có/Không từ sáng.
+- **V1 TELEGRAM** – ✅ XONG 11:22 1/11. Admin ID 8492970897, PV-TEST tin có ảnh msg_id 850+851.
 - **V2 ĐƯỜNG CŨ VỀ D1** – CHƯA. Mọi lượt qua Apps Script phải tự về D1. Bổ sung các lượt sáng nay còn thiếu. Xong khi: PV-TEST qua đường cũ → hiện ở D1 + trang QL. Bằng chứng: số lượt đường cũ hôm nay = số đã về D1.
 - **V3 WI-FI** – CHƯA. Thêm dải IPv6 các quán (Nhỏ 103 bị chặn 2402:800:…); Sheet "Cảnh báo" → đúng "Bắt buộc". Xong khi: IPv6 quán chấm được, IP lạ vẫn chặn. Bằng chứng: bảng IP từng quán + kết quả thử.
 - **V4 TỰ PHỤC HỒI** – CHƯA. QR lỗi/>5s/không hiện → tự chuyển đường cũ (đã có cham() wrapper); Telegram lỗi → gửi lại; 23:30 so D1–Sheet, lệch → tự gửi bù. Bằng chứng: bảng 3 tình huống + kết quả.
@@ -15,6 +15,18 @@ Xong mỗi việc → cập nhật file này, báo anh 1 dòng.
 - **V7 KIỂM KÊ HỆ THỐNG (KIEM-KE.md)** – CHƯA. 8 phần: QR 5 quán, app NV, trang QL, Telegram, bảng tin, cron, D1–Sheet, nối Xếp lịch. Mỗi phần: màn hình/nút/hàm/bảng/cron/link + bản đồ liên thông. Đối chiếu 4 nguồn: code cũ, cài đặt Sheet, dữ liệu T6–T10, CLAUDE.md. Đánh số mọi yêu cầu CLAUDE.md. DỪNG gửi anh duyệt.
 - **V8 ĐỐI SOÁT TOÀN HỆ THỐNG** – CHƯA. Theo kế hoạch V7 đã duyệt. 8 phần × 3 lớp (màn hình/liên thông/dữ liệu). Khác (ngoài quyết định) → vá, 1 bản update/chỗ.
 - **V9 CHUYỂN TRANG QUẢN LÝ** – CHƯA (bước 1 Nguyên trạng đã deploy /quanlychamcong-thu, chờ anh test). T11+ dữ liệu D1, T10 trở về Sheet (chỉ xem). Lương T10 phải khớp 64/64. T11 chạy song song. DỪNG danh sách kiểm tra duyệt + DỪNG trước trỏ link thật.
+
+## MỤC MỚI THÊM 1/11 (từ tin anh)
+
+- **V10 TRÌNH DUYỆT TỰ ĐỘNG** – CHƯA. Playwright/Puppeteer chạy macOS 12 (Playwright không hỗ trợ chrome mac12; cần Puppeteer-core + Chrome local hoặc Chrome headless CLI). Từ nay "mở trang thật thử đủ luồng" = dùng công cụ này, chỉ gọi API là CHƯA ĐỦ (ghi CLAUDE.md luật 4 cổng #3).
+- **V11 KIỂM 4 QUÁN LƯỢT CHẤM THẬT ĐẦU TIÊN SAU CC 01/11g** – CHƯA. Khi TP/DD/TD/LDD có lượt chấm mới → kiểm log TelegramLog + tin có ảnh trong group → báo anh từng quán.
+- **V12 CHÉP CoSo TOẠ ĐỘ (ViDo/KinhDo) TỪ SHEET SANG D1** – CHƯA. Hiện cả 5 quán D1 có `null` → "Quán chưa lưu vị trí". Fix: export AS CoSo + UPDATE D1.
+- **V13 Sửa trang quản lý (SAU khi chuyển lên CF – mỗi mục 1 bản update)**:
+  - V13a Tra cứu từ ngày đến ngày ở tab Xác nhận giờ.
+  - V13b Từ chối: bỏ prompt → ô inline + lý do chọn nhanh ("Không đi làm", "Chấm nhầm", "Trùng lượt", "Khác"), vẫn bắt buộc.
+  - V13c **Khôi phục nút Xoá cho admin TẠI DÒNG** (hiện chỉ trong form Sửa).
+  - V13d Nhãn "Quên chấm ra" bị lặp 2 lần → chỉ hiện 1.
+  - V13e Dòng Quên chấm ra: gợi ý giờ ra = CaKT.
 
 ---
 
