@@ -109,6 +109,26 @@ function xnDuyet(p){ var _q=khongQuyen(p.pin,'duyet',2); if(_q) return _q; var t
     if(cach!=='dexuat') ghiNhatKy(ai, d.slice(0,7), r.MaNV, 'Xác nhận giờ '+d+' ('+mo+')', xnDeXuat(r)||'', g+(p.lyDo?' – '+p.lyDo:''));
     xong.push(String(r.ID)); }); } finally { try{ lk.releaseLock(); }catch(e){} }
   return {ok:true, xong:xong.length, bo:bo, cap:cap}; }
+// (CC 01/11b) Từ chối lượt: bắt lý do, ghi TrangThai='Từ chối', GioTinh=0, không tính giờ. Giữ lịch sử.
+function xnTuChoi(p){
+  var _q = khongQuyen(p.pin, 'duyet', 2); if (_q) return _q;
+  var tk = tkDayDu(p.pin); if (!tk) return {ok:false, msg:'Sai mã'};
+  var ly = String(p.lyDo||'').trim(); if (!ly) return {ok:false, msg:'Ghi lý do từ chối (bắt buộc)'};
+  var r = ccRows().filter(function(x){ return String(x.ID) === String(p.id); })[0]; if (!r) return {ok:false, msg:'Không tìm thấy'};
+  if (!tk.duocCS(r.MaCS)) return {ok:false, msg:'Không thuộc quán của bạn'};
+  var d = dateKey(r.Ngay); var kh = khoaNgay_(tk, d); if (kh) return {ok:false, msg:kh};
+  if (r.TrangThai !== 'Chờ xác nhận' && r.TrangThai !== 'Quên chấm ra') return {ok:false, msg:'Chỉ từ chối lượt Chờ xác nhận / Quên chấm ra'};
+  try{ ensureCols('ChamCong', XN_COT); }catch(e){}
+  var sh = SS.getSheetByName('ChamCong'), h = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
+  var set = function(k, v){ var i = h.indexOf(k); if (i > -1) sh.getRange(r._r, i+1).setValue(v); };
+  set('TrangThai', 'Từ chối'); set('GioTinh', 0); set('Cach', 'Từ chối'); set('LyDo', ly);
+  set('XacNhanBoi', tk.ten||'Quản lý'); set('XacNhanLuc', new Date());
+  ghiNhatKy(tk.ten||'Quản lý', d.slice(0,7), r.MaNV, 'Từ chối lượt ' + d + ' ' + r.MaCS,
+    hhmm(r.Vao)+'–'+(hhmm(r.Ra)||'?')+' · '+(+r.GioTinh||0)+'h', 'Từ chối: ' + ly);
+  var cap = []; try{ cap.push(xnMuc_(Object.assign({}, r, {TrangThai:'Từ chối', GioTinh:0, Cach:'Từ chối', LyDo:ly, XacNhanBoi:tk.ten||'Quản lý', XacNhanLuc:new Date()}), fmtDate(new Date()), function(){ return ''; }, rows_('XinPhep'))); }catch(e){}
+  return {ok:true, cap:cap};
+}
+
 function xnBoDuyet(p){ var tk=tkDayDu(p.pin); if(!tk) return {ok:false,msg:'Sai mã'}; if(!tk.suaGio) return {ok:false,msg:'Bỏ duyệt cần quyền điều chỉnh giờ'};
   var r=ccRows().filter(function(x){ return String(x.ID)===String(p.id); })[0]; if(!r) return {ok:false,msg:'Không tìm thấy'}; var d=dateKey(r.Ngay);
   if(!tk.duocCS(r.MaCS)) return {ok:false,msg:'Không thuộc quán của bạn'}; if(thangDaChot(d.slice(0,7))) return {ok:false,msg:'Tháng đã chốt lương'};

@@ -22,7 +22,7 @@ def chuyen(html):
     h=h.replace("var CS='<?= cs ?>', TK='<?= tk ?>';","var _q=new URLSearchParams(location.search), CS=_q.get('cs')||'', TK=_q.get('t')||'';")
     assert '<?' not in h
     return h
-P={'/quan-ly':chuyen(QL), '/cham-cong':chuyen(QR), '/gio-cong':chuyen(LT), '/khao-sat':chuyen(KS), '/lich-cua-toi':chuyen(LT)}
+P={'/quan-ly':chuyen(QL), '/quanlychamcong-thu':chuyen(QL), '/cham-cong':chuyen(QR), '/gio-cong':chuyen(LT), '/khao-sat':chuyen(KS), '/lich-cua-toi':chuyen(LT)}   # (1/11) /quanlychamcong-thu = link thử Loại 1 nguyên trạng QuanLy.html
 ALLOW=['qrInfo','qrMo','qrNhanVien','qrVao','qrRa','gioCongCuaToi','ksDanhSach','ksXacMinh','ksGui','lichCuaToi','luuDangKyBanNV','themRanhThem','xoaRanhThem','nhanCa','huyNhanCa','xinPhep','baoQuenCham','phanHoi','baoHong','dsBaoHongNV','bangTinVao','datBietDanh','demCaChoDuyetT10','kiemWifiTu2510','batWifiBatBuoc','tgCallback','saoLuuSheetNgay','exportBangLuongT10','exportChamCongThang','exportCaiDatAll','exportNhanVienAll','exportLichSuLuong','xoaLuotTheoID','qrDangKySdtBackfill']
 worker='''/**
  * Ncafe – trang nhân viên chạy trên Cloudflare (quét QR chấm công, lịch của tôi, giờ công, khảo sát).

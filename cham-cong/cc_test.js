@@ -284,6 +284,16 @@ T('XN3 Quản lý duyệt theo nhân viên xác nhận (từng dòng hoặc cả
   const e=xnBoDuyet({pin:'5678',id:id('313')}); const f=xnBoDuyet({pin:'2468',id:id('313')});
   return (a.ok && a.xong===2 && +r('303').GioTinh===8 && r('303').TrangThai==='Đã xác nhận' && /nhân viên xác nhận/.test(r('303').Cach) && !!r('303').XacNhanBoi && !b.ok && !c.ok
     && d.ok && +r('213').GioTinh===5 && /sửa 07:00–12:00/.test(r('213').Cach) && !e.ok && f.ok && r('313').TrangThai==='Chờ xác nhận') || JSON.stringify({a,b,c,d,e,f}); });
+T('XN-TC Từ chối lượt: bắt lý do, ghi TrangThai=Từ chối + GioTinh=0, giữ lịch sử; thiếu lý do → chặn; đã duyệt → chặn', ()=>{
+  const id=m=>(rows('ChamCong').find(x=>String(x.MaNV)===m&&dateKey(x.Ngay)===N)||{}).ID;
+  const target=id('313'); if(!target) return 'không có ID 313';
+  const a=xnTuChoi({pin:'5678',id:target});   // thiếu lý do
+  const b=xnTuChoi({pin:'5678',id:target,lyDo:'test từ chối'});
+  const r=rows('ChamCong').find(x=>String(x.ID)===target);
+  xnDuyet({pin:'5678',ids:[target],cach:'dexuat'});   // đã duyệt → không từ chối lại được
+  const c=xnTuChoi({pin:'5678',id:target,lyDo:'thử lần 2'});
+  return (!a.ok && /lý do/i.test(a.msg) && b.ok && r.TrangThai==='Từ chối' && +r.GioTinh===0 && /test từ chối/.test(r.LyDo||'') && !c.ok) || JSON.stringify({a,b,c,r});
+});
 T('XN4 Quản lý theo quán: tài khoản gắn quán Đống Đa chỉ thấy và chỉ duyệt được Đống Đa; admin thấy hết', ()=>{
   luuTaiKhoan({pin:'1234',list:[{Ten:'Admin',PIN:'1234',VaiTro:'Admin'},{Ten:'Quản lý',PIN:'5678',VaiTro:'Quản lý',SuaGio:'Không'},{Ten:'QL TP',PIN:'2468',VaiTro:'Quản lý',SuaGio:'Có'},{Ten:'QL ĐĐ',PIN:'1357',VaiTro:'Quản lý',SuaGio:'Không',Quan:'DD'}]});
   const a=xnDanhSach({pin:'1357',ngay:N}), ad=xnDanhSach({pin:'1234',ngay:N}); const idTP=ad.list.find(x=>x.MaCS==='TP' && x.TrangThai==='Chờ xác nhận').ID;

@@ -83,7 +83,7 @@ input[type=date],input[type=month]{width:auto;min-width:140px;text-align:left}
 <div class="panel" id="view"></div><p class="sub" id="doTG" style="margin-top:14px;font-size:12px;color:#8A817C"></p></div></div>
 <script>
 var DSVT=['Pha chế','Phục vụ','Rửa ly','Bảo vệ','Quản lý','Support'], DSCV=['Trưởng ca','Quản lý','Phó quản lý'];
-var $=function(i){return document.getElementById(i);}, NN=10, PIN='', ROLE='', SUA=false, Q={}, TEN='', VER_TRANG='CC 01/11a', STORES=[], CS={}, CUR='hom';
+var $=function(i){return document.getElementById(i);}, NN=10, PIN='', ROLE='', SUA=false, Q={}, TEN='', VER_TRANG='CC 01/11c', STORES=[], CS={}, CUR='hom';
 // (29/10) Tự phát hiện file QuanLy bị DÁN CHỒNG (dán bản mới mà chưa Ctrl+A xoá bản cũ): bản cũ nằm sau sẽ đè bản mới → báo rõ cách sửa
 var __BAN_NAY=VER_TRANG; window.addEventListener('load',function(){ setTimeout(function(){ if(VER_TRANG===__BAN_NAY) return; var b=document.createElement('div');
   b.style.cssText='margin:10px auto;max-width:1100px;padding:12px 14px;border-radius:10px;background:#B4382F;color:#fff;font:600 15px/1.45 system-ui,sans-serif';
@@ -295,7 +295,7 @@ function theXN(o,r){ var cho=o.TrangThai==='Chờ xác nhận', da=o.TrangThai==
   h+='<div class="xn-r xn-h"><span>Ca '+o.Ca+(o.CoLich?'':' (ngoài lịch)')+'</span><span'+(suaDuoc?' class="xn-nhanh-bam" data-nhanh="'+o.ID+'" title="Bấm để sửa giờ"':'')+'>Chấm '+o.Vao+' – '+(o.Ra||'?')+(suaDuoc?' ✎':'')+'</span><span>NV: '+kh+(o.CoMat?' · có mặt '+o.CoMat:'')+(o.LyDo?' · <span class="sub">'+esc(o.LyDo)+'</span>':'')+(o.Ghi?' · <span class="sub">"'+esc(o.Ghi)+'"</span>':'')+'</span>'+(o.AnhVao?'<a href="'+esc(o.AnhVao)+'" target="_blank">ảnh vào</a>':'')+(o.AnhRa?'<a href="'+esc(o.AnhRa)+'" target="_blank">ảnh ra</a>':'')+'</div>';
   h+='<div class="xn-r xn-h" style="align-items:center"><span>Lịch <b>'+hm(o.GioLich)+'h</b></span><span>Chấm <b>'+(o.GioCham!=null?hm(o.GioCham)+'h':'–')+'</b></span><span'+(suaDuoc?' class="xn-nhanh-bam" data-nhanh="'+o.ID+'" title="Bấm để sửa giờ"':'')+'>Đề xuất <b>'+(o.DeXuat!=null?hm(o.DeXuat)+'h':'?')+'</b>'+(r.theoCham?' <span class="sub">theo giờ chấm</span>':'')+'</span><span style="flex:1"></span>';
   if(da) h+='<span class="xt xt-o">✓ '+hm(o.GioTinh)+'h · '+esc(o.Cach||'đã xác nhận')+'</span><span class="sub">'+esc(o.Boi||'')+(o.Luc?' '+esc(o.Luc):'')+(o.CoPhep?' · '+esc(o.CoPhep):'')+(o.LyDoSua?' · '+esc(o.LyDoSua):'')+'</span>'+(o.Khoa?'<span class="sub">· đợt đã khoá'+(ROLE==='admin'?'':', chỉ admin sửa')+'</span>':'')+((r.suaGio && (!o.Khoa||ROLE==='admin'))?'<button class="mini" data-bo="'+o.ID+'">Bỏ duyệt</button><button class="mini" data-sua="'+o.ID+'">Sửa</button>':'');
-  else if(cho||o.TrangThai==='Quên chấm ra') h+=(o.DeXuat!=null?'<button class="mini p" data-duyet="'+o.ID+'">✓ Duyệt '+hm(o.DeXuat)+'h</button>':'')+'<button class="mini" data-sua="'+o.ID+'">Sửa</button>';
+  else if(cho||o.TrangThai==='Quên chấm ra') h+=(o.DeXuat!=null?'<button class="mini p" data-duyet="'+o.ID+'">✓ Duyệt '+hm(o.DeXuat)+'h</button>':'')+'<button class="mini" style="color:#B4382F;border-color:#B4382F" data-tuchoi="'+o.ID+'" data-ten="'+esc(o.Ten)+'">✗ Từ chối</button>'+'<button class="mini" data-sua="'+o.ID+'">Sửa</button>';
   h+='</div>';
   if(XNS.nhanh===o.ID){ var v0=o.CoMat||o.KhaiTu||o.Vao||o.Ca.split('–')[0], r0=o.KhaiDen||o.Ra||o.Ca.split('–')[1];
     h+='<div class="xn-r xn-nhanh"><b>Sửa giờ:</b> <input type="time" id="nhV" value="'+v0+'"> – <input type="time" id="nhR" value="'+r0+'"> <span class="sub">hoặc</span> <input type="number" id="nhG" step="0.25" min="0" max="16" inputmode="decimal" placeholder="số giờ" title="Nhập thẳng số giờ, VD 7.5 – bỏ trống thì tính theo giờ vào / ra" style="width:84px"><select id="nhP"><option>Có lý do</option><option>Có phép</option><option>Không phép</option></select><input id="nhL" list="nhGoiY" placeholder="Lý do (bắt buộc)" style="flex:1;min-width:150px"><button class="mini p" data-luunhanh="'+o.ID+'">Lưu</button><button class="mini" data-dongnhanh="1">✕</button></div>'; }
@@ -311,6 +311,8 @@ function ganXN(r){ var v=$('view'), goi=function(fn,p,ok){ google.script.run.wit
   v.querySelectorAll('[data-chonca]').forEach(function(b){ b.onclick=function(){ var k=b.dataset.chonca.split('|'); r.list.forEach(function(o){ if(o.MaCS===k[0] && o.Ca===k[1] && (!k[2]||o.Ngay===k[2]) && o.TrangThai==='Chờ xác nhận') XNS.chon[o.ID]=true; }); v.querySelectorAll('[data-chon]').forEach(function(c){ c.checked=!!XNS.chon[c.dataset.chon]; }); veXNBar(); }; });
   v.querySelectorAll('[data-chonkhop]').forEach(function(b){ b.onclick=function(){ var k=b.dataset.chonkhop.split('|'); r.list.forEach(function(o){ if(o.MaCS===k[0] && o.Ca===k[1] && (!k[2]||o.Ngay===k[2]) && o.TrangThai==='Chờ xác nhận' && o.Khop) XNS.chon[o.ID]=true; }); v.querySelectorAll('[data-chon]').forEach(function(c){ c.checked=!!XNS.chon[c.dataset.chon]; }); veXNBar(); }; });
   v.querySelectorAll('[data-duyet]').forEach(function(b){ b.onclick=function(){ b.disabled=true; goi('xnDuyet',{ids:[b.dataset.duyet],cach:'dexuat'}); }; });
+  // (CC 01/11c) Nút Từ chối: bắt lý do, không reload trang, ghi lịch sử
+  v.querySelectorAll('[data-tuchoi]').forEach(function(b){ b.onclick=function(){ var ly=prompt('Lý do từ chối lượt chấm của '+b.dataset.ten+' (bắt buộc):'); if(!ly||!ly.trim()){ if(ly!==null) alert('Phải ghi lý do để từ chối'); return; } b.disabled=true; goi('xnTuChoi',{id:b.dataset.tuchoi,lyDo:ly.trim()}); }; });
   v.querySelectorAll('[data-sua]').forEach(function(b){ b.onclick=function(){ XNS.sua=XNS.sua===b.dataset.sua?'':b.dataset.sua; XNS.nhanh=''; veXNVe(); }; });
   v.querySelectorAll('[data-huysua]').forEach(function(b){ b.onclick=function(){ XNS.sua=''; veXNVe(); }; });
   v.querySelectorAll('[data-nhanh]').forEach(function(b){ b.onclick=function(){ XNS.nhanh=XNS.nhanh===b.dataset.nhanh?'':b.dataset.nhanh; XNS.sua=''; veXNVe(); var l=$('nhL'); if(l) l.focus(); }; });
@@ -864,4 +866,4 @@ setInterval(function(){ if(!document.hidden) capNhatSo(true); }, 120000);
 document.addEventListener('visibilitychange', function(){ if(!document.hidden) capNhatSo(false); });
 document.addEventListener('click', function(e){ if(e.target.closest && e.target.closest('#tabs .tab, #subtabs .tabcon')) setTimeout(function(){ capNhatSo(false); }, 1500); });
 </script></body></html>
-<!-- HẾT QuanLy.html – bản CC 01/11a (dán đủ thì dòng này nằm cuối cùng) -->
+<!-- HẾT QuanLy.html – bản CC 01/11c (dán đủ thì dòng này nằm cuối cùng) -->

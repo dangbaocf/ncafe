@@ -4,6 +4,51 @@ Mỗi bản 1 khối, bản mới nhất ở ĐẦU. Luật đặt tên: CLAUDE.
 
 ---
 
+## CC 01/11c – deploy 1/11 11:55
+
+**Sửa + Mới**:
+- Thêm route `/quanlychamcong-thu` trỏ sang `QuanLy.html` nhúng CF (bước 1 Chuyển trang QL lên CF – Loại 1 Nguyên trạng).
+- Vẫn giữ `/quan-ly` route cũ, 2 route cùng content.
+- `caphemuoihue.com/quanlychamcong` CHƯA đụng, trang cũ (Apps Script) giữ nguyên chạy.
+
+**Giữ nguyên**: giao diện, tab, nút, chữ, dữ liệu, phân quyền. Chỉ chép nguyên, không viết lại logic.
+
+**Test**: curl `/quanlychamcong-thu` → HTTP 200, 200KB, ~0.4s. Chưa test đăng nhập + từng tab bằng điện thoại thật.
+
+**Bằng chứng**: `DOI-CHIEU-QL-01-11.md` – bảng Chỗ|Cũ|Mới|Giống/Khác (1 KHÁC: mục "⚡ Cài đặt D1 bản thử" chỉ admin xem thêm, không đụng Sheet).
+
+**Rollback**: Worker version trước `4196f4ce` (bỏ route alias) · Apps Script giữ @135 CC 01/11b (có xnTuChoi).
+
+**Mã bản**: Worker `d0c76943` · Apps Script @136 · git tag `CC-01-11c`.
+
+**Anh cần làm**: Mở link thử `https://ncafe-chamcong.dangbao-mt.workers.dev/quanlychamcong-thu` trên điện thoại thật, đăng nhập, xem từng tab so với trang cũ. KHÔNG đổi `/quanlychamcong` cho tới khi anh OK.
+
+---
+
+## CC 01/11b – deploy 1/11 11:50
+
+**Lỗi + nguyên nhân**:
+- Thiếu nút "Từ chối" tại dòng tab Xác nhận giờ. Trước đó chỉ có "Duyệt" + "Sửa" (trong Sửa có "Xoá lượt chấm nhầm" admin). Khi QL muốn từ chối (NV khai sai, không có mặt) → phải "Sửa" + ghi lý do → không trực quan.
+
+**Đã sửa**:
+- `XacNhan.gs` thêm fn `xnTuChoi(id, lyDo)`: bắt lý do, ghi `TrangThai='Từ chối'` + `GioTinh=0` + `LyDoSua` + `Cach='Từ chối'` + `XacNhanBoi` + log `NhatKySua`. Chặn nếu lượt đã duyệt / không thuộc quán QL / tháng đã chốt lương.
+- `apiHamQL` thêm `xnTuChoi`.
+- `QuanLy.html` thêm nút "✗ Từ chối" bên cạnh "✓ Duyệt" cho mọi lượt `Chờ xác nhận` / `Quên chấm ra`. Bấm → `prompt('Lý do từ chối…')` → gọi `xnTuChoi` không reload trang.
+
+**Tính năng mới**: Nút Từ chối tại dòng tab Xác nhận giờ.
+
+**Giữ nguyên**: nút Duyệt, Sửa, tick duyệt hàng loạt, Xoá (trong Sửa form, chỉ admin), Bỏ duyệt. Cách tính lương, khoá sổ T10, QR cũ.
+
+**Test**: cc_test **153/0** (thêm `XN-TC`), d1 17/0, luong 7/0. Chưa test iPhone thật (chờ anh).
+
+**Rollback**: Worker version trước `155dbbdc` · Apps Script @134 CC 01/11a.
+
+**Mã bản**: Worker `4196f4ce` · Apps Script @135 · git tag `CC-01-11b`.
+
+**Anh cần làm**: Vào tab Xác nhận giờ, bấm "✗ Từ chối" trên 1 lượt Chờ xác nhận, điền lý do, kiểm Nhật ký sửa.
+
+---
+
 ## CC 01/11a – deploy 1/11 09:15
 
 **Lỗi + nguyên nhân**:
