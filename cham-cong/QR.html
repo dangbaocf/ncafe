@@ -24,8 +24,26 @@ img.pv{width:100%;border-radius:12px;margin-top:10px}
 .done{text-align:center}.big{font-size:52px;font-weight:800;letter-spacing:-.02em;margin:6px 0}
 .hide{display:none}
 </style></head><body>
-<h1>Chấm công Ncafe</h1><span class="store" id="store">Đang kiểm tra mã QR…</span><div id="vtTT" style="font-size:13px;margin:6px 2px 0;color:#6B6460">📍 Đang lấy vị trí…</div><div id="wfTT" style="font-size:13px;margin:4px 2px 0"></div>
-<div class="card hide" id="sMa"><div class="lbl">Mã nhân viên (điện thoại sẽ nhớ cho lần sau)</div><input class="input" id="ma" inputmode="numeric" placeholder="VD: 312" autocomplete="off" oninput="goMa()"><div id="maTen" class="sub" style="margin-top:6px;min-height:18px"></div><button class="btn ghost" onclick="tim()">Tìm</button><p class="err" id="eMa"></p></div>
+<h1>Chấm công Ncafe</h1><span class="store" id="store">Đang kiểm tra mã QR…</span><div id="vtTT" class="hide" style="font-size:13px;margin:6px 2px 0;color:#6B6460"></div><div id="wfTT" style="font-size:13px;margin:4px 2px 0"></div>
+<div class="card hide" id="sMa">
+<div class="lbl">Mã nhân viên</div>
+<input class="input" id="ma" inputmode="numeric" placeholder="VD: 312" autocomplete="off" maxlength="6" oninput="duoc()">
+<div id="maTen" class="sub" style="margin-top:6px;min-height:18px"></div>
+<div class="lbl" style="margin-top:10px">4 số cuối điện thoại</div>
+<input class="input" id="sdt4" inputmode="numeric" type="password" maxlength="4" placeholder="••••" autocomplete="off" oninput="duoc()">
+<button class="btn" id="btNext" onclick="tim()" disabled style="margin-top:12px">Tiếp tục</button>
+<p class="sub" style="margin-top:4px;text-align:center;font-size:12px">Điện thoại nhớ cho lần sau quét QR.</p>
+<p class="err" id="eMa"></p>
+</div>
+<div class="card hide" id="sDangKySdt">
+<div class="lbl" style="font-size:15px;font-weight:600;color:#2F5D62">Chào <span id="dkTen">bạn</span>! Hồ sơ chưa có số điện thoại của bạn.</div>
+<div class="lbl" style="margin-top:10px">Nhập số điện thoại của bạn (10 số, bắt đầu 0)</div>
+<input class="input" id="sdtFull" inputmode="numeric" type="tel" maxlength="10" placeholder="VD: 0905 123 456" autocomplete="off" oninput="dkCheck()">
+<p class="sub" style="font-size:12px;color:#6B6460;margin-top:4px">Quản lý sẽ xác nhận lại. Lần sau bạn chỉ cần 4 số cuối.</p>
+<button class="btn" id="btDK" onclick="dkGui()" disabled style="margin-top:12px">Lưu & chấm công</button>
+<p class="err" id="eDK"></p>
+<p style="text-align:center;margin-top:8px"><button class="link" onclick="ls('ncafe_ma',null);ls('ncafe_sdt4',null);location.reload()">Không phải tôi? Đổi mã</button></p>
+</div>
 <div class="card hide" id="sCham"></div>
 <div class="card hide done" id="sXong"></div>
 <script>
@@ -57,27 +75,58 @@ function cham(fn, args, ok, loi){
 }
 // Lấy vị trí: lần 1 nhanh (wifi / mạng di động, vài giây – đủ cho bán kính 100m), lần 2 bằng GPS cho chính xác hơn. Bị chặn thì báo nhân viên cách bật.
 var TRONG_APP=/Zalo|FBAN|FBAV|FB_IAB|Instagram|Messenger|Line\//i.test(navigator.userAgent);
-function veViTri(){ var e=$('vtTT'); if(!e) return; if(POS.lat){ e.innerHTML='📍 Đã lấy vị trí (±'+POS.acc+' m)'; e.style.color='#2F6B3A'; return; }
-  if(!POS.loi){ e.textContent='📍 Đang lấy vị trí…'; return; } e.style.color='#B4382F';
-  e.innerHTML='⚠️ Chưa lấy được vị trí ('+POS.loi+'). '+(TRONG_APP?'Bạn đang mở trong Zalo / Facebook: bấm <b>⋯</b> → <b>Mở bằng trình duyệt</b> (Safari / Chrome), hoặc quét mã bằng <b>Camera</b> của điện thoại.':(POS.loi==='chưa cho phép'?'Bật lại: iPhone → Cài đặt → Quyền riêng tư → Dịch vụ định vị → bật, mục Safari chọn "Khi dùng ứng dụng"; Android → bấm ổ khoá cạnh địa chỉ web → Vị trí → Cho phép. Rồi tải lại trang.':'Ra gần cửa / bật Wi-Fi rồi tải lại trang.'))+' Vẫn chấm được, nhưng quản lý sẽ thấy "Không lấy được định vị".'; }
+// (1/11) Ẩn text "Đang/Đã lấy vị trí" theo luật anh Bảo: NV không thấy việc kiểm vị trí (mục 5 CLAUDE.md).
+// Chỉ hiện khi CÓ LỖI (NV cần biết để bật quyền vị trí).
+function veViTri(){ var e=$('vtTT'); if(!e) return;
+  if(POS.lat){ e.classList.add('hide'); e.innerHTML=''; return; }
+  if(!POS.loi){ e.classList.add('hide'); return; }
+  e.classList.remove('hide'); e.style.color='#B4382F';
+  e.innerHTML='⚠️ Chưa lấy được vị trí ('+POS.loi+'). '+(TRONG_APP?'Bạn đang mở trong Zalo / Facebook: bấm <b>⋯</b> → <b>Mở bằng trình duyệt</b> (Safari / Chrome), hoặc quét mã bằng <b>Camera</b> của điện thoại.':(POS.loi==='chưa cho phép'?'Bật lại: iPhone → Cài đặt → Quyền riêng tư → Dịch vụ định vị → bật, mục Safari chọn "Khi dùng ứng dụng"; Android → bấm ổ khoá cạnh địa chỉ web → Vị trí → Cho phép. Rồi tải lại trang.':'Ra gần cửa / bật Wi-Fi rồi tải lại trang.'))+' Vẫn chấm được.'; }
 function layViTri(chinhXac, han, xong){ if(!navigator.geolocation){ POS.loi='máy không hỗ trợ'; veViTri(); if(xong) xong(); return; }
   navigator.geolocation.getCurrentPosition(function(p){ var a=Math.round(p.coords.accuracy); if(!POS.lat || a<(+POS.acc||1e9)) POS={lat:p.coords.latitude,lng:p.coords.longitude,acc:a,loi:''}; veViTri(); if(xong) xong(); },
     function(e){ if(!POS.lat) POS.loi=e.code===1?'chưa cho phép':(e.code===3?'hết thời gian chờ':'không xác định được'); veViTri(); if(xong) xong(); }, {enableHighAccuracy:chinhXac, timeout:han, maximumAge:120000}); }
 layViTri(false, 8000); layViTri(true, 25000);
-var MA_NHO=ls('ncafe_ma'); if(MA_NHO) $('ma').value=MA_NHO;
-cham('qrMo', {cs:CS,t:TK,maNV:MA_NHO||'',deviceId:DEV},
+var MA_NHO=ls('ncafe_ma'), SDT4_NHO=ls('ncafe_sdt4');
+if(MA_NHO) $('ma').value=MA_NHO;
+if(SDT4_NHO) $('sdt4').value=SDT4_NHO;
+cham('qrMo', {cs:CS,t:TK,maNV:MA_NHO||'',sdt4:SDT4_NHO||'',deviceId:DEV},
   function(r){ if(!r.ok){ $('store').textContent=r.msg; $('store').style.cssText='background:#F8E1DE;color:#B4382F'; return; }
-    $('store').textContent='Quán '+r.store.TenCS; WIFI=r.wifi||{}; veWifi(); if(r.nv && r.nv.ok) nhanNV(r.nv); else $('sMa').classList.remove('hide'); },
+    $('store').textContent='Quán '+r.store.TenCS; WIFI=r.wifi||{}; veWifi();
+    if(r.nv && r.nv.ok) nhanNV(r.nv);
+    else if(r.nv && r.nv.canNhapSdt){ moDangKySdt(r.nv); }
+    else { $('sMa').classList.remove('hide'); setTimeout(duoc,0); } },
   function(e){ $('store').textContent='Lỗi mạng: '+(e.message||e)+' – tải lại trang'; });
 var WIFI={};
 function wifiChan(){ return WIFI.bat && !WIFI.ok && WIFI.cheDo==='batbuoc'; }
 function veWifi(){ var e=$('wfTT'); if(!e || !WIFI.bat) return; if(WIFI.ok){ e.innerHTML='📶 Đang dùng wifi quán'; e.style.color='#2F6B3A'; return; }
   e.style.color=WIFI.cheDo==='batbuoc'?'#B4382F':'#8A6A10'; e.innerHTML='📶 Bạn chưa kết nối <b>wifi của quán</b> – bật wifi quán (tắt 4G / VPN) rồi <a href="#" onclick="location.reload();return false">tải lại trang</a> nhé.'+(WIFI.cheDo==='batbuoc'?' Cần wifi của quán mới chấm công được.':' Lần này vẫn chấm công bình thường.'); }
-var goMaHen=null; function goMa(){ var m=$('ma').value.replace(/\D/g,''); $('maTen').textContent=''; clearTimeout(goMaHen); if(m.length>=3) goMaHen=setTimeout(function(){ $('maTen').textContent='Đang tìm…'; tim(); }, 350); }
-function nhanNV(r){ if(!r.ok){ ls('ncafe_ma',null); $('sMa').classList.remove('hide'); $('sCham').classList.add('hide'); $('eMa').textContent=r.msg; if($('maTen')) $('maTen').textContent=''; return; }
-  NV=r; ls('ncafe_ma',r.MaNV||r.maNV); $('sMa').classList.add('hide'); S={vt:(r.lich&&r.lich[0]&&r.lich[0].ViTri)||r.ViTri||r.viTri,ca:(r.lich&&r.lich[0]&&r.lich[0].MaCa)||'',kh:'',photo:null,gio:'',ghi:''}; ve(); }
-function tim(){ var m=$('ma').value.trim(); if(!m){ $('eMa').textContent='Nhập mã nhân viên'; return; } $('eMa').textContent='';
-  cham('qrNhanVien', {cs:CS,t:TK,maNV:m,deviceId:DEV}, nhanNV, function(e){ $('eMa').textContent='Lỗi: '+(e.message||e); }); }
+// (1/11) Màn hình đầu: mã + 4 số cuối SĐT. Nút Tiếp tục chỉ sáng khi đủ.
+function duoc(){ var m=$('ma').value.replace(/\D/g,'').slice(0,6), s=$('sdt4').value.replace(/\D/g,'').slice(0,4);
+  if(m!==$('ma').value) $('ma').value=m; if(s!==$('sdt4').value) $('sdt4').value=s;
+  if($('btNext')) $('btNext').disabled=!(m.length>=3 && s.length===4); }
+function nhanNV(r){ if(!r.ok){
+    if(r.khoaDen){ $('sMa').classList.remove('hide'); $('eMa').textContent=r.msg; return; }
+    // Giữ ô, không xoá ls (admin có thể đổi SDT; user có thể gõ nhầm)
+    $('sMa').classList.remove('hide'); $('sCham').classList.add('hide'); $('eMa').textContent=r.msg; if($('maTen')) $('maTen').textContent=''; return; }
+  NV=r; ls('ncafe_ma',r.MaNV||r.maNV); if($('sdt4') && $('sdt4').value.trim()) ls('ncafe_sdt4',$('sdt4').value.trim());
+  $('sMa').classList.add('hide'); $('sDangKySdt').classList.add('hide');
+  S={vt:(r.lich&&r.lich[0]&&r.lich[0].ViTri)||r.ViTri||r.viTri,ca:(r.lich&&r.lich[0]&&r.lich[0].MaCa)||'',kh:'',photo:null,gio:'',ghi:''}; ve(); }
+function tim(){ var m=$('ma').value.trim(), s=$('sdt4').value.trim(); if(!m || s.length!==4){ $('eMa').textContent='Nhập đủ mã nhân viên và 4 số cuối điện thoại'; return; } $('eMa').textContent='';
+  cham('qrNhanVien', {cs:CS,t:TK,maNV:m,sdt4:s,deviceId:DEV},
+    function(r){ if(r.canNhapSdt){ moDangKySdt(r); return; } nhanNV(r); },
+    function(e){ $('eMa').textContent='Lỗi: '+(e.message||e); }); }
+// Cách A: NV chưa có SĐT → nhập 10 số đầy đủ, lưu lần đầu
+function moDangKySdt(r){ NV=r; $('sMa').classList.add('hide'); $('sDangKySdt').classList.remove('hide');
+  if($('dkTen') && (r.goi||r.Ten)) $('dkTen').textContent = r.goi||r.Ten; }
+function dkCheck(){ var s=$('sdtFull').value.replace(/\D/g,'').slice(0,10); if(s!==$('sdtFull').value) $('sdtFull').value=s;
+  $('btDK').disabled = !/^0[1-9]\d{8}$/.test(s); }
+function dkGui(){ var m=$('ma').value.trim(), s=$('sdtFull').value.trim(); $('btDK').disabled=true; $('btDK').textContent='Đang lưu…'; $('eDK').textContent='';
+  cham('qrDangKySdt', {cs:CS,t:TK,maNV:m,sdt:s,deviceId:DEV},
+    function(x){ if(!x.ok){ $('btDK').disabled=false; $('btDK').textContent='Lưu & chấm công'; $('eDK').textContent=x.msg; return; }
+      // Lưu 4 số cuối + reload qrNhanVien để vào bước chọn ca
+      ls('ncafe_sdt4', s.slice(-4));
+      cham('qrNhanVien', {cs:CS,t:TK,maNV:m,sdt4:s.slice(-4),deviceId:DEV}, nhanNV, function(e){ $('eDK').textContent='Lỗi: '+e.message; }); },
+    function(e){ $('btDK').disabled=false; $('btDK').textContent='Lưu & chấm công'; $('eDK').textContent='Lỗi: '+(e.message||e); }); }
 var TU_GUI=false, CANLY=false, LYDO=['Có mặt đúng giờ, chấm muộn (mã QR / mạng / hết pin)','Đã xin phép quản lý','Xe hư / lủng lốp','Ốm / sức khoẻ','Việc gia đình','Kẹt xe / mưa lớn','Đông khách, quản lý giữ lại','Quán vắng, quản lý cho về','Khác'];
 function luu(){ if($('ktu')) S.tu=$('ktu').value; if($('kden')) S.den=$('kden').value; if($('kcm')) S.cm=$('kcm').value; if($('gio')) S.gio=$('gio').value; if($('ghi')) S.ghi=$('ghi').value; if($('gbd')) S.bd=$('gbd').value; if($('gkt')) S.kt=$('gkt').value; }
 function ve(){ var r=NV, b=$('sCham'); b.classList.remove('hide'); var vao=r.next==='VAO';
@@ -105,7 +154,7 @@ function ve(){ var r=NV, b=$('sCham'); b.classList.remove('hide'); var vao=r.nex
   var du=S.photo && (vao?S.ca:(S.kh && (!CANLY || S.ly))); if(du) h+='<button class="btn" id="gui" onclick="gui()">'+(vao?'Vào ca':'Ra ca')+'</button>';
   if(vao) h+='<p class="sub" style="text-align:center;margin-top:8px">💡 Nên đến sớm 10 phút để chuẩn bị cho ca làm việc.</p>';
   else if(S.photo) h+='<p class="sub" style="margin-top:10px">'+(vao?'Chọn ca làm để vào ca.':(S.kh?'Chọn lý do để ra ca.':'Chọn: đủ ca, tăng ca hay giảm ca.'))+'</p>';
-  h+='<p class="err" id="err"></p><p style="text-align:center;margin-top:6px"><button class="link" onclick="ls(\'ncafe_ma\',null);location.reload()">Không phải bạn? Đổi mã</button></p>';
+  h+='<p class="err" id="err"></p><p style="text-align:center;margin-top:6px"><button class="link" onclick="ls(\'ncafe_ma\',null);ls(\'ncafe_sdt4\',null);location.reload()">Không phải tôi? Đổi mã</button></p>';
   b.innerHTML=h;
   b.querySelectorAll('[data-ca]').forEach(function(x){ x.onclick=function(){ luu(); S.ca=x.dataset.ca; ve(); }; });
   b.querySelectorAll('[data-vt]').forEach(function(x){ x.onclick=function(){ S.vt=x.dataset.vt; ve(); }; });
@@ -124,7 +173,7 @@ function loiChao(r, nn){ var m=function(x){ var p=String(x||'').split(':'); retu
   return {dung:true, html:'<div style="'+xanh+'">🎉 Chúc mừng '+ten+' đã đến đúng giờ!<div style="font-weight:500;margin-top:4px">Chúc ca làm thật vui vẻ.</div></div>'}; }
 function gui(){ if(!POS.lat && !gui.daCho && POS.loi!=='chưa cho phép'){ gui.daCho=true; var b0=$('gui'); b0.disabled=true; b0.textContent='Đang lấy vị trí…'; layViTri(false, 6000, function(){ gui(); }); return; } gui.daCho=false;
   luu(); var b=$('gui'); b.disabled=true; b.textContent='Đang lưu…';
-  var maNV=NV.MaNV||NV.maNV; var base={cs:CS,t:TK,maNV:maNV,deviceId:DEV,photo:S.photo,lat:POS.lat,lng:POS.lng,acc:POS.acc,loiViTri:POS.loi||'',trongApp:TRONG_APP?1:''}, fn, p;
+  var sdt4=ls('ncafe_sdt4')||''; var maNV=NV.MaNV||NV.maNV; var base={cs:CS,t:TK,maNV:maNV,sdt4:sdt4,deviceId:DEV,photo:S.photo,lat:POS.lat,lng:POS.lng,acc:POS.acc,loiViTri:POS.loi||'',trongApp:TRONG_APP?1:''}, fn, p;
   if(NV.next==='VAO'){ fn='qrVao'; p=Object.assign(base,{maCa:S.ca,viTri:S.vt,gioBD:S.bd,gioKT:S.kt}); } else { fn='qrRa'; p=Object.assign(base,{khaiLoai:S.kh,tu:S.kh==='du'?'':S.tu,den:S.kh==='du'?'':S.den,coMat:S.kh==='du'?S.cm:'',lyDo:S.ly,ghiChu:S.ghi}); }
   cham(fn, p, function(r){ if(!r.ok){
       // giờ cao điểm: máy chủ đang ghi cho người khác → tự thử lại (tối đa 3 lần, cách 2–4 giây), nhân viên không phải bấm

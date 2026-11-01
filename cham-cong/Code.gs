@@ -4,7 +4,7 @@
  * Chỉ ĐỌC lịch đã xếp từ app Xếp lịch (CaiDat LICH_SHEET_ID) để biết ca hôm nay và so đúng lịch.
  * App Xếp lịch chỉ ĐỌC Sheet này để học. Hai app không sửa dữ liệu của nhau.
  *******************************************************/
-var VER='CC 30/10d';
+var VER='CC 01/11a';
 var SS = SpreadsheetApp.getActiveSpreadsheet();
 
 // (30/10) Utilities.formatDate rất chậm trên máy chủ Google (~1–2 ms / lần; bảng lương gọi ~6.000 lần nhưng chỉ ~100 giá trị khác nhau → ~12 giây).
@@ -164,7 +164,9 @@ function apiHam(){ return {qrInfo:qrInfo, qrMo:qrMo, qrNhanVien:qrNhanVien, qrVa
     exportChamCongThang:exportChamCongThang,
     exportCaiDatAll:exportCaiDatAll,
     exportNhanVienAll:exportNhanVienAll,
-    exportLichSuLuong:exportLichSuLuong}; }   // (31/10 đợt A) export fn cho worker gọi qua API_KEY để so khớp lương
+    exportLichSuLuong:exportLichSuLuong,
+    xoaLuotTheoID:xoaLuotTheoID,
+    qrDangKySdtBackfill:qrDangKySdtBackfill}; }   // (31/10 đợt A) export fn cho worker gọi qua API_KEY để so khớp lương + (1/11) xoá test + đăng ký SDT cách A
 /* (30/10b) Số ca "Chờ xác nhận" trong tháng 10/2026 theo quán – trước kỳ lương 3/11 để QL duyệt hết. Chỉ trả số, không tên nhân viên. */
 function demCaChoDuyetT10(){
   var today=fmtDate(new Date()), so={}, tong=0;
@@ -353,6 +355,26 @@ function saoLuuSheetNgay(p){
  * Worker ncafe-chamcong gọi hàm này qua ctx.waitUntil sau khi ghi D1.
  * Idempotent theo cột ID (ChamCong Sheet có cột ID). Ghi chữ thuần (prefix ' cho IP/ngày/giờ/sdt).
  * KHÔNG cần PIN – authz đã qua API_KEY ở lớp doPost. */
+/** (1/11 Việc 2 cách A) NV đăng ký SĐT lần đầu qua QR. Worker gọi fn này (API_KEY).
+ *  Ghi SDT vào Sheet NhanVien, đánh dấu SdtCho='Có' (QL duyệt sau). */
+function qrDangKySdtBackfill(p){
+  if (!p || !p.MaNV || !p.SDT) return {ok:false, msg:'Thiếu MaNV/SDT'};
+  var sh = SS.getSheetByName('NhanVien'); if (!sh) return {ok:false, msg:'Thiếu bảng NhanVien'};
+  try{ ensureCols('NhanVien', ['SdtCho']); }catch(e){}
+  var h = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0], iMa = h.indexOf('MaNV'), iSDT = h.indexOf('SDT'), iCho = h.indexOf('SdtCho');
+  if (iMa < 0 || iSDT < 0) return {ok:false, msg:'Thiếu cột'};
+  var ids = sh.getRange(2, iMa+1, sh.getLastRow()-1, 1).getValues();
+  for (var i = 0; i < ids.length; i++) {
+    if (String(ids[i][0]).toUpperCase() === String(p.MaNV).toUpperCase()) {
+      sh.getRange(i+2, iSDT+1).setValue(sdtGhi_(p.SDT));
+      if (iCho >= 0) sh.getRange(i+2, iCho+1).setValue(p.SdtCho || 'Có');
+      try{ ghiNhatKy('NV đăng ký lần đầu', '', p.MaNV, 'SDT (chờ QL)', '', '••••'); }catch(e){}
+      return {ok:true, dong:i+2};
+    }
+  }
+  return {ok:false, msg:'Không tìm thấy NV'};
+}
+
 function qrVaoBackfill(p){
   if(!p || !p.ID) return {ok:false, msg:'Thiếu ID'};
   try{ ensureCols('ChamCong', XN_COT); }catch(e){}
@@ -425,6 +447,21 @@ function exportNhanVienAll(p){
     TrangThai:String(n.TrangThai||'Đang làm')}; });
   return {ok:true, list:list, so:list.length};
 }
+/** (1/11) Xoá record Sheet ChamCong theo danh sách ID. Dùng xoá dấu test từ CF.
+ *  Auth qua API_KEY (doPost đã check). KHÔNG cần PIN. */
+function xoaLuotTheoID(p){
+  var ids = (p && p.ids) || []; if (!ids.length) return {ok:true, soXoa:0};
+  var sh = SS.getSheetByName('ChamCong'); if (!sh) return {ok:false, msg:'Thiếu bảng ChamCong'};
+  var h = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0], iID = h.indexOf('ID');
+  if (iID < 0) return {ok:false, msg:'Thiếu cột ID'};
+  var v = sh.getRange(2, iID+1, sh.getLastRow()-1, 1).getValues();
+  var idSet = {}; ids.forEach(function(x){ idSet[String(x)] = 1; });
+  var xoa = []; for (var i = v.length-1; i >= 0; i--) if (idSet[String(v[i][0])]) xoa.push(i+2);
+  xoa.forEach(function(r){ sh.deleteRow(r); });
+  try{ ghiNhatKy('CF xoá test', '', '', 'Xoá lượt test 1/11', '', ids.join(',').slice(0,200)); }catch(e){}
+  return {ok:true, soXoa:xoa.length, idXoa:ids};
+}
+
 function exportLichSuLuong(p){
   var r = (SS.getSheetByName('LichSuLuong')?rows('LichSuLuong'):[]).map(function(x){
     return {MaNV:String(x.MaNV||''), Kieu:String(x.Kieu||''), Ngay:dateKey(x.Ngay), Tu:+x.Tu||0, Len:+x.Len||0, TuMacDinh:String(x.TuMacDinh||'')};

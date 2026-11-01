@@ -20,7 +20,7 @@
  */
 
 import {
-  qrInfo, qrMo, qrNhanVien, qrVao, qrRa
+  qrInfo, qrMo, qrNhanVien, qrVao, qrRa, qrDangKySdt
 } from './d1.js';
 import {
   caiDatDoc, caiDatGhi,
@@ -35,6 +35,7 @@ const ROUTES = {
   '/cham-cong-d1/qr/nhan-vien':    ['qrNhanVien',   false],
   '/cham-cong-d1/qr/vao':          ['qrVao',        true],
   '/cham-cong-d1/qr/ra':           ['qrRa',         true],
+  '/cham-cong-d1/qr/dang-ky-sdt':  ['qrDangKySdt',  true],
 
   '/cham-cong-d1/cai-dat/doc':       ['caiDatDoc',   false],
   '/cham-cong-d1/cai-dat/ghi':       ['caiDatGhi',   false],
@@ -46,7 +47,7 @@ const ROUTES = {
   '/cham-cong-d1/cai-dat/nhat-ky':   ['nhatKyDs',    false]
 };
 const HANDLERS = {
-  qrInfo, qrMo, qrNhanVien, qrVao, qrRa,
+  qrInfo, qrMo, qrNhanVien, qrVao, qrRa, qrDangKySdt,
   caiDatDoc, caiDatGhi,
   wifiQuanDs, wifiQuanLuu, wifiQuanBo,
   wifiChoDs, wifiChoXuLy,

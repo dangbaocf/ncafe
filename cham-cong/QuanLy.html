@@ -83,7 +83,7 @@ input[type=date],input[type=month]{width:auto;min-width:140px;text-align:left}
 <div class="panel" id="view"></div><p class="sub" id="doTG" style="margin-top:14px;font-size:12px;color:#8A817C"></p></div></div>
 <script>
 var DSVT=['Pha chế','Phục vụ','Rửa ly','Bảo vệ','Quản lý','Support'], DSCV=['Trưởng ca','Quản lý','Phó quản lý'];
-var $=function(i){return document.getElementById(i);}, NN=10, PIN='', ROLE='', SUA=false, Q={}, TEN='', VER_TRANG='CC 30/10d', STORES=[], CS={}, CUR='hom';
+var $=function(i){return document.getElementById(i);}, NN=10, PIN='', ROLE='', SUA=false, Q={}, TEN='', VER_TRANG='CC 01/11a', STORES=[], CS={}, CUR='hom';
 // (29/10) Tự phát hiện file QuanLy bị DÁN CHỒNG (dán bản mới mà chưa Ctrl+A xoá bản cũ): bản cũ nằm sau sẽ đè bản mới → báo rõ cách sửa
 var __BAN_NAY=VER_TRANG; window.addEventListener('load',function(){ setTimeout(function(){ if(VER_TRANG===__BAN_NAY) return; var b=document.createElement('div');
   b.style.cssText='margin:10px auto;max-width:1100px;padding:12px 14px;border-radius:10px;background:#B4382F;color:#fff;font:600 15px/1.45 system-ui,sans-serif';
@@ -864,4 +864,4 @@ setInterval(function(){ if(!document.hidden) capNhatSo(true); }, 120000);
 document.addEventListener('visibilitychange', function(){ if(!document.hidden) capNhatSo(false); });
 document.addEventListener('click', function(e){ if(e.target.closest && e.target.closest('#tabs .tab, #subtabs .tabcon')) setTimeout(function(){ capNhatSo(false); }, 1500); });
 </script></body></html>
-<!-- HẾT QuanLy.html – bản CC 30/10d (dán đủ thì dòng này nằm cuối cùng) -->
+<!-- HẾT QuanLy.html – bản CC 01/11a (dán đủ thì dòng này nằm cuối cùng) -->

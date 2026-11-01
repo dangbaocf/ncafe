@@ -12,6 +12,14 @@ Trả lời bằng tiếng Việt. Mỗi lần sửa lỗi: tóm tắt LỖI GÌ
   1. Chỉ được đánh dấu ✓ / báo "XONG" khi việc ĐÚNG ĐỦ như lệnh, ĐANG CHẠY THẬT, có BẰNG CHỨNG (số test đạt, số liệu khớp, kết quả đo).
   2. Làm một phần / khung / chưa lên bản chính / chưa thử thật → ghi "CHƯA XONG – đã làm được…, còn thiếu…". KHÔNG đánh ✓.
   3. Mỗi báo cáo rà lại MỌI ✓ theo luật này; chưa đạt → chuyển "CHƯA XONG" + nói rõ còn thiếu gì.
+- **Luật KHÔNG TEST BẰNG MÃ NV THẬT (chốt 1/11 lúc 08:30)**: TUYỆT ĐỐI KHÔNG dùng mã nhân viên thật (101, 102, 201…) để test chấm công / sdt4 / wifi / Telegram. Chỉ dùng mã thử RIÊNG (NV-TEST, PV-TEST…) đã tạo trong D1 + Sheet với TrangThai='Thử'. Lý do: test tạo record Sheet, gắn thiết bị, counter sai, cảnh báo "Điện thoại mới" cho NV thật → nhiễu dữ liệu.
+- **Luật ĐỐI SOÁT BẢN CŨ TRƯỚC KHI DEPLOY (chốt 1/11 lúc 08:15)**: Mọi lần viết lại / port chức năng từ bản cũ (Apps Script) sang bản mới (Cloudflare) phải đối soát từng màn hình, bước, ô, nút, danh sách, thông báo của bản cũ TRƯỚC. Lập bảng Giống/Khác. Chỗ KHÁC: giữ nguyên bản cũ, trừ khi anh Bảo đã quyết đổi (ghi vào CLAUDE.md). Bỏ qua đối soát → nguy cơ "trang trắng", mất chức năng, thay đổi hành vi NV không báo.
+- **VIEC-TON.md luôn đồng bộ**: mọi việc anh giao chưa XONG viết vào `VIEC-TON.md` (1 dòng/việc, có thứ tự). Xong việc → cập nhật file + báo anh 1 dòng.
+- **Mỗi lần sửa = 1 bản update (chốt 1/11 lúc 09:00)**:
+  1. Tên bản: `CC [DD/MM][chữ cái]` – ví dụ `CC 01/11a`, `CC 01/11b`. Cùng tên cho: `VER` Code.gs, `VER_TRANG` QuanLy.html, dòng HẾT QuanLy.html, clasp version, git commit title, git tag, mô tả deploy Worker.
+  2. Thêm vào ĐẦU `CAP-NHAT.md` sau mỗi bản: tên – giờ deploy – lỗi + vì sao + đã sửa – tính năng mới – mục giữ nguyên – test (số bài/đạt) – mã Worker + số bản Apps Script để rollback.
+  3. Tin báo anh sau mỗi bản TỐI ĐA 5 dòng: `CC 01/11b – đã deploy [giờ]` / `Sửa: [lỗi] → [đã sửa]` / `Mới: [nếu có]` / `Test: [x/x đạt] | Giữ nguyên: [mục]` / `Anh cần làm: [nếu có]`.
+  4. Bản sau xây trên bản trước, không làm lại; lỗi do bản mới → sửa thành bản tiếp; chỉ rollback khi anh ra lệnh.
 - Trước khi sửa: giải thích bằng tiếng Việt sẽ sửa gì, chờ anh Bảo đồng ý.
 - Giữ nguyên mọi yêu cầu cũ; mỗi yêu cầu mới phải có test.
 - Chạy toàn bộ test trước khi deploy; có test fail thì KHÔNG deploy.

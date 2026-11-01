@@ -233,6 +233,15 @@ export async function wifiQueueCho(env, maCS, maNV, ten, ip, asOrg, ccid, anh, l
 export async function wifiChan(env, cs, nv, loai, p) {
   const ip = String((p && p.ip) || '');
   const asOrg = String((p && p.asOrg) || '');
+  // (1/11) Luật mới: IP phải khớp ĐÚNG quán của QR đang quét. Dùng Wi-Fi quán khác → chặn,
+  // báo quét QR quán đó hoặc bắt Wi-Fi quán hiện tại.
+  const dsAll = await wifiDs(env);
+  const wAny = dsAll.find(x => ipKhop(ip, x.IP));
+  if (wAny && up(wAny.MaCS) !== up(cs.MaCS)) {
+    const csKhacInfo = await getCoSo(env, wAny.MaCS);
+    const tenKhac = csKhacInfo ? csKhacInfo.TenCS : wAny.MaCS;
+    return { ok: false, msg: 'Bạn đang dùng Wi-Fi quán ' + tenKhac + '. Quét mã QR của quán đó hoặc bắt Wi-Fi quán ' + cs.TenCS + '.' };
+  }
   const w = await wifiKiem(env, cs.MaCS, ip);
   if (!w.bat || w.ok) return null;
   // Chỉ chặn khi Bắt buộc. 'Cảnh báo' / 'Tắt' → cho qua (chỉ ghi cảnh báo "Cách quán…"/"IP lạ").
@@ -314,14 +323,14 @@ export async function qrInfo(env, p) {
   };
 }
 
-/** Kiểm sdt4: NV có SDT → sdt4 phải khớp 4 số cuối. NV không có SDT → bỏ qua check.
+/** Kiểm sdt4: NV có SDT → sdt4 phải khớp 4 số cuối. NV không có SDT → trả canNhapSdt (cách A).
  *  Chỉ kiểm khi KIEM_SDT4='Có' trong CaiDat (default 'Không' → bỏ qua, tương thích Việc 1).
- *  Trả { ok, msg?, khoaDen? }. */
+ *  Trả { ok, msg?, khoaDen?, canNhapSdt? }. */
 async function kiemSdt4(env, n, sdt4In, deviceId) {
   const bat = String(await cfg(env, 'KIEM_SDT4') || 'Không');
   if (bat !== 'Có') return { ok: true, coSdt: !!n.SDT };   // Việc 1: không bắt check sdt4
   const sdt = String(n.SDT || '').trim();
-  if (!sdt) return { ok: true, coSdt: false };   // chưa có SDT trong hồ sơ → không bắt buộc
+  if (!sdt) return { ok: true, coSdt: false, canNhapSdt: true };   // cách A: lần đầu NV nhập SĐT đầy đủ
   const dung = sdt.slice(-4);
   const vao = String(sdt4In || '').trim();
   if (vao === dung) { await kiemSdt4Reset(env, deviceId); return { ok: true, coSdt: true }; }
@@ -413,11 +422,11 @@ export async function qrNhanVien(env, p) {
     if (p.deviceId) await kiemSdt4Tang(env, p.deviceId, String(p.maNV || '?'));
     return { ok: false, msg: 'Mã hoặc số điện thoại không đúng', duPhong: true };
   }
-  // Nếu NV có SDT, bắt buộc sdt4
+  // Nếu NV có SDT, bắt buộc sdt4; nếu NV chưa có SDT (cách A), trả canNhapSdt
   const chk = await kiemSdt4(env, n, p.sdt4, p.deviceId);
   if (!chk.ok) return { ok: false, msg: chk.msg, coSdt: true, khoaDen: chk.khoaDen };
   const mo = await caDangMo(env, n.MaNV);
-  // Pull cas cho store nếu có cs/t trong request
+  // Pull cas cho store
   let cas = [], nn = +(await cfg(env, 'NHAC_NHO_PHUT')) || 10;
   if (p.cs) {
     try { cas = await getCasChoQuan(env, p.cs); } catch (e) { cas = []; }
@@ -432,6 +441,7 @@ export async function qrNhanVien(env, p) {
     lich: [],   // Luật B: KHÔNG đọc lịch Xếp lịch – NV tự chọn ca
     cas, nn, lyDo,
     coSdt: chk.coSdt,
+    canNhapSdt: !!chk.canNhapSdt,   // cách A: NV chưa có SDT → QR.html hiện form nhập 10 số
     bietDanh: String(n.BietDanh || '')
   };
   if (mo) {
@@ -472,6 +482,30 @@ export async function backfillSheet(env, fn, record) {
   } catch (e) {
     console.log('[backfill ' + fn + '] lỗi:', e.message);
   }
+}
+
+/** NV đăng ký SĐT lần đầu (cách A). Backend validate 10 số, check unique, ghi D1 + waitUntil Sheet.
+ *  Flag SdtCho='Có' → QL duyệt ở trang Nhân sự. */
+export async function qrDangKySdt(env, request, p, ctx) {
+  const info = await qrInfo(env, p);
+  if (!info.ok) return info;
+  const sdt = String(p.sdt || '').replace(/\D/g, '');
+  if (sdt.length !== 10 || !/^0[1-9]\d{8}$/.test(sdt)) return { ok: false, msg: 'Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)' };
+  const n = await getNhanVien(env, p.maNV);
+  if (!n || !(await dangLam(n))) return { ok: false, msg: 'Mã nhân viên không hợp lệ', duPhong: true };
+  if (n.SDT) return { ok: false, msg: 'Nhân viên này đã có SĐT trong hồ sơ. Dùng 4 số cuối của SĐT đó.' };
+  // Check unique – không trùng SĐT NV khác
+  const trung = await env.DB.prepare("SELECT MaNV FROM NhanVien WHERE SDT = ?1 AND MaNV <> ?2 LIMIT 1").bind(sdt, up(n.MaNV)).first();
+  if (trung) return { ok: false, msg: 'Số điện thoại này đã được đăng ký cho người khác. Nhờ quản lý kiểm tra.' };
+  await env.DB.prepare("UPDATE NhanVien SET SDT = ?1, SdtCho = 'Có', Updated = ?2 WHERE MaNV = ?3").bind(sdt, fmtDT(new Date()), up(n.MaNV)).run();
+  await env.DB.prepare(
+    "INSERT INTO NhatKySua(Luc, Boi, Bang, Khoa, Cot, Cu, Moi, LyDo) VALUES(?1, 'NV đăng ký lần đầu', 'NhanVien', ?2, 'SDT', '', '••••', ?3)"
+  ).bind(fmtDT(new Date()), up(n.MaNV), 'NV nhập SĐT qua QR; chờ QL xác nhận. IP ' + (request.headers.get('CF-Connecting-IP') || '')).run();
+  // Backfill Sheet qua ctx.waitUntil (fn mới qrDangKySdtBackfill)
+  if (ctx && ctx.waitUntil) {
+    ctx.waitUntil(backfillSheet(env, 'qrDangKySdtBackfill', { MaNV: up(n.MaNV), SDT: sdt, SdtCho: 'Có' }));
+  }
+  return { ok: true, msg: 'Đã lưu SĐT. Quản lý sẽ xác nhận sau. Giờ bạn chấm công được rồi.' };
 }
 
 export async function qrVao(env, request, p, ctx) {
