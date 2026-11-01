@@ -67,7 +67,7 @@ layViTri(false, 8000); layViTri(true, 25000);
 var MA_NHO=ls('ncafe_ma'); if(MA_NHO) $('ma').value=MA_NHO;
 cham('qrMo', {cs:CS,t:TK,maNV:MA_NHO||'',deviceId:DEV},
   function(r){ if(!r.ok){ $('store').textContent=r.msg; $('store').style.cssText='background:#F8E1DE;color:#B4382F'; return; }
-    $('store').textContent='Quán '+r.store.TenCS; WIFI=r.wifi||{}; veWifi(); if(r.nv) nhanNV(r.nv); else $('sMa').classList.remove('hide'); },
+    $('store').textContent='Quán '+r.store.TenCS; WIFI=r.wifi||{}; veWifi(); if(r.nv && r.nv.ok) nhanNV(r.nv); else $('sMa').classList.remove('hide'); },
   function(e){ $('store').textContent='Lỗi mạng: '+(e.message||e)+' – tải lại trang'; });
 var WIFI={};
 function wifiChan(){ return WIFI.bat && !WIFI.ok && WIFI.cheDo==='batbuoc'; }
@@ -75,7 +75,7 @@ function veWifi(){ var e=$('wfTT'); if(!e || !WIFI.bat) return; if(WIFI.ok){ e.i
   e.style.color=WIFI.cheDo==='batbuoc'?'#B4382F':'#8A6A10'; e.innerHTML='📶 Bạn chưa kết nối <b>wifi của quán</b> – bật wifi quán (tắt 4G / VPN) rồi <a href="#" onclick="location.reload();return false">tải lại trang</a> nhé.'+(WIFI.cheDo==='batbuoc'?' Cần wifi của quán mới chấm công được.':' Lần này vẫn chấm công bình thường.'); }
 var goMaHen=null; function goMa(){ var m=$('ma').value.replace(/\D/g,''); $('maTen').textContent=''; clearTimeout(goMaHen); if(m.length>=3) goMaHen=setTimeout(function(){ $('maTen').textContent='Đang tìm…'; tim(); }, 350); }
 function nhanNV(r){ if(!r.ok){ ls('ncafe_ma',null); $('sMa').classList.remove('hide'); $('sCham').classList.add('hide'); $('eMa').textContent=r.msg; if($('maTen')) $('maTen').textContent=''; return; }
-  NV=r; ls('ncafe_ma',r.MaNV); $('sMa').classList.add('hide'); S={vt:(r.lich[0]&&r.lich[0].ViTri)||r.ViTri,ca:(r.lich[0]&&r.lich[0].MaCa)||'',kh:'',photo:null,gio:'',ghi:''}; ve(); }
+  NV=r; ls('ncafe_ma',r.MaNV||r.maNV); $('sMa').classList.add('hide'); S={vt:(r.lich&&r.lich[0]&&r.lich[0].ViTri)||r.ViTri||r.viTri,ca:(r.lich&&r.lich[0]&&r.lich[0].MaCa)||'',kh:'',photo:null,gio:'',ghi:''}; ve(); }
 function tim(){ var m=$('ma').value.trim(); if(!m){ $('eMa').textContent='Nhập mã nhân viên'; return; } $('eMa').textContent='';
   cham('qrNhanVien', {cs:CS,t:TK,maNV:m,deviceId:DEV}, nhanNV, function(e){ $('eMa').textContent='Lỗi: '+(e.message||e); }); }
 var TU_GUI=false, CANLY=false, LYDO=['Có mặt đúng giờ, chấm muộn (mã QR / mạng / hết pin)','Đã xin phép quản lý','Xe hư / lủng lốp','Ốm / sức khoẻ','Việc gia đình','Kẹt xe / mưa lớn','Đông khách, quản lý giữ lại','Quán vắng, quản lý cho về','Khác'];
@@ -124,7 +124,7 @@ function loiChao(r, nn){ var m=function(x){ var p=String(x||'').split(':'); retu
   return {dung:true, html:'<div style="'+xanh+'">🎉 Chúc mừng '+ten+' đã đến đúng giờ!<div style="font-weight:500;margin-top:4px">Chúc ca làm thật vui vẻ.</div></div>'}; }
 function gui(){ if(!POS.lat && !gui.daCho && POS.loi!=='chưa cho phép'){ gui.daCho=true; var b0=$('gui'); b0.disabled=true; b0.textContent='Đang lấy vị trí…'; layViTri(false, 6000, function(){ gui(); }); return; } gui.daCho=false;
   luu(); var b=$('gui'); b.disabled=true; b.textContent='Đang lưu…';
-  var base={cs:CS,t:TK,maNV:NV.MaNV,deviceId:DEV,photo:S.photo,lat:POS.lat,lng:POS.lng,acc:POS.acc,loiViTri:POS.loi||'',trongApp:TRONG_APP?1:''}, fn, p;
+  var maNV=NV.MaNV||NV.maNV; var base={cs:CS,t:TK,maNV:maNV,deviceId:DEV,photo:S.photo,lat:POS.lat,lng:POS.lng,acc:POS.acc,loiViTri:POS.loi||'',trongApp:TRONG_APP?1:''}, fn, p;
   if(NV.next==='VAO'){ fn='qrVao'; p=Object.assign(base,{maCa:S.ca,viTri:S.vt,gioBD:S.bd,gioKT:S.kt}); } else { fn='qrRa'; p=Object.assign(base,{khaiLoai:S.kh,tu:S.kh==='du'?'':S.tu,den:S.kh==='du'?'':S.den,coMat:S.kh==='du'?S.cm:'',lyDo:S.ly,ghiChu:S.ghi}); }
   cham(fn, p, function(r){ if(!r.ok){
       // giờ cao điểm: máy chủ đang ghi cho người khác → tự thử lại (tối đa 3 lần, cách 2–4 giây), nhân viên không phải bấm

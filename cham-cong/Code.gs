@@ -416,11 +416,13 @@ function exportCaiDatAll(p){
   return {ok:true, cfg:out, soKhoa:Object.keys(out).length};
 }
 function exportNhanVienAll(p){
-  var list=rows('NhanVien').map(function(n){ return {MaNV:String(n.MaNV), Ten:String(n.Ten||''), ViTri:String(n.ViTri||''),
+  var list=rows('NhanVien').map(function(n){ var sdt=sdtDoc_(n.SDT); return {MaNV:String(n.MaNV), Ten:String(n.Ten||''), ViTri:String(n.ViTri||''),
     ChucVu:String(n.ChucVu||''), Loai:String(n.Loai||''), CoSoChinh:String(n.CoSoChinh||''),
     LuongGio:+n.LuongGio||0, LuongCoBan:+n.LuongCoBan||0, KieuLuong:String(n.KieuLuong||''),
     NgayVao:String(n.NgayVao||'').slice(0,10), NgaySinh:String(n.NgaySinh||'').slice(0,10),
-    GioChuanNgay:+n.GioChuanNgay||0, NgayChuan:+n.NgayChuan||0, TrangThai:String(n.TrangThai||'Đang làm')}; });
+    GioChuanNgay:+n.GioChuanNgay||0, NgayChuan:+n.NgayChuan||0,
+    SDT:sdt, SDT4:sdt?sdt.slice(-4):'',   // (1/11) chép sang D1 để kiểm sdt4 ở lớp CF (không gửi về điện thoại NV)
+    TrangThai:String(n.TrangThai||'Đang làm')}; });
   return {ok:true, list:list, so:list.length};
 }
 function exportLichSuLuong(p){

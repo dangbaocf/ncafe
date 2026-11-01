@@ -314,17 +314,131 @@ export async function qrInfo(env, p) {
   };
 }
 
+/** Kiểm sdt4: NV có SDT → sdt4 phải khớp 4 số cuối. NV không có SDT → bỏ qua check.
+ *  Chỉ kiểm khi KIEM_SDT4='Có' trong CaiDat (default 'Không' → bỏ qua, tương thích Việc 1).
+ *  Trả { ok, msg?, khoaDen? }. */
+async function kiemSdt4(env, n, sdt4In, deviceId) {
+  const bat = String(await cfg(env, 'KIEM_SDT4') || 'Không');
+  if (bat !== 'Có') return { ok: true, coSdt: !!n.SDT };   // Việc 1: không bắt check sdt4
+  const sdt = String(n.SDT || '').trim();
+  if (!sdt) return { ok: true, coSdt: false };   // chưa có SDT trong hồ sơ → không bắt buộc
+  const dung = sdt.slice(-4);
+  const vao = String(sdt4In || '').trim();
+  if (vao === dung) { await kiemSdt4Reset(env, deviceId); return { ok: true, coSdt: true }; }
+  // Sai: tăng counter theo deviceId; 5 lần/5 phút → khoá
+  const khoa = await kiemSdt4Tang(env, deviceId, n.MaNV);
+  return { ok: false, coSdt: true, msg: khoa.khoa
+      ? 'Sai 5 lần – khoá máy này 5 phút. Nhờ quản lý mở khoá.'
+      : 'Mã hoặc số điện thoại không đúng (còn ' + (5 - khoa.lan) + ' lần)',
+    khoaDen: khoa.den || '' };
+}
+
+async function kiemSdt4Khoa(env, deviceId) {
+  if (!deviceId) return null;
+  const r = await env.DB.prepare(
+    "SELECT KhoaDen FROM ThietBi WHERE Dev = ?1 AND MaNV = '_sdt4_'"
+  ).bind(String(deviceId).slice(0, 40)).first();
+  if (!r || !r.KhoaDen) return null;
+  const den = String(r.KhoaDen);
+  if (den > fmtDT(new Date())) return den;
+  return null;
+}
+
+async function kiemSdt4Tang(env, deviceId, maNV) {
+  if (!deviceId) return { lan: 1, khoa: false };
+  const dev = String(deviceId).slice(0, 40);
+  const r = await env.DB.prepare("SELECT Luc, KhoaDen FROM ThietBi WHERE Dev = ?1 AND MaNV = '_sdt4_'").bind(dev).first();
+  const now = Date.now();
+  let lan = 1, luc = fmtDT(new Date());
+  if (r && r.Luc) {
+    // Luc trong 5 phút gần nhất tính liên tục
+    const prevTime = new Date(r.Luc.replace(' ', 'T') + '+07:00').getTime();
+    if (now - prevTime < 5 * 60 * 1000) {
+      const prevLan = +(String(r.Luc).match(/#(\d+)$/) || [, 0])[1] || 0;
+      lan = prevLan + 1;
+    }
+  }
+  luc = fmtDT(new Date()) + '#' + lan;
+  const khoa = lan >= 5;
+  const den = khoa ? fmtDT(new Date(now + 5 * 60 * 1000)) : '';
+  await env.DB.prepare(
+    "INSERT INTO ThietBi(MaNV, Dev, Luc, KhoaDen) VALUES('_sdt4_', ?1, ?2, ?3) " +
+    "ON CONFLICT(MaNV, Dev) DO UPDATE SET Luc = excluded.Luc, KhoaDen = excluded.KhoaDen"
+  ).bind(dev, luc, den).run();
+  // Log + Telegram admin khi khoá
+  if (khoa) {
+    await ghiNhatKySdt4(env, deviceId, maNV, lan);
+    try {
+      if (env.TG_TOKEN) {
+        const chat = String((await cfg(env, 'TG_ADMIN_IDS')) || '').split(',').map(s => s.trim()).filter(Boolean);
+        for (const c of chat) {
+          await fetch('https://api.telegram.org/bot' + env.TG_TOKEN + '/sendMessage', {
+            method: 'POST', headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ chat_id: c, text: '🚨 Khoá chấm công (5 lần sai SĐT): mã NV đoán = ' + maNV + ', thiết bị ' + dev.slice(0, 10) + '… khoá đến ' + den })
+          }).catch(() => {});
+        }
+      }
+    } catch (e) {}
+  }
+  return { lan, khoa, den };
+}
+
+async function kiemSdt4Reset(env, deviceId) {
+  if (!deviceId) return;
+  await env.DB.prepare("DELETE FROM ThietBi WHERE Dev = ?1 AND MaNV = '_sdt4_'").bind(String(deviceId).slice(0, 40)).run();
+}
+
+async function ghiNhatKySdt4(env, deviceId, maNV, lan) {
+  await env.DB.prepare(
+    "INSERT INTO NhatKySua(Luc, Boi, Bang, Khoa, Cot, Cu, Moi, LyDo) VALUES(?1, 'Hệ thống', 'ThietBi', ?2, 'KhoaDen', '', '5 phút', ?3)"
+  ).bind(fmtDT(new Date()), String(deviceId).slice(0, 40) + '|' + maNV, 'Sai sdt4 ' + lan + ' lần liên tiếp').run();
+}
+
+/** Lấy danh sách Ca áp dụng cho MaCS (CoSo='ALL' hoặc chứa mã). */
+async function getCasChoQuan(env, maCS) {
+  const rs = await env.DB.prepare("SELECT MaCa, TenCa, GioBD, GioKT, SoGio, CoSo FROM Ca ORDER BY GioBD, SoGio").all();
+  const u = up(maCS);
+  return (rs.results || []).filter(c => {
+    const cs = String(c.CoSo || 'ALL').toUpperCase();
+    return cs === 'ALL' || cs === '' || cs.split(/[,;]/).map(s => s.trim()).includes(u);
+  }).map(c => ({ MaCa: c.MaCa, TenCa: c.TenCa, GioBD: c.GioBD, GioKT: c.GioKT, SoGio: +c.SoGio || 0 }));
+}
+
 export async function qrNhanVien(env, p) {
+  // Chống khoá máy
+  const bk = await kiemSdt4Khoa(env, p.deviceId);
+  if (bk) return { ok: false, msg: 'Thiết bị đang bị khoá sau 5 lần sai. Thử lại sau ' + bk + '.', khoaDen: bk };
   const n = await getNhanVien(env, p.maNV);
-  if (!n || !(await dangLam(n))) return { ok: false, msg: 'Mã nhân viên không hợp lệ', duPhong: true };
+  if (!n || !(await dangLam(n))) {
+    if (p.deviceId) await kiemSdt4Tang(env, p.deviceId, String(p.maNV || '?'));
+    return { ok: false, msg: 'Mã hoặc số điện thoại không đúng', duPhong: true };
+  }
+  // Nếu NV có SDT, bắt buộc sdt4
+  const chk = await kiemSdt4(env, n, p.sdt4, p.deviceId);
+  if (!chk.ok) return { ok: false, msg: chk.msg, coSdt: true, khoaDen: chk.khoaDen };
   const mo = await caDangMo(env, n.MaNV);
-  return {
+  // Pull cas cho store nếu có cs/t trong request
+  let cas = [], nn = +(await cfg(env, 'NHAC_NHO_PHUT')) || 10;
+  if (p.cs) {
+    try { cas = await getCasChoQuan(env, p.cs); } catch (e) { cas = []; }
+  }
+  // Danh sách lý do ra ca – hard-code (CLAUDE.md section 9 + QR.html fallback LYDO).
+  const lyDo = ['Có mặt đúng giờ, chấm muộn (mã QR / mạng / hết pin)','Đã xin phép quản lý','Xe hư / lủng lốp','Ốm / sức khoẻ','Việc gia đình','Kẹt xe / mưa lớn','Đông khách, quản lý giữ lại','Quán vắng, quản lý cho về','Khác'];
+  // Format giống AS qrNhanVien (QR.html code đọc r.MaNV, r.Ten, r.next, r.lich, r.cas, r.dang, r.nn, r.lyDo)
+  const r = {
     ok: true,
-    maNV: n.MaNV, goi: tenNgan(n.Ten), viTri: n.ViTri, coSo: n.CoSoChinh,
-    coSdt: !!n.SDT, bietDanh: String(n.BietDanh || ''),
-    dangTrongCa: !!mo,
-    ca: mo ? { ID: mo.ID, CaBD: mo.CaBD, CaKT: mo.CaKT, Vao: mo.Vao, MaCS: mo.MaCS, MaCa: mo.MaCa } : null
+    MaNV: String(n.MaNV), Ten: tenNgan(n.Ten), ViTri: n.ViTri || 'Phục vụ',
+    next: mo ? 'RA' : 'VAO',
+    lich: [],   // Luật B: KHÔNG đọc lịch Xếp lịch – NV tự chọn ca
+    cas, nn, lyDo,
+    coSdt: chk.coSdt,
+    bietDanh: String(n.BietDanh || '')
   };
+  if (mo) {
+    const caG = mo.CaBD && mo.CaKT ? (toMin(mo.CaKT) - toMin(mo.CaBD)) / 60 : 0;
+    r.dang = { Vao: mo.Vao, MaCS: mo.MaCS, MaCa: mo.MaCa, CaBD: mo.CaBD, CaKT: mo.CaKT, SoGio: caG };
+  }
+  return r;
 }
 
 export async function qrMo(env, request, p) {
@@ -364,8 +478,12 @@ export async function qrVao(env, request, p, ctx) {
   const info = await qrInfo(env, p);
   if (!info.ok) return info;
   const cs = info.store;
+  const bk = await kiemSdt4Khoa(env, p.deviceId);
+  if (bk) return { ok: false, msg: 'Thiết bị đang bị khoá sau 5 lần sai SĐT. Thử lại sau ' + bk + '.', khoaDen: bk };
   const n = await getNhanVien(env, p.maNV);
-  if (!n || !(await dangLam(n))) return { ok: false, msg: 'Mã nhân viên không hợp lệ', duPhong: true };
+  if (!n || !(await dangLam(n))) { if (p.deviceId) await kiemSdt4Tang(env, p.deviceId, String(p.maNV || '?')); return { ok: false, msg: 'Mã hoặc số điện thoại không đúng', duPhong: true }; }
+  const chk = await kiemSdt4(env, n, p.sdt4, p.deviceId);
+  if (!chk.ok) return { ok: false, msg: chk.msg, coSdt: true, khoaDen: chk.khoaDen };
   const ip = (request.headers.get('CF-Connecting-IP') || '').trim();
   const asOrg = ((request.cf && request.cf.asOrganization) || '').trim();
   const wc = await wifiChan(env, cs, n, 'VAO', { ip, asOrg });
@@ -438,8 +556,12 @@ export async function qrRa(env, request, p, ctx) {
   const info = await qrInfo(env, p);
   if (!info.ok) return info;
   const cs = info.store;
+  const bk = await kiemSdt4Khoa(env, p.deviceId);
+  if (bk) return { ok: false, msg: 'Thiết bị đang bị khoá sau 5 lần sai SĐT. Thử lại sau ' + bk + '.', khoaDen: bk };
   const n = await getNhanVien(env, p.maNV);
-  if (!n) return { ok: false, msg: 'Mã nhân viên không hợp lệ', duPhong: true };
+  if (!n) { if (p.deviceId) await kiemSdt4Tang(env, p.deviceId, String(p.maNV || '?')); return { ok: false, msg: 'Mã hoặc số điện thoại không đúng', duPhong: true }; }
+  const chk = await kiemSdt4(env, n, p.sdt4, p.deviceId);
+  if (!chk.ok) return { ok: false, msg: chk.msg, coSdt: true, khoaDen: chk.khoaDen };
   const loai = p.khaiLoai === 'dung' ? 'du' : p.khaiLoai;
   if (['du', 'tang', 'giam'].indexOf(loai) < 0) return { ok: false, msg: 'Chọn: đủ ca, tăng ca hoặc giảm ca' };
   const ip = (request.headers.get('CF-Connecting-IP') || '').trim();
